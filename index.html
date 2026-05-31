@@ -397,9 +397,45 @@
   .modal input:focus, .modal textarea:focus { border-color: var(--accent); }
   .modal textarea { resize:vertical; height:70px; }
   .modal-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:18px; }
+  /* ── Password Gate ── */
+  .pw-overlay {
+    position:fixed; inset:0; background:var(--header-bg);
+    display:flex; align-items:center; justify-content:center; z-index:9999;
+  }
+  .pw-box {
+    background:var(--surface); border-radius:14px; padding:36px 40px;
+    width:340px; box-shadow:var(--shadow-lg); border:1px solid var(--border);
+    text-align:center;
+  }
+  .pw-box h2 { margin:0 0 6px; font-size:17px; font-weight:500; color:var(--text-primary); }
+  .pw-box p  { margin:0 0 20px; font-size:13px; color:var(--text-muted); }
+  .pw-input {
+    width:100%; padding:10px 14px; font-size:14px; border:1px solid var(--border);
+    border-radius:8px; font-family:inherit; outline:none; text-align:center;
+    letter-spacing:2px; transition:border-color 0.12s;
+  }
+  .pw-input:focus { border-color:var(--accent); }
+  .pw-btn {
+    margin-top:12px; width:100%; padding:10px; font-size:14px; font-weight:500;
+    background:var(--accent); color:white; border:none; border-radius:8px;
+    cursor:pointer; font-family:inherit; transition:background 0.14s;
+  }
+  .pw-btn:hover { background:var(--accent-hover); }
+  .pw-error { margin-top:10px; font-size:12.5px; color:var(--red); display:none; }
 </style>
 </head>
 <body>
+
+<div class="pw-overlay" id="pwOverlay">
+  <div class="pw-box">
+    <h2>TW Project Manager</h2>
+    <p>접근하려면 비밀번호를 입력하세요</p>
+    <input class="pw-input" type="password" id="pwInput" placeholder="비밀번호"
+      onkeydown="if(event.key==='Enter') checkPassword()" />
+    <button class="pw-btn" onclick="checkPassword()">입력</button>
+    <div class="pw-error" id="pwError">비밀번호가 올바르지 않습니다</div>
+  </div>
+</div>
 
 <header>
   <h1>TW Project Manager</h1>
@@ -647,6 +683,23 @@
 </div>
 
 <script>
+/* ── Password Gate ── */
+const PW_KEY = 'tw_pm_auth';
+function checkPassword() {
+  const val = document.getElementById('pwInput').value;
+  if (val === 'parktw') {
+    sessionStorage.setItem(PW_KEY, '1');
+    document.getElementById('pwOverlay').style.display = 'none';
+  } else {
+    document.getElementById('pwError').style.display = 'block';
+    document.getElementById('pwInput').value = '';
+    document.getElementById('pwInput').focus();
+  }
+}
+if (sessionStorage.getItem(PW_KEY) === '1') {
+  document.getElementById('pwOverlay').style.display = 'none';
+}
+
 /* ── Google Sheets API ── */
 const API_URL = 'https://script.google.com/macros/s/AKfycbxf7pqiX8VEAqmQup6obRbDmzKPpBvqparPJx5ZbyP6FT4vPxTcuRaANCuKks7FPrXT/exec';
 
