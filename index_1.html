@@ -404,6 +404,8 @@
 <header>
   <h1>TW Project Manager</h1>
   <div class="header-actions">
+    <span id="syncStatus" style="font-size:12px;transition:opacity 1s;opacity:0;"></span>
+    <button class="btn-util" onclick="init()" title="서버에서 최신 데이터 불러오기">↻ 새로고침</button>
     <button class="btn-ppt" onclick="exportToPPT()">PPT 내보내기</button>
     <button class="btn-util" onclick="exportData()" title="전체 데이터를 JSON 파일로 저장">백업</button>
     <label class="btn-util" title="JSON 파일에서 데이터 복원" style="display:flex;align-items:center;cursor:pointer;">데이터 복원<input type="file" accept=".json" onchange="importData(event)" style="display:none;"></label>
@@ -645,6 +647,38 @@
 </div>
 
 <script>
+/* ── Google Sheets API ── */
+const API_URL = 'https://script.google.com/macros/s/AKfycbxf7pqiX8VEAqmQup6obRbDmzKPpBvqparPJx5ZbyP6FT4vPxTcuRaANCuKks7FPrXT/exec';
+
+async function fetchFromServer() {
+  try {
+    const res = await fetch(API_URL);
+    return await res.json();
+  } catch(e) { console.warn('서버 불러오기 실패:', e); return null; }
+}
+
+async function saveToServer() {
+  if (!API_URL) return;
+  try {
+    await fetch(API_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ projects, deletedProjects })
+    });
+  } catch(e) { console.warn('서버 저장 실패:', e); }
+}
+
+function showSyncStatus(msg, color) {
+  let el = document.getElementById('syncStatus');
+  if (!el) return;
+  el.textContent = msg;
+  el.style.color = color || 'var(--text-muted)';
+  el.style.opacity = '1';
+  clearTimeout(el._hideTimer);
+  el._hideTimer = setTimeout(() => { el.style.opacity = '0'; }, 3000);
+}
+
 const ITEMS = [
   { key:'a', title:'RFM 접수', desc:'RFM/ e-Mail/ 전화/ 대면 문의 모두 RFM 등록 유도, 개발 연동 건 및 TW가 드라이브 하는 건은 담당 라이터 이름 기재하고 등록' },
   { key:'b', title:'TW Project로 등록', desc:'TW Project 2025 Jira 칸반 등록' },
@@ -703,12 +737,7 @@ const _now = new Date().toISOString();
 const _mkChecks = () => { const c={}; 'abcdefghijklmn'.split('').forEach(k=>c[k]=false); return c; };
 const _defaults = _DEFAULT_ROWS.map(r => Object.assign({}, r, {targetDate:'', checks:_mkChecks(), selected:true, resource:'', bu:'', createdAt:_now}));
 
-let _stored = null;
-try { _stored = JSON.parse(localStorage.getItem(STORAGE_KEY)); } catch {}
-let projects = (_stored && _stored.length > 0) ? _stored : _defaults;
-if (!_stored || _stored.length === 0) {
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(projects)); } catch {}
-}
+let projects = [];
 
 let currentProjectId = null;
 let sidePanelProjectId = null;
@@ -719,6 +748,8 @@ function loadProjects() {
 }
 function saveProjects() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(projects));
+  showSyncStatus('저장 중...', 'var(--amber)');
+  saveToServer().then(() => showSyncStatus('✓ 저장됨', 'var(--green)'));
 }
 
 /* ── Modal ── */
@@ -1687,10 +1718,26 @@ document.addEventListener('keydown', e => {
   window._loadColWidths = loadCols;
 })();
 
-renderDashboard();
-renderDeletedList();
-window._loadColWidths && window._loadColWidths();
-window._attachColResizeHandlers && window._attachColResizeHandlers();
+async function init() {
+  showSyncStatus('불러오는 중...', 'var(--amber)');
+  const serverData = await fetchFromServer();
+  if (serverData && Array.isArray(serverData.projects)) {
+    projects = serverData.projects;
+    deletedProjects = serverData.deletedProjects || [];
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(projects)); } catch {}
+    showSyncStatus('✓ 서버에서 불러옴', 'var(--green)');
+  } else {
+    let _stored = null;
+    try { _stored = JSON.parse(localStorage.getItem(STORAGE_KEY)); } catch {}
+    projects = (_stored && _stored.length > 0) ? _stored : _defaults;
+    showSyncStatus('오프라인 모드', 'var(--amber)');
+  }
+  renderDashboard();
+  renderDeletedList();
+  window._loadColWidths && window._loadColWidths();
+  window._attachColResizeHandlers && window._attachColResizeHandlers();
+}
+init();
 </script>
 </body>
 </html>
