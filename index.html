@@ -1,0 +1,2227 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<title>[Technical Publication] IBU Status</title>
+<script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg: #f5f6f8;
+    --surface: #ffffff;
+    --surface-2: #f9fafb;
+    --border: #e8eaed;
+    --border-subtle: #f0f1f3;
+    --text-primary: #111827;
+    --text-secondary: #6b7280;
+    --text-muted: #9ca3af;
+    --accent: #2563eb;
+    --accent-light: #eff6ff;
+    --accent-hover: #1d4ed8;
+    --header-bg: #0f1b35;
+    --header-accent: #2563eb;
+    --analysis-bg: #0d2233;
+    --green: #059669;
+    --green-light: #ecfdf5;
+    --red: #dc2626;
+    --red-light: #fef2f2;
+    --amber: #d97706;
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+    --shadow-lg: 0 12px 40px rgba(0,0,0,0.14);
+    --radius: 10px;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "DM Sans", "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+    background: var(--bg);
+    color: var(--text-primary);
+    min-height: 100vh;
+    font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── Header ── */
+  header {
+    background: var(--header-bg);
+    color: white;
+    padding: 0 36px;
+    height: 58px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  header h1 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+    color: rgba(255,255,255,0.92);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  header h1::before {
+    content: '';
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--header-accent);
+    box-shadow: 0 0 8px var(--header-accent);
+  }
+  .header-actions { display:flex; gap:8px; align-items:center; }
+
+  .container { max-width: 1280px; margin: 0 auto; padding: 28px 24px; }
+
+  /* ── Buttons ── */
+  button {
+    cursor: pointer; border: none; border-radius: 7px;
+    font-family: inherit; transition: all 0.14s ease;
+    font-weight: 400;
+  }
+  .btn-primary {
+    background: var(--accent); color: white;
+    padding: 8px 16px; font-size: 13px; font-weight: 500;
+  }
+  .btn-primary:hover { background: var(--accent-hover); }
+  .btn-secondary {
+    background: var(--accent); color: white;
+    padding: 6px 14px; font-size: 12.5px;
+  }
+  .btn-secondary:hover { background: var(--accent-hover); }
+  .btn-ghost {
+    background: transparent; color: var(--accent);
+    padding: 6px 12px; font-size: 13px;
+  }
+  .btn-ghost:hover { background: var(--accent-light); }
+  .btn-danger {
+    background: var(--red-light); color: var(--red);
+    padding: 5px 10px; font-size: 12px;
+  }
+  .btn-danger:hover { background: #fee2e2; }
+  .btn-ppt {
+    background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.9);
+    padding: 7px 14px; font-size: 12.5px; font-weight: 500;
+    border: 1px solid rgba(255,255,255,0.15); border-radius: 7px;
+  }
+  .btn-ppt:hover { background: rgba(255,255,255,0.18); }
+  .btn-util {
+    background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.8);
+    padding: 7px 14px; font-size: 12.5px;
+    border: 1px solid rgba(255,255,255,0.1); border-radius: 7px;
+    cursor: pointer; font-family: inherit;
+  }
+  .btn-util:hover { background: rgba(255,255,255,0.13); }
+
+  /* ── Product cell ── */
+  .product-cell { display:flex; align-items:center; gap:4px; }
+  .product-name {
+    color: var(--accent); font-weight: 600; font-size: 13.5px;
+    cursor:pointer; text-decoration:none; white-space:nowrap;
+    letter-spacing: -0.1px;
+  }
+  .product-name:hover { color: var(--accent-hover); }
+  .cell-input-name {
+    color: var(--accent); font-weight: 600; font-size: 13.5px;
+    letter-spacing: -0.1px;
+  }
+  .btn-side-open {
+    background:transparent; color: var(--text-muted); font-size:14px;
+    padding:2px 5px; border-radius:4px; flex-shrink:0; line-height:1;
+  }
+  .btn-side-open:hover { background: var(--accent-light); color: var(--accent); }
+
+  /* ── Inline-editable cells ── */
+  .cell-input {
+    width:100%; border:none; border-bottom:1.5px solid transparent;
+    background:transparent; font-family:inherit; font-size:13px;
+    color: var(--text-primary); font-weight: 400;
+    padding:3px 2px; border-radius:3px; outline:none; min-width:0;
+    transition:border-color 0.12s, background 0.12s;
+  }
+  .cell-input:hover  { border-bottom-color: var(--border); }
+  .cell-input:focus  { border-bottom-color: var(--accent); background: var(--accent-light); }
+  .cell-input-date   { font-size:12px; color: var(--text-secondary); width:130px; cursor:pointer; }
+  .cell-input-date::-webkit-calendar-picker-indicator { cursor:pointer; opacity:0.5; }
+
+  /* ── Project Table ── */
+  .table-wrap {
+    background: var(--surface); border-radius: var(--radius);
+    overflow-x:auto; box-shadow: var(--shadow-sm);
+    border: 1px solid var(--border);
+  }
+  .project-table { width:100%; border-collapse:collapse; table-layout:fixed; }
+
+  /* ── Sticky columns ── */
+  .project-table thead tr:nth-child(2) th:nth-child(1) { position:sticky; left:0; z-index:4; }
+  .project-table thead tr:nth-child(2) th:nth-child(2) { position:sticky; left:38px; z-index:4; }
+  .project-table thead tr:nth-child(2) th:nth-child(3) { position:sticky; left:198px; z-index:4; }
+  .project-table tbody td:nth-child(1) {
+    position:sticky; left:0; z-index:2; background: var(--surface);
+  }
+  .project-table tbody td:nth-child(2) {
+    position:sticky; left:38px; z-index:2; background: var(--surface);
+  }
+  .project-table tbody td:nth-child(3) {
+    position:sticky; left:198px; z-index:2;
+    background: var(--surface); box-shadow:2px 0 6px rgba(0,0,0,0.04);
+  }
+  .project-table tbody tr:hover td:nth-child(1),
+  .project-table tbody tr:hover td:nth-child(2),
+  .project-table tbody tr:hover td:nth-child(3) { background: var(--surface-2); }
+
+  .project-table thead th {
+    background: var(--header-bg); color: rgba(255,255,255,0.82);
+    padding: 11px 14px;
+    text-align:left; font-size:12px; font-weight: 400; white-space:nowrap;
+    vertical-align:middle; position:relative; overflow:visible;
+    letter-spacing: 0.3px;
+  }
+
+  /* ── Column resize handle ── */
+  .col-resizer {
+    position:absolute; right:0; top:0; bottom:0; width:5px;
+    cursor:col-resize; z-index:10; user-select:none;
+  }
+  .col-resizer:hover, .col-resizer.resizing { background:rgba(255,255,255,0.2); }
+
+  /* ── Add-row button ── */
+  .add-row-tr td {
+    padding:5px 10px; border-top:1px dashed var(--border); background: var(--surface-2);
+  }
+  .btn-add-row {
+    background:none; border:none; color: var(--accent); font-size:18px; font-weight: 400;
+    cursor:pointer; padding:2px 10px; border-radius:5px; line-height:1;
+    transition:background 0.1s;
+  }
+  .btn-add-row:hover { background: var(--accent-light); }
+
+  /* ── Icon action buttons ── */
+  .btn-icon {
+    background:none; border:none; padding:5px 7px; border-radius:6px;
+    font-size:15px; line-height:1; cursor:pointer; transition:background 0.1s;
+  }
+  .btn-icon-detail { color: var(--accent); }
+  .btn-icon-detail:hover { background: var(--accent-light); }
+  .btn-icon-delete { color: #ef4444; }
+  .btn-icon-delete:hover { background: var(--red-light); }
+
+  /* ── Delete confirm modal ── */
+  .del-modal-overlay {
+    position:fixed; inset:0; background:rgba(0,0,0,0.4);
+    display:none; align-items:center; justify-content:center; z-index:400;
+    backdrop-filter: blur(2px);
+  }
+  .del-modal-overlay.show { display:flex; }
+  .del-modal {
+    background: var(--surface); border-radius: 12px; padding:26px 28px; width:370px;
+    max-width:90%; box-shadow: var(--shadow-lg);
+    border: 1px solid var(--border);
+  }
+  .del-modal-title { font-size:16px; font-weight: 500; color: var(--red); margin:0 0 8px; }
+  .del-modal-body  { font-size:13px; color: var(--text-secondary); margin-bottom:20px; line-height:1.65; }
+  .del-modal-name  { font-weight: 500; color: var(--accent); }
+  .del-modal-actions { display:flex; justify-content:flex-end; gap:8px; }
+
+  /* ── Deleted list section ── */
+  .deleted-section { margin-top:28px; }
+  .deleted-section-head {
+    display:flex; align-items:center; gap:10px; margin-bottom:10px; cursor:pointer;
+  }
+  .deleted-section-head h3 {
+    margin:0; font-size:13.5px; font-weight: 400; color: var(--text-muted);
+  }
+  .deleted-toggle-btn {
+    background:none; border:none; color: var(--text-muted); font-size:12.5px;
+    padding:3px 8px; border-radius:5px; cursor:pointer;
+  }
+  .deleted-toggle-btn:hover { background: var(--surface-2); }
+  .deleted-clear-btn {
+    margin-left:auto; background: var(--red-light); color: var(--red); border:none;
+    font-size:12px; padding:4px 10px; border-radius:5px; cursor:pointer; font-family:inherit;
+  }
+  .deleted-clear-btn:hover { background:#fee2e2; }
+  .deleted-table-wrap { background: var(--surface); border-radius: var(--radius); overflow-x:auto; box-shadow: var(--shadow-sm); border: 1px solid var(--border); }
+  .deleted-table { width:100%; border-collapse:collapse; }
+  .deleted-table th {
+    background: var(--surface-2); color: var(--text-muted); font-size:11.5px; font-weight: 400;
+    padding:9px 14px; text-align:left; border-bottom:1px solid var(--border);
+  }
+  .deleted-table td {
+    padding:9px 14px; font-size:12px; color: var(--text-muted); border-bottom:1px solid var(--border-subtle);
+    vertical-align:middle;
+  }
+  .deleted-table tr:last-child td { border-bottom:none; }
+  .deleted-table td.del-name { color: var(--text-secondary); font-weight: 400; }
+  .btn-icon-restore { color: var(--green); }
+  .btn-icon-restore:hover { background: var(--green-light); }
+  .project-table tbody tr { border-bottom:1px solid var(--border-subtle); transition:background 0.1s; }
+  .project-table tbody tr:last-child { border-bottom:none; }
+  .project-table tbody tr:hover { background: var(--surface-2); }
+  .project-table tbody td { padding:9px 14px; font-size:13px; vertical-align:middle; }
+  .td-actions { white-space:nowrap; }
+  .td-actions-inner { display:flex; gap:4px; align-items:center; }
+
+  /* ── Progress Bar (table) ── */
+  .progress-bar {
+    display:flex; height:24px; border-radius:5px; overflow:hidden;
+    border:1px solid var(--border); background: var(--surface-2); min-width:130px;
+  }
+  .progress-segment {
+    flex:1; border-right:1px solid var(--border);
+    display:flex; align-items:center; justify-content:center;
+    font-weight:500; font-size:11px; overflow:hidden;
+    cursor:pointer; user-select:none; transition:filter 0.12s;
+    background:#ffffff; color:#cbd5e1;
+  }
+  .progress-segment:hover { filter:brightness(0.93); }
+  .progress-segment:last-child { border-right:none; }
+  .progress-segment.ps-wip  { background:#BDD7EE; color:#1F3864; }
+  .progress-segment.ps-done { background:#1F3864; color:#ffffff; }
+  /* ? indicator (progress-bar 설정 항목) */
+  .check-pb {
+    width:13px; height:13px; margin-top:2px; flex-shrink:0;
+    display:inline-flex; align-items:center; justify-content:center;
+    font-size:9px; font-weight:700; color:var(--accent);
+    border:1.5px solid var(--accent); border-radius:3px; cursor:pointer;
+    background:#eff6ff; line-height:1;
+  }
+  .kanban-card.pb-checked { background:var(--surface-2); opacity:0.85; }
+  .kanban-card.pb-checked .kanban-card-title { text-decoration:none; color:var(--text-primary); }
+
+  /* ── Empty state ── */
+  .empty-row td { text-align:center; padding:60px 20px; color: var(--text-muted); font-size:14px; }
+
+  /* ── Side Panel ── */
+  .side-overlay {
+    position:fixed; inset:0; background:rgba(0,0,0,0.25); z-index:200; display:none;
+    backdrop-filter: blur(1px);
+  }
+  .side-overlay.show { display:block; }
+  .side-panel {
+    position:fixed; top:0; right:-720px; width:700px; height:100vh;
+    background: var(--surface); z-index:201; box-shadow: var(--shadow-lg);
+    transition:right 0.28s cubic-bezier(0.4,0,0.2,1); display:flex; flex-direction:column;
+    border-left: 1px solid var(--border);
+  }
+  .side-panel.open { right:0; }
+  .side-panel-head {
+    background: var(--header-bg); color:white;
+    padding:14px 20px; display:flex; justify-content:space-between;
+    align-items:center; flex-shrink:0;
+  }
+  .side-panel-head h3 { margin:0; font-size:14.5px; font-weight: 400; letter-spacing:0.2px; }
+  .side-panel-close {
+    background:transparent; color:rgba(255,255,255,0.7); font-size:18px;
+    padding:2px 8px; border-radius:4px; line-height:1;
+  }
+  .side-panel-close:hover { background:rgba(255,255,255,0.12); color:white; }
+  .side-panel-body { flex:1; overflow:auto; padding:16px; }
+  .side-panel-percent {
+    font-size:12.5px; color: var(--green); font-weight: 400; margin-bottom:12px;
+    padding:5px 12px; background: var(--green-light); border-radius:6px;
+    display:inline-block; letter-spacing:0.2px;
+  }
+
+  /* ── Kanban Board ── */
+  .kanban-board { display:flex; gap:7px; align-items:flex-start; }
+  .kanban-col {
+    flex:1; min-width:115px; background: var(--surface-2); border-radius:8px;
+    border:1px solid var(--border); overflow:hidden; display:flex; flex-direction:column;
+  }
+  .kanban-col.done-col { background:#e8edf5; border-color:#9DBAD2; }
+  .kanban-col.wip-col  { background:#f0f6fb; border-color:#BDD7EE; }
+  .kanban-col-header {
+    background: #ffffff; color: #94a3b8; padding:8px 9px;
+    display:flex; flex-wrap:wrap; align-items:center; gap:4px; flex-shrink:0;
+    border-bottom: 1px solid var(--border);
+  }
+  .done-col .kanban-col-header { background: #1F3864; color:rgba(255,255,255,0.9); }
+  .wip-col  .kanban-col-header { background: #BDD7EE; color: #1F3864; }
+  .done-col .kanban-stage-count { background:rgba(255,255,255,0.2); }
+  .wip-col  .kanban-stage-count { background:rgba(31,56,100,0.15); }
+  .done-col .kanban-stage-num   { background:rgba(255,255,255,0.2); }
+  .wip-col  .kanban-stage-num   { background:rgba(31,56,100,0.15); }
+  .kanban-stage-num {
+    width:18px; height:18px; background:rgba(255,255,255,0.18); border-radius:50%;
+    display:inline-flex; align-items:center; justify-content:center;
+    font-size:10.5px; font-weight: 400; flex-shrink:0;
+  }
+  .kanban-stage-name { flex:1; font-size:13px; font-weight: 500; line-height:1.3; }
+  .kanban-stage-count {
+    font-size:10px; background:rgba(255,255,255,0.18);
+    padding:1px 5px; border-radius:8px; flex-shrink:0;
+  }
+  .kanban-cards { padding:7px; display:flex; flex-direction:column; gap:5px; flex:1; }
+  .kanban-card {
+    background: var(--surface); border-radius:5px; padding:7px 8px;
+    box-shadow: var(--shadow-sm); border:1px solid var(--border-subtle);
+    display:flex; align-items:flex-start; gap:6px;
+    transition:opacity 0.12s;
+  }
+  .kanban-card.checked { background: var(--surface-2); opacity:0.52; }
+  .kanban-card input[type="checkbox"] {
+    width:13px; height:13px; margin-top:2px; flex-shrink:0;
+    accent-color: var(--green); cursor:pointer;
+  }
+  .kanban-card-title { font-size:11px; font-weight: 400; color: var(--text-primary); line-height:1.4; }
+  .kanban-card.checked .kanban-card-title { text-decoration:line-through; color: var(--text-muted); }
+  .kanban-card-desc { display:none; }
+  .kanban-card { position:relative; }
+  .kanban-card-title-row { display:flex; align-items:center; gap:4px; }
+  .btn-info {
+    background:none; border:none; padding:0; cursor:pointer;
+    color:var(--text-muted); font-size:12px; line-height:1;
+    flex-shrink:0; border-radius:50%; width:15px; height:15px;
+    display:inline-flex; align-items:center; justify-content:center;
+    transition:color 0.1s;
+  }
+  .btn-info:hover { color:var(--accent); }
+  .kanban-card-tooltip {
+    display:none; position:absolute; left:50%; bottom:calc(100% + 6px);
+    transform:translateX(-50%); background:#1f2937; color:#f9fafb;
+    font-size:11px; line-height:1.5; padding:7px 10px; border-radius:7px;
+    white-space:normal; width:220px; z-index:100;
+    box-shadow:0 4px 12px rgba(0,0,0,0.2);
+  }
+  .kanban-card-tooltip::after {
+    content:''; position:absolute; top:100%; left:50%; transform:translateX(-50%);
+    border:5px solid transparent; border-top-color:#1f2937;
+  }
+  .kanban-card-tooltip.show { display:block; }
+
+  /* ── Standard Checklist (Monotone) ── */
+  .kanban-board.mono .kanban-col {
+    background: #f4f4f5; border-color: #d4d4d8;
+  }
+  .kanban-board.mono .kanban-col.done-col {
+    background: #e4e4e7; border-color: #a1a1aa;
+  }
+  .kanban-board.mono .kanban-col-header {
+    background: #3f3f46; color: rgba(255,255,255,0.8);
+  }
+  .kanban-board.mono .done-col .kanban-col-header {
+    background: #52525b;
+  }
+  .kanban-board.mono .kanban-card {
+    background: #ffffff; border-color: #e4e4e7;
+  }
+  .kanban-board.mono .kanban-card.checked {
+    background: #f4f4f5; opacity: 0.6;
+  }
+  .kanban-board.mono .kanban-card input[type="checkbox"] {
+    accent-color: #71717a;
+  }
+  .kanban-board.mono .kanban-card-title { color: #52525b; }
+  .kanban-board.mono .btn-info { color: #a1a1aa; }
+  .kanban-board.mono .btn-info:hover { color: #52525b; }
+  .standard-checklist-header {
+    display:flex; align-items:center; justify-content:space-between; margin-bottom:12px;
+  }
+  .standard-checklist-header h3 {
+    font-size:15px; font-weight:500; color:var(--text-muted); margin:0; letter-spacing:-0.1px;
+  }
+  .btn-std-edit {
+    background:#f4f4f5; color:#52525b; border:1px solid #d4d4d8;
+    padding:5px 14px; font-size:12.5px; border-radius:7px;
+    cursor:pointer; font-family:inherit; transition:all 0.12s;
+  }
+  .btn-std-edit:hover { background:#e4e4e7; }
+  .btn-std-edit.editing { background:#3f3f46; color:white; border-color:#3f3f46; }
+
+  /* ── Full Detail View ── */
+  #detail { display:none; }
+  .checklist-header {
+    display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:22px;
+  }
+  .detail-label { font-size:10.5px; font-weight: 400; color: var(--text-muted); text-transform:uppercase; letter-spacing:1.2px; margin-bottom:5px; }
+  .checklist-title { font-size:26px; font-weight: 500; color: var(--text-primary); line-height:1.25; }
+  .detail-subtitle { font-size:13px; color: var(--text-secondary); margin-top:5px; }
+  .checklist { background: var(--surface); border-radius: var(--radius); padding:20px 22px; box-shadow: var(--shadow-sm); border:1px solid var(--border); position:relative; }
+  .btn-pencil-edit {
+    background:none; border:1px solid transparent; border-radius:7px;
+    color:var(--text-muted); padding:5px 7px; cursor:pointer;
+    transition:all 0.13s; display:inline-flex; align-items:center; gap:5px;
+    font-family:inherit; font-size:11.5px;
+  }
+  .btn-pencil-edit:hover { background:var(--surface-2); border-color:var(--border); color:var(--text-secondary); }
+  .btn-pencil-edit.editing { background:var(--accent-light); border-color:var(--accent); color:var(--accent); }
+  .kanban-board.mono .btn-pencil-edit:hover { background:#e4e4e7; color:#52525b; }
+  .kanban-board.mono .btn-pencil-edit.editing { background:#e4e4e7; border-color:#71717a; color:#3f3f46; }
+  .checklist-edit-row { display:flex; justify-content:flex-end; margin-bottom:10px; }
+  .checklist .kanban-col { min-width:160px; }
+  .checklist .kanban-card-title { font-size:12px; }
+  .checklist .kanban-card-desc  { font-size:11px; }
+  .checklist .kanban-card { padding:9px 10px; }
+
+  /* ── Modal ── */
+  .modal-overlay {
+    position:fixed; inset:0; background:rgba(0,0,0,0.35);
+    display:none; align-items:center; justify-content:center; z-index:300;
+    backdrop-filter: blur(2px);
+  }
+  .modal-overlay.show { display:flex; }
+  .modal {
+    background: var(--surface); border-radius: 12px; padding:26px 28px;
+    width:430px; max-width:90%; box-shadow: var(--shadow-lg);
+    border: 1px solid var(--border);
+  }
+  .modal h2 { margin:0 0 16px; font-size:16px; font-weight: 500; color: var(--text-primary); }
+  .modal label { display:block; font-size:11.5px; font-weight: 400; color: var(--text-secondary); margin-bottom:4px; margin-top:14px; text-transform:uppercase; letter-spacing:0.5px; }
+  .modal label:first-of-type { margin-top:0; }
+  .modal input[type="text"], .modal input[type="date"], .modal textarea {
+    width:100%; padding:8px 11px; font-size:13.5px;
+    border:1px solid var(--border); border-radius:7px; font-family:inherit;
+    color: var(--text-primary); outline:none; transition:border-color 0.12s;
+    background: var(--surface);
+  }
+  .modal input:focus, .modal textarea:focus { border-color: var(--accent); }
+  .modal textarea { resize:vertical; height:70px; }
+  .modal-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:18px; }
+</style>
+</head>
+<body>
+
+
+<header>
+  <h1>TW Project Manager</h1>
+  <div class="header-actions">
+    <span id="syncStatus" style="font-size:12px;transition:opacity 1s;opacity:0;"></span>
+    <button class="btn-util" onclick="init()" title="서버에서 최신 데이터 불러오기">↻ 새로고침</button>
+    <button class="btn-ppt" onclick="exportToPPT()">PPT 내보내기</button>
+    <button class="btn-util" onclick="exportData()" title="전체 데이터를 JSON 파일로 저장">백업</button>
+    <label class="btn-util" title="JSON 파일에서 데이터 복원" style="display:flex;align-items:center;cursor:pointer;">데이터 복원<input type="file" accept=".json" onchange="importData(event)" style="display:none;"></label>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- Dashboard (Table) -->
+  <div id="dashboard">
+    <div style="display:flex;align-items:baseline;gap:16px;margin:0 0 20px;">
+      <h2 style="font-size:21px;font-weight:500;color:var(--text-primary);margin:0;letter-spacing:-0.3px;">[Technical Publication] IBU Status</h2>
+    </div>
+    <p style="font-size:12px;font-weight:400;color:var(--text-muted);margin:0 0 12px 2px;text-transform:uppercase;letter-spacing:1px;">In Active</p>
+    <div class="table-wrap" style="overflow-x:auto;">
+      <table class="project-table" id="mainTable">
+        <colgroup>
+          <col id="col0" style="width:38px">
+          <col id="col1" style="width:160px">
+          <col id="col2" style="width:180px">
+          <col id="col3" style="width:160px">
+          <col id="col4" style="width:150px">
+          <col id="col5" style="width:130px">
+          <col id="col6" style="width:120px">
+          <col id="col7" style="width:120px">
+          <col id="col8" style="width:90px">
+          <col id="col9" style="width:80px">
+          <col id="col10" style="width:110px">
+          <col id="col11" style="width:90px">
+          <col id="col12" style="width:120px">
+          <col id="col13" style="width:110px">
+        </colgroup>
+        <thead>
+          <!-- 섹션 레이블 행 -->
+          <tr>
+            <th colspan="7" style="background:var(--surface);text-align:left;font-size:15px;font-weight:600;color:var(--text-secondary);letter-spacing:1.2px;text-transform:uppercase;border-right:3px solid var(--accent);padding:7px 18px;border-bottom:1px solid var(--border);">Report</th>
+            <th colspan="7" style="background:var(--surface);text-align:left;font-size:15px;font-weight:600;color:var(--text-muted);letter-spacing:1.2px;text-transform:uppercase;padding:7px 18px;border-bottom:1px solid var(--border);">Analysis</th>
+          </tr>
+          <!-- 컬럼 헤더 행 -->
+          <tr>
+            <th style="text-align:center;background:var(--header-bg);">
+              <input type="checkbox" id="chkAll" title="전체 선택/해제"
+                style="width:14px;height:14px;accent-color:var(--accent);cursor:pointer;"
+                onchange="toggleAllSelected(this.checked)" />
+            </th>
+            <th style="background:var(--header-bg);">Product<div class="col-resizer" data-col="1"></div></th>
+            <th style="background:var(--header-bg);">Publication<div class="col-resizer" data-col="2"></div></th>
+            <th style="background:var(--header-bg);">Purpose<div class="col-resizer" data-col="3"></div></th>
+            <th style="background:var(--header-bg);">Progress Rate<div class="col-resizer" data-col="4"></div></th>
+            <th style="background:var(--header-bg);">Target Date<div class="col-resizer" data-col="5"></div></th>
+            <th style="background:var(--header-bg);border-right:3px solid var(--accent);"><div class="col-resizer" data-col="6"></div></th>
+            <th style="background:var(--analysis-bg);">
+              <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-start;">
+                <span>Resource</span>
+                <select id="resourceFilter"
+                  style="font-size:11px;padding:2px 6px;border:1px solid rgba(255,255,255,0.12);border-radius:4px;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.8);cursor:pointer;max-width:110px;font-family:inherit;"
+                  onchange="applyResourceFilter(this.value)">
+                  <option value="">? All ?</option>
+                </select>
+              </div>
+              <div class="col-resizer" data-col="7"></div>
+            </th>
+            <th style="background:var(--analysis-bg);">
+              <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-start;">
+                <span>BU</span>
+                <select id="buFilter"
+                  style="font-size:11px;padding:2px 6px;border:1px solid rgba(255,255,255,0.12);border-radius:4px;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.8);cursor:pointer;max-width:110px;font-family:inherit;"
+                  onchange="applyBuFilter(this.value)">
+                  <option value="">? All ?</option>
+                </select>
+              </div>
+              <div class="col-resizer" data-col="8"></div>
+            </th>
+            <th style="background:var(--analysis-bg);">
+              <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-start;">
+                <span>Status</span>
+                <select id="progressFilter"
+                  style="font-size:11px;padding:2px 6px;border:1px solid rgba(255,255,255,0.12);border-radius:4px;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.8);cursor:pointer;max-width:110px;font-family:inherit;"
+                  onchange="applyProgressFilter(this.value)">
+                  <option value="">? All ?</option>
+                  <option value="0">Not Started (0%)</option>
+                  <option value="prog">In Progress (1?99%)</option>
+                  <option value="100">Completed (100%)</option>
+                </select>
+              </div>
+              <div class="col-resizer" data-col="9"></div>
+            </th>
+            <th style="background:var(--analysis-bg);">
+              <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-start;">
+                <span>Project Type</span>
+                <select id="projectTypeFilter"
+                  style="font-size:11px;padding:2px 6px;border:1px solid rgba(255,255,255,0.12);border-radius:4px;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.8);cursor:pointer;max-width:110px;font-family:inherit;"
+                  onchange="applyProjectTypeFilter(this.value)">
+                  <option value="">? All ?</option>
+                </select>
+              </div>
+              <div class="col-resizer" data-col="10"></div>
+            </th>
+            <th style="background:var(--analysis-bg);">
+              <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-start;">
+                <span>Progress (%)</span>
+                <select id="pctFilter"
+                  style="font-size:11px;padding:2px 6px;border:1px solid rgba(255,255,255,0.12);border-radius:4px;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.8);cursor:pointer;max-width:110px;font-family:inherit;"
+                  onchange="applyPctFilter(this.value)">
+                  <option value="">? All ?</option>
+                  <option value="0">0%</option>
+                  <option value="1-33">1?33%</option>
+                  <option value="34-66">34?66%</option>
+                  <option value="67-99">67?99%</option>
+                  <option value="100">100%</option>
+                </select>
+              </div>
+              <div class="col-resizer" data-col="11"></div>
+            </th>
+            <th style="background:var(--analysis-bg);">
+              <span>Start Date</span>
+              <div class="col-resizer" data-col="12"></div>
+            </th>
+            <th style="background:var(--analysis-bg);">
+              <span>Lead Time (Week)</span>
+              <div class="col-resizer" data-col="13"></div>
+            </th>
+          </tr>
+        </thead>
+        <tbody id="projectTbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Deleted Projects List -->
+  <div id="deletedSection" class="deleted-section" style="display:none;">
+    <div class="deleted-section-head" onclick="toggleDeletedList()">
+      <h3 id="deletedSectionTitle">?? 삭제된 프로젝트</h3>
+      <button class="deleted-toggle-btn" id="deletedToggleBtn">▲ 접기</button>
+      <button class="deleted-clear-btn" onclick="clearDeletedList(event)">전체 지우기</button>
+    </div>
+    <div id="deletedListBody">
+      <div class="table-wrap" style="overflow-x:auto;">
+        <table class="project-table" id="deletedTable">
+          <colgroup>
+            <col style="width:38px"><col style="width:160px"><col style="width:180px">
+            <col style="width:160px"><col style="width:150px"><col style="width:130px">
+            <col style="width:120px"><col style="width:120px"><col style="width:90px">
+            <col style="width:80px"><col style="width:110px"><col style="width:90px">
+            <col style="width:120px"><col style="width:110px">
+          </colgroup>
+          <thead>
+            <tr>
+              <th colspan="7" style="background:var(--surface);text-align:left;font-size:11px;font-weight:400;color:var(--text-secondary);letter-spacing:1.2px;text-transform:uppercase;border-right:3px solid var(--accent);padding:7px 18px;border-bottom:1px solid var(--border);">Report</th>
+              <th colspan="7" style="background:var(--surface);text-align:left;font-size:11px;font-weight:400;color:var(--text-muted);letter-spacing:1.2px;text-transform:uppercase;padding:7px 18px;border-bottom:1px solid var(--border);">Analysis</th>
+            </tr>
+            <tr>
+              <th style="text-align:center;background:var(--header-bg);"></th>
+              <th style="background:var(--header-bg);">Product</th>
+              <th style="background:var(--header-bg);">Publication</th>
+              <th style="background:var(--header-bg);">Purpose</th>
+              <th style="background:var(--header-bg);">Progress Rate</th>
+              <th style="background:var(--header-bg);">Target Date</th>
+              <th style="background:var(--header-bg);border-right:3px solid var(--accent);"></th>
+              <th style="background:var(--analysis-bg);">Resource</th>
+              <th style="background:var(--analysis-bg);">BU</th>
+              <th style="background:var(--analysis-bg);">Status</th>
+              <th style="background:var(--analysis-bg);">Project Type</th>
+              <th style="background:var(--analysis-bg);">Progress (%)</th>
+              <th style="background:var(--analysis-bg);">Start Date</th>
+              <th style="background:var(--analysis-bg);">Lead Time (Week)</th>
+            </tr>
+          </thead>
+          <tbody id="deletedTbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Full Detail View -->
+  <div id="detail">
+    <div class="checklist-header">
+      <div>
+        <h2 style="font-size:19px;font-weight:500;color:var(--text-primary);margin:0 0 4px;letter-spacing:-0.2px;">Project Checklist</h2>
+        <div class="detail-label">Product</div>
+        <div class="checklist-title" id="detailTitle"></div>
+        <div class="detail-subtitle" id="detailSubtitle"></div>
+      </div>
+      <button class="btn-ghost" onclick="showDashboard()">← 대시보드로</button>
+    </div>
+    <div class="checklist" id="checklist"></div>
+
+    <div style="margin-top:32px;">
+      <div class="standard-checklist-header">
+        <h3>Standard Checklist</h3>
+      </div>
+      <div class="checklist" id="standardChecklist"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Side Panel Overlay -->
+<div class="side-overlay" id="sideOverlay" onclick="closeSidePanel()"></div>
+
+<!-- Side Panel -->
+<div class="side-panel" id="sidePanel">
+  <div class="side-panel-head">
+    <h3 id="sidePanelTitle">체크리스트</h3>
+    <button class="side-panel-close" onclick="closeSidePanel()">?</button>
+  </div>
+  <div class="side-panel-body">
+    <div id="sidePanelPercent" class="side-panel-percent"></div>
+    <div id="sidePanelChecklist"></div>
+  </div>
+</div>
+
+<!-- Delete Confirm Modal -->
+<div class="del-modal-overlay" id="delModal">
+  <div class="del-modal">
+    <div class="del-modal-title">?? 프로젝트 삭제</div>
+    <div class="del-modal-body">
+      아래 프로젝트를 삭제하시겠습니까?<br>
+      <span class="del-modal-name" id="delModalName"></span><br>
+      <span style="font-size:12px;color:#9ca3af;">삭제된 항목은 하단 삭제 목록에서 확인할 수 있습니다.</span>
+    </div>
+    <div class="del-modal-actions">
+      <button class="btn-ghost" onclick="closeDelModal()">취소</button>
+      <button style="background:var(--red);color:white;padding:7px 16px;font-size:13px;font-weight:400;border-radius:7px;border:none;cursor:pointer;font-family:inherit;" onclick="executeDelete()">삭제</button>
+    </div>
+  </div>
+</div>
+
+<!-- New Project Modal -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <h2>새 프로젝트 만들기</h2>
+    <label>Product (프로젝트명) *</label>
+    <input type="text" id="inputName" placeholder="제품명 / 프로젝트명" />
+    <label>Publication (출판물)</label>
+    <input type="text" id="inputPublication" placeholder="매뉴얼 / 가이드 / 보고서 등" />
+    <label>Purpose (목적)</label>
+    <textarea id="inputPurpose" placeholder="작업 목적 입력"></textarea>
+    <label>Target Date (목표일)</label>
+    <input type="date" id="inputTargetDate" />
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeModal()">취소</button>
+      <button class="btn-secondary" onclick="createProject()">만들기</button>
+    </div>
+  </div>
+</div>
+
+<script>
+
+/* ── Google Sheets API ── */
+const API_URL = 'https://script.google.com/macros/s/AKfycbxf7pqiX8VEAqmQup6obRbDmzKPpBvqparPJx5ZbyP6FT4vPxTcuRaANCuKks7FPrXT/exec';
+
+async function fetchFromServer() {
+  try {
+    const res = await fetch(API_URL);
+    return await res.json();
+  } catch(e) { console.warn('서버 불러오기 실패:', e); return null; }
+}
+
+async function saveToServer() {
+  if (!API_URL) return;
+  try {
+    await fetch(API_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ projects, deletedProjects })
+    });
+  } catch(e) { console.warn('서버 저장 실패:', e); }
+}
+
+function showSyncStatus(msg, color) {
+  let el = document.getElementById('syncStatus');
+  if (!el) return;
+  el.textContent = msg;
+  el.style.color = color || 'var(--text-muted)';
+  el.style.opacity = '1';
+  clearTimeout(el._hideTimer);
+  el._hideTimer = setTimeout(() => { el.style.opacity = '0'; }, 3000);
+}
+
+const ITEMS = [
+  { key:'a', title:'RFM 접수', desc:'RFM/ e-Mail/ 전화/ 대면 문의 모두 RFM 등록 유도, 개발 연동 건 및 TW가 드라이브 하는 건은 담당 라이터 이름 기재하고 등록' },
+  { key:'b', title:'TW Project로 등록', desc:'TW Project 2025 Jira 칸반 등록' },
+  { key:'c', title:'RFM 폴더 생성', desc:'폴더 구조 Y:\\부서폴더\\IBU\\ICS\\TW\\TW Manual\\RFM (Request for Manual) confidential\\00 New Project Folder Tree' },
+  { key:'d', title:'자료 취합/검토/보완 요청', desc:'' },
+  { key:'e', title:'일정/Scope 결정', desc:'미진행/홀딩 결정하면 여기서 중단' },
+  { key:'f', title:'1st Draft 제작', desc:'' },
+  { key:'g', title:'Review/Feedback/Revision loop', desc:'' },
+  { key:'h', title:'In-team review', desc:'' },
+  { key:'i', title:'연구소와 보안 회의', desc:'' },
+  { key:'j', title:'소스 파일 클렌징 후 LOM 폴더로 백업', desc:'' },
+  { key:'k', title:'LOM 리스트 업데이트', desc:'' },
+  { key:'l', title:'SharePoint 업데이트', desc:'' },
+  { key:'m', title:'복사 공지', desc:'' },
+  { key:'n', title:'홈페이지 업데이트', desc:'' },
+];
+
+// Progress tracking stages (used for progress bar %)
+const STAGES = [
+  { num:1, label:'Preparations',           items:['a','b','c','d'] },
+  { num:2, label:'Creating 1st draft',     items:['f'] },
+  { num:3, label:'Feedback/Revision loop', items:['g','h'] },
+  { num:4, label:'Final review',           items:['i'] },
+  { num:5, label:'Project closing',        items:['j','k','l','m'] },
+];
+// Kanban stages include 'e' and 'n'
+const KANBAN_STAGES = [
+  { num:1, label:'Preparations',           items:['a','b','c','d','e'] },
+  { num:2, label:'Creating 1st draft',     items:['f'] },
+  { num:3, label:'Feedback/Revision loop', items:['g','h'] },
+  { num:4, label:'Final review',           items:['i'] },
+  { num:5, label:'Project closing',        items:['j','k','l','m','n'] },
+];
+
+// 동적 아이템/스테이지 (Standard Checklist에서 수정 시 반영)
+const STD_ITEMS_STORAGE = 'tw_pm_standard_items';
+const STD_STAGES_STORAGE = 'tw_pm_standard_stages';
+
+function getActiveItems() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(STD_ITEMS_STORAGE));
+    if (saved && saved.length) return saved;
+  } catch {}
+  return ITEMS.map(it => ({ key: it.key, title: it.title, desc: it.desc }));
+}
+function getActiveStages() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(STD_STAGES_STORAGE));
+    if (saved && saved.length) return saved;
+  } catch {}
+  return KANBAN_STAGES.map(s => ({ num: s.num, label: s.label, items: [...s.items] }));
+}
+function getActiveItemMap() {
+  return Object.fromEntries(getActiveItems().map(it => [it.key, it]));
+}
+function saveStdStages(stages) {
+  localStorage.setItem(STD_STAGES_STORAGE, JSON.stringify(stages));
+}
+
+const TRACKED = STAGES.flatMap(s => s.items);
+const ITEM_MAP = Object.fromEntries(ITEMS.map(it => [it.key, it]));
+const STORAGE_KEY = 'tw_pm_projects_v2';
+
+const _DEFAULT_ROWS = [
+  {id:'p0',  name:'NX-TSH310 PLP (TSMC)',            publication:'Installation/Operation/Maintenance',         purpose:'Certification & Delivery'},
+  {id:'p1',  name:'NX-TSH310 PLP (TSMC)',            publication:'Technical Overview',                         purpose:'TRM'},
+  {id:'p2',  name:'NX-Hybrid WLI',                   publication:'Technical Overview',                         purpose:'TRM'},
+  {id:'p3',  name:'NX-Hybrid WLI',                   publication:'Master PPT',                                 purpose:'TRM'},
+  {id:'p4',  name:'NX-Mask (NOVA Project)',           publication:'Technical Overview',                         purpose:'TRM'},
+  {id:'p5',  name:'NX-Mask (NOVA Project)',           publication:'Installation/Operation/Maintenance',         purpose:'Certification & Delivery'},
+  {id:'p6',  name:'ERO Measurement',                  publication:'New Features Guide',                         purpose:'Delivery'},
+  {id:'p7',  name:'Cu Pad Measurement',               publication:'New Features Guide',                         purpose:'Delivery'},
+  {id:'p8',  name:'NX-3DM',                           publication:'Installation/Operation/Maintenance',         purpose:'Delivery'},
+  {id:'p9',  name:'NX-3DM',                           publication:'Technical Overview',                         purpose:'TRM'},
+  {id:'p10', name:'NX-TSH1518 (LGD)',                publication:'Installation/Operation/Maintenance (EN/KO)', purpose:'Certification'},
+  {id:'p11', name:'NX-Wafer200 (SK Hynix, Huahong)', publication:'Installation',                               purpose:'Certification'},
+  {id:'p12', name:'NX-Hybrid WLI',                   publication:'New Features Guide',                         purpose:'Delivery'},
+  {id:'p13', name:'NX-HDM (NuFlare)',                publication:'Installation/Operation/Maintenance',         purpose:'Delivery'},
+];
+const _now = new Date().toISOString();
+const _mkChecks = () => { const c={}; 'abcdefghijklmn'.split('').forEach(k=>c[k]=false); return c; };
+const _defaults = _DEFAULT_ROWS.map(r => Object.assign({}, r, {targetDate:'', checks:_mkChecks(), selected:true, resource:'', bu:'', createdAt:_now}));
+
+let projects = [];
+
+let currentProjectId = null;
+let sidePanelProjectId = null;
+
+function loadProjects() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+  catch { return []; }
+}
+function saveProjects() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(projects));
+  showSyncStatus('저장 중...', 'var(--amber)');
+  saveToServer().then(() => showSyncStatus('✓ 저장됨', 'var(--green)'));
+}
+
+/* ── Modal ── */
+function openNewProjectModal() {
+  ['inputName','inputPublication','inputPurpose','inputTargetDate'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('modal').classList.add('show');
+  setTimeout(() => document.getElementById('inputName').focus(), 50);
+}
+function closeModal() { document.getElementById('modal').classList.remove('show'); }
+
+function createProject() {
+  const name = document.getElementById('inputName').value.trim();
+  if (!name) { alert('Product(프로젝트명)을 입력해주세요.'); return; }
+  const checks = {};
+  ITEMS.forEach(it => checks[it.key] = false);
+  projects.push({
+    id: 'p_' + Date.now(), name,
+    publication: document.getElementById('inputPublication').value.trim(),
+    purpose: document.getElementById('inputPurpose').value.trim(),
+    targetDate: document.getElementById('inputTargetDate').value,
+    checks, selected: true, resource: '', bu: '', projectType: '', startDate: '', createdAt: new Date().toISOString()
+  });
+  saveProjects(); closeModal(); renderDashboard();
+}
+
+/* ── Delete ── */
+const DELETED_KEY = 'tw_pm_deleted_v1';
+let deletedProjects = [];
+try { deletedProjects = JSON.parse(localStorage.getItem(DELETED_KEY)) || []; } catch {}
+
+let _pendingDeleteId = null;
+
+function confirmDelete(id) {
+  const p = projects.find(p => p.id === id);
+  if (!p) return;
+  _pendingDeleteId = id;
+  document.getElementById('delModalName').textContent = p.name || '(이름 없음)';
+  document.getElementById('delModal').classList.add('show');
+}
+function closeDelModal() {
+  _pendingDeleteId = null;
+  document.getElementById('delModal').classList.remove('show');
+}
+function executeDelete() {
+  const id = _pendingDeleteId;
+  if (!id) return;
+  const p = projects.find(p => p.id === id);
+  if (p) {
+    deletedProjects.unshift({
+      id: p.id, name: p.name, publication: p.publication,
+      purpose: p.purpose, targetDate: p.targetDate, resource: p.resource,
+      bu: p.bu, projectType: p.projectType, startDate: p.startDate||'',
+      checks: Object.assign({}, p.checks),
+      deletedAt: new Date().toISOString()
+    });
+    try { localStorage.setItem(DELETED_KEY, JSON.stringify(deletedProjects)); } catch {}
+  }
+  projects = projects.filter(p => p.id !== id);
+  saveProjects();
+  closeDelModal();
+  renderDashboard();
+  renderDeletedList();
+}
+
+/* ── Progress ── */
+function stageProgress(project, stage) {
+  const total = stage.items.length;
+  const done = stage.items.filter(k => project.checks[k]).length;
+  return { done, total, pct: total === 0 ? 0 : done / total };
+}
+function overallPercent(project) {
+  const stages = getActiveStages();
+  const tracked = stages.flatMap(s => s.items);
+  if (!tracked.length) return 0;
+  const done = tracked.filter(k => project.checks[k]).length;
+  return Math.round(done / tracked.length * 100);
+}
+// pbState per stage: 0=흰색, 1=wip(파랑), 2=done(네이비)
+function getPbState(project, stageNum) {
+  return (project.pbStates && project.pbStates[stageNum]) || 0;
+}
+function psClassFromState(state) {
+  if (state === 2) return 'ps-done';
+  if (state === 1) return 'ps-wip';
+  return '';
+}
+function renderProgressBar(project) {
+  const stages = getActiveStages();
+  // 색상이 있는(wip/done) 가장 큰 스테이지 인덱스 찾기
+  const highestActive = stages.reduce((max, stage, i) =>
+    getPbState(project, stage.num) > 0 ? i : max, -1);
+
+  return stages.map((stage, i) => {
+    let state = getPbState(project, stage.num);
+    // 더 큰 숫자에 색상이 있으면 이 스테이지를 강제로 네이비
+    if (i < highestActive) state = 2;
+    const cls = psClassFromState(state);
+    const { done, total } = stageProgress(project, stage);
+    return `<div class="progress-segment ${cls}"
+      title="${stage.label}: ${done}/${total} — 클릭으로 전환"
+      onclick="clickProgressBar('${project.id}',${stage.num})">${stage.num}</div>`;
+  }).join('');
+}
+
+/* ── Read-only progress bar (deleted rows) ── */
+function renderProgressBarStatic(project) {
+  return getActiveStages().map(stage => {
+    const state = getPbState(project, stage.num);
+    const { done, total } = stageProgress(project, stage);
+    const cls = psClassFromState(state);
+    return `<div class="progress-segment ${cls}" style="cursor:default;"
+      title="${stage.label}: ${done}/${total}">${stage.num}</div>`;
+  }).join('');
+}
+
+/* ── Deleted item side panel (read-only) ── */
+function openDeletedSidePanel(id) {
+  const p = deletedProjects.find(p => p.id === id);
+  if (!p) return;
+  const checks = p.checks || {};
+  const fakeP = Object.assign({}, p, { checks });
+  sidePanelProjectId = null; // not an active project
+  document.getElementById('sidePanelTitle').textContent = `${p.name} (삭제됨)`;
+  document.getElementById('sidePanelPercent').textContent = `전체 진행률: ${overallPercent(fakeP)}%`;
+  document.getElementById('sidePanelChecklist').innerHTML = buildKanbanReadOnly(fakeP);
+  document.getElementById('sideOverlay').classList.add('show');
+  document.getElementById('sidePanel').classList.add('open');
+}
+function openDeletedDetail(id) {
+  const p = deletedProjects.find(p => p.id === id);
+  if (!p) return;
+  const checks = p.checks || {};
+  const fakeP = Object.assign({}, p, { checks });
+  closeSidePanel();
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('detail').style.display = 'block';
+  document.getElementById('detailTitle').textContent = p.name + ' (삭제됨)';
+  const sub = [p.publication, p.purpose].filter(Boolean).join('  ·  ');
+  document.getElementById('detailSubtitle').textContent = sub;
+  document.title = p.name + ' ? TW Project Manager';
+  document.getElementById('checklist').innerHTML = buildKanbanReadOnly(fakeP);
+  history.pushState({ view: 'dashboard' }, '', '');
+}
+function buildKanbanReadOnly(p) {
+  const activeStages  = getActiveStages();
+  const activeItemMap = getActiveItemMap();
+  return '<div class="kanban-board">' +
+    activeStages.map(stage => {
+      const done  = stage.items.filter(k => p.checks[k]).length;
+      const total = stage.items.length;
+      const allDone = done === total;
+      const colClass = allDone ? 'done-col' : done > 0 ? 'wip-col' : '';
+      const cards = stage.items.map(key => {
+        const it = activeItemMap[key]; if (!it) return '';
+        const checked = p.checks[key];
+        const uid = p.id + '_' + key;
+        const isPb = checked === 'pb';
+        const isChecked = !!checked;
+        const cardClass = isPb ? 'pb-checked' : isChecked ? 'checked' : '';
+        const checkEl = isPb
+          ? `<span class="check-pb" style="cursor:default;">?</span>`
+          : `<input type="checkbox" ${isChecked?'checked':''} disabled />`;
+        return `<div class="kanban-card ${cardClass}" data-key="${key}">
+          ${checkEl}
+          <div style="flex:1;min-width:0;">
+            <div class="kanban-card-title-row">
+              <span class="kanban-card-title">${escapeHtml(it.title)}</span>
+              ${it.desc ? `<button class="btn-info" onclick="toggleTooltip('${uid}',event)" title="설명 보기">ℹ</button>` : ''}
+            </div>
+            ${it.desc ? `<div class="kanban-card-tooltip" id="tip_${uid}">${escapeHtml(it.desc)}</div>` : ''}
+          </div>
+        </div>`;
+      }).join('');
+      return `<div class="kanban-col ${colClass}">
+        <div class="kanban-col-header">
+          <span class="kanban-stage-num">${stage.num}</span>
+          <span class="kanban-stage-name">${stage.label}</span>
+          <span class="kanban-stage-count">${done}/${total}</span>
+        </div>
+        <div class="kanban-cards">${cards}</div>
+      </div>`;
+    }).join('') + '</div>';
+}
+
+/* ── Progress Bar click → sync checklist ── */
+function clickProgressBar(id, stageNum) {
+  const p = projects.find(p => p.id === id);
+  if (!p) return;
+
+  const stage = getActiveStages().find(s => s.num === stageNum);
+  if (!stage) return;
+
+  if (!p.pbStates) p.pbStates = {};
+  const cur = p.pbStates[stageNum] || 0;
+  const next = (cur + 1) % 3; // 0→1→2→0
+  p.pbStates[stageNum] = next;
+
+  if (next === 0) {
+    // 흰색: 이 스테이지만 전체 해제
+    stage.items.forEach(k => { p.checks[k] = false; });
+  } else {
+    // 연파랑/진네이비: 이 스테이지 전체 '?'
+    stage.items.forEach(k => { p.checks[k] = 'pb'; });
+    // 캐스케이드: 더 작은 번호의 스테이지도 모두 pb + pbState=2로 설정
+    const stages = getActiveStages();
+    stages.forEach(s => {
+      if (s.num < stageNum) {
+        p.pbStates[s.num] = 2;
+        s.items.forEach(k => { p.checks[k] = 'pb'; });
+      }
+    });
+  }
+
+  saveProjects();
+  refreshProjectRow(id);
+
+  if (sidePanelProjectId === id) {
+    document.getElementById('sidePanelPercent').textContent = `전체 진행률: ${overallPercent(p)}%`;
+    document.getElementById('sidePanelChecklist').innerHTML = buildKanban(p, 'toggleSideCheck');
+  }
+  if (currentProjectId === id) {
+    document.getElementById('checklist').innerHTML = buildKanban(p, 'toggleCheck');
+  }
+}
+
+/* ── Lightweight row refresh (progress bar + status badge + pct) ── */
+function refreshProjectRow(id) {
+  const p = projects.find(p => p.id === id);
+  const tr = document.querySelector(`#projectTbody tr[data-pid="${id}"]`);
+  if (!p || !tr) return;
+  const tds = tr.querySelectorAll('td');
+  // col 4 = Progress Rate (index 4)
+  tds[4].querySelector('.progress-bar').innerHTML = renderProgressBar(p);
+  // col 9 = Status badge (index 9)
+  tds[9].innerHTML = renderStatusBadge(p);
+  // col 11 = Progress % (index 11)
+  tds[11].querySelector('span').textContent = overallPercent(p) + '%';
+}
+
+/* ── Project-specific items/stages helpers ── */
+function getProjectItems(p) {
+  if (p.customItems && p.customItems.length) return p.customItems;
+  return getActiveItems();
+}
+function getProjectStages(p) {
+  if (p.customStages && p.customStages.length) return p.customStages;
+  return getActiveStages();
+}
+function getProjectItemMap(p) {
+  return Object.fromEntries(getProjectItems(p).map(it => [it.key, it]));
+}
+
+/* ── Kanban Builder ── */
+let projectEditing = false;
+
+const PENCIL_SVG = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`;
+
+/* progress bar 상태 → colClass 변환 */
+function pbStateToColClass(state) {
+  if (state === 2) return 'done-col';
+  if (state === 1) return 'wip-col';
+  return '';
+}
+/* progress bar 상태와 실제 체크 상태 비교 → 충돌 여부 */
+function hasStageConflict(p, stage, displayState) {
+  const done  = stage.items.filter(k => !!p.checks[k]).length;
+  const total = stage.items.length;
+  if (displayState === 0) return done > 0;
+  if (displayState === 1) return done !== 1;
+  if (displayState === 2) return done !== total;
+  return false;
+}
+/* 캐스케이드 포함한 스테이지별 display state 계산 */
+function getDisplayStates(p, stages) {
+  const highestActive = stages.reduce((max, s, i) =>
+    getPbState(p, s.num) > 0 ? i : max, -1);
+  return stages.map((stage, i) => {
+    let state = getPbState(p, stage.num);
+    if (i < highestActive) state = 2;
+    return state;
+  });
+}
+
+function buildKanban(p, toggleFnName) {
+  const stages      = getProjectStages(p);
+  const itemMap     = getProjectItemMap(p);
+  const displayStates = getDisplayStates(p, stages);
+  const editBtn = `<div class="checklist-edit-row"><button class="btn-pencil-edit ${projectEditing?'editing':''}" onclick="toggleProjectEdit()" title="체크리스트 수정">${PENCIL_SVG}${projectEditing?'&nbsp;완료':''}</button></div>`;
+
+  return editBtn + '<div class="kanban-board">' +
+    stages.map((stage, stageIdx) => {
+      const done  = stage.items.filter(k => p.checks[k]).length;
+      const total = stage.items.length;
+      const displayState = displayStates[stageIdx];
+      const colClass = pbStateToColClass(displayState);
+      const conflict = hasStageConflict(p, stage, displayState);
+      const cards = stage.items.map(key => {
+        const it = itemMap[key]; if (!it) return '';
+        const checked = p.checks[key];
+        const uid = p.id + '_' + key;
+
+        if (projectEditing) {
+          return `<div class="kanban-card" data-key="${key}" style="flex-direction:column;gap:6px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;">
+              <input type="checkbox" disabled style="width:13px;height:13px;opacity:0.3;flex-shrink:0;" />
+              <span style="flex:1;font-size:10px;color:#a1a1aa;font-weight:500;text-transform:uppercase;letter-spacing:0.5px;">${escapeHtml(key)}</span>
+              <button onclick="deleteProjectItem('${p.id}','${key}')" title="항목 삭제"
+                style="background:none;border:none;color:#ef4444;font-size:14px;cursor:pointer;padding:0 2px;line-height:1;flex-shrink:0;">✕</button>
+            </div>
+            <input
+              value="${escapeHtml(it.title)}" placeholder="항목 제목"
+              onblur="saveProjectItemField('${p.id}','${key}','title',this.value)"
+              onkeydown="if(event.key==='Enter')this.blur()"
+              style="width:100%;border:none;border-bottom:1.5px solid var(--border);background:transparent;
+                font-family:inherit;font-size:12px;color:var(--text-primary);padding:3px 2px;outline:none;border-radius:0;" />
+            <textarea placeholder="설명 (선택사항)"
+              onblur="saveProjectItemField('${p.id}','${key}','desc',this.value)"
+              style="width:100%;border:1px solid var(--border);border-radius:5px;background:var(--surface-2);
+                font-family:inherit;font-size:11px;color:var(--text-secondary);padding:5px 7px;outline:none;
+                resize:none;height:52px;line-height:1.4;">${escapeHtml(it.desc||'')}</textarea>
+          </div>`;
+        }
+
+        const isPb = checked === 'pb';
+        const isChecked = !!checked;
+        const cardClass = isPb ? 'pb-checked' : isChecked ? 'checked' : '';
+        const checkEl = isPb
+          ? `<span class="check-pb" onclick="${toggleFnName}('${key}',true)" title="클릭하면 직접 체크로 전환">?</span>`
+          : `<input type="checkbox" ${isChecked?'checked':''} onchange="${toggleFnName}('${key}',this.checked)" />`;
+        return `<div class="kanban-card ${cardClass}" data-key="${key}">
+          ${checkEl}
+          <div style="flex:1;min-width:0;">
+            <div class="kanban-card-title-row">
+              <span class="kanban-card-title">${escapeHtml(it.title)}</span>
+              ${it.desc ? `<button class="btn-info" onclick="toggleTooltip('${uid}',event)" title="설명 보기">ℹ</button>` : ''}
+            </div>
+            ${it.desc ? `<div class="kanban-card-tooltip" id="tip_${uid}">${escapeHtml(it.desc)}</div>` : ''}
+          </div>
+        </div>`;
+      }).join('');
+
+      const addBtn = projectEditing ? `
+        <button onclick="addProjectItem('${p.id}',${stageIdx})"
+          style="margin:4px 7px 7px;width:calc(100% - 14px);border:1.5px dashed var(--border);background:none;
+            color:var(--text-muted);font-size:18px;border-radius:6px;cursor:pointer;padding:3px 0;
+            font-family:inherit;transition:all 0.12s;"
+          onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)';"
+          onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-muted)';">＋</button>` : '';
+
+      const conflictBadge = conflict
+        ? `<span style="font-size:10px;font-weight:700;background:rgba(255,255,255,0.25);
+            border-radius:4px;padding:1px 5px;margin-left:2px;">?</span>` : '';
+      return `<div class="kanban-col ${colClass}">
+        <div class="kanban-col-header">
+          <span class="kanban-stage-num">${stage.num}</span>
+          <span class="kanban-stage-name">${stage.label}</span>
+          <span class="kanban-stage-count">${done}/${total}</span>
+          ${conflictBadge}
+        </div>
+        <div class="kanban-cards">${cards}</div>
+        ${addBtn}
+      </div>`;
+    }).join('') + '</div>';
+}
+
+function toggleProjectEdit() {
+  projectEditing = !projectEditing;
+  const p = projects.find(p => p.id === currentProjectId);
+  if (!p) return;
+  // 처음 수정 시 standard에서 복사
+  if (projectEditing && !p.customItems) {
+    p.customItems  = getActiveItems().map(it => ({ ...it }));
+    p.customStages = getActiveStages().map(s => ({ ...s, items: [...s.items] }));
+    saveProjects();
+  }
+  document.getElementById('checklist').innerHTML = buildKanban(p, 'toggleCheck');
+}
+
+function saveProjectItemField(pid, key, field, value) {
+  const p = projects.find(p => p.id === pid);
+  if (!p || !p.customItems) return;
+  const item = p.customItems.find(it => it.key === key);
+  if (item) { item[field] = value.trim(); saveProjects(); }
+}
+
+function addProjectItem(pid, stageIdx) {
+  const p = projects.find(p => p.id === pid);
+  if (!p) return;
+  if (!p.customItems)  { p.customItems  = getActiveItems().map(it => ({ ...it })); }
+  if (!p.customStages) { p.customStages = getActiveStages().map(s => ({ ...s, items: [...s.items] })); }
+  const newKey = 'pc_' + Date.now();
+  p.customItems.push({ key: newKey, title: '', desc: '' });
+  p.customStages[stageIdx].items.push(newKey);
+  saveProjects();
+  document.getElementById('checklist').innerHTML = buildKanban(p, 'toggleCheck');
+  setTimeout(() => {
+    const inp = document.querySelector(`#checklist .kanban-card[data-key="${newKey}"] input`);
+    if (inp) inp.focus();
+  }, 50);
+}
+
+function deleteProjectItem(pid, key) {
+  const p = projects.find(p => p.id === pid);
+  if (!p || !p.customItems) return;
+  p.customItems  = p.customItems.filter(it => it.key !== key);
+  p.customStages = p.customStages.map(s => ({ ...s, items: s.items.filter(k => k !== key) }));
+  delete p.checks[key];
+  saveProjects();
+  document.getElementById('checklist').innerHTML = buildKanban(p, 'toggleCheck');
+}
+
+/* ── Status Badge ── */
+function renderStatusBadge(project) {
+  let highest = 0;
+  STAGES.forEach((stage, i) => {
+    const done = stage.items.filter(k => project.checks[k]).length;
+    if (done > 0) highest = i + 1;
+  });
+  if (highest === 0)
+    return `<span style="font-size:13px;color:var(--text-muted);font-weight:400;">?</span>`;
+  const complete = highest === STAGES.length && STAGES[highest-1].items.every(k => project.checks[k]);
+  const bg = complete ? '#059669' : '#10b981';
+  return `<span style="display:inline-flex;align-items:center;justify-content:center;
+    width:26px;height:26px;border-radius:50%;background:${bg};color:white;
+    font-size:12px;font-weight:400;">${highest}</span>`;
+}
+
+/* ── Dashboard (Table) ── */
+function renderDashboard() {
+  document.getElementById('detail').style.display = 'none';
+  document.getElementById('dashboard').style.display = '';
+  const tbody = document.getElementById('projectTbody');
+
+  if (projects.length === 0) {
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="14">?? 등록된 프로젝트가 없습니다. 아래 <b>＋</b> 버튼으로 추가하세요.</td></tr>`;
+    const addTr = document.createElement('tr');
+    addTr.className = 'add-row-tr';
+    addTr.innerHTML = `<td colspan="14"><button class="btn-add-row" onclick="addInlineRow()" title="새 행 추가">＋</button></td>`;
+    tbody.appendChild(addTr);
+    return;
+  }
+
+  const chkAll = document.getElementById('chkAll');
+  const allSel  = projects.every(p => p.selected !== false);
+  const noneSel = projects.every(p => p.selected === false);
+  chkAll.checked = allSel;
+  chkAll.indeterminate = !allSel && !noneSel;
+
+  tbody.innerHTML = projects.map(p => {
+    const sel = p.selected !== false;
+    const pub = escapeHtml(p.publication || '');
+    const pur = escapeHtml(p.purpose || '');
+    return `<tr data-pid="${p.id}">
+      <td style="text-align:center;">
+        <input type="checkbox" ${sel ? 'checked' : ''}
+          style="width:15px;height:15px;accent-color:#3b82f6;cursor:pointer;"
+          onchange="toggleSelected('${p.id}', this.checked)" />
+      </td>
+      <td>
+        <div class="product-cell">
+          <input class="cell-input cell-input-name" value="${escapeHtml(p.name)}"
+            onblur="saveField('${p.id}','name',this.value)"
+            onkeydown="if(event.key==='Enter')this.blur()" />
+          <button class="btn-side-open" onclick="openSidePanel('${p.id}')" title="체크리스트 보기">?</button>
+        </div>
+      </td>
+      <td><input class="cell-input" value="${pub}"
+        onblur="saveField('${p.id}','publication',this.value)"
+        onkeydown="if(event.key==='Enter')this.blur()" /></td>
+      <td><input class="cell-input" value="${pur}"
+        onblur="saveField('${p.id}','purpose',this.value)"
+        onkeydown="if(event.key==='Enter')this.blur()" /></td>
+      <td><div class="progress-bar">${renderProgressBar(p)}</div></td>
+      <td><input type="date" class="cell-input cell-input-date" value="${p.targetDate||''}"
+        onchange="saveField('${p.id}','targetDate',this.value)" /></td>
+      <td class="td-actions" style="border-right:3px solid var(--accent);"><div class="td-actions-inner">
+        <button class="btn-icon btn-icon-detail" onclick="showDetail('${p.id}')" title="체크리스트 상세보기">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><line x1="9" y1="9" x2="15" y2="9"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="12" y2="17"/></svg>
+        </button>
+        <button class="btn-icon btn-icon-delete" onclick="confirmDelete('${p.id}')" title="삭제">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+        </button>
+      </div></td>
+      <td style="background:#f8fbff;"><input class="cell-input" value="${escapeHtml(p.resource||'')}"
+        placeholder="예: Alice, Bob"
+        onblur="saveResourceField('${p.id}',this.value)"
+        onkeydown="if(event.key==='Enter')this.blur()" /></td>
+      <td style="background:#f8fbff;"><input class="cell-input" value="${escapeHtml(p.bu||'')}"
+        placeholder="예: IBU"
+        onblur="saveBuField('${p.id}',this.value)"
+        onkeydown="if(event.key==='Enter')this.blur()" /></td>
+      <td style="background:#f8fbff;text-align:center;">${renderStatusBadge(p)}</td>
+      <td style="background:#f8fbff;"><input class="cell-input" value="${escapeHtml(p.projectType||'')}"
+        placeholder="예: New, Update"
+        onblur="saveProjectTypeField('${p.id}',this.value)"
+        onkeydown="if(event.key==='Enter')this.blur()" /></td>
+      <td style="background:#f8fbff;text-align:center;">
+        <span style="font-size:13px;font-weight:400;color:var(--accent);">${overallPercent(p)}%</span>
+      </td>
+      <td style="background:#f8fbff;">
+        <input type="date" class="cell-input cell-input-date" value="${p.startDate||''}"
+          onchange="saveStartDateField('${p.id}',this.value)" />
+      </td>
+      <td style="background:#f8fbff;text-align:center;">
+        <span style="font-size:13px;font-weight:400;color:var(--text-secondary);">${calcLeadTimeWeeks(p.startDate)}</span>
+      </td>
+    </tr>`;
+  }).join('');
+
+  refreshSideFilters();
+
+  // Add-row button at bottom
+  const addTr = document.createElement('tr');
+  addTr.className = 'add-row-tr';
+  addTr.innerHTML = `<td colspan="14"><button class="btn-add-row" onclick="addInlineRow()" title="새 행 추가">＋</button></td>`;
+  tbody.appendChild(addTr);
+}
+
+function addInlineRow() {
+  const checks = {};
+  ITEMS.forEach(it => checks[it.key] = false);
+  const newP = {
+    id: 'p_' + Date.now(), name: '', publication: '', purpose: '',
+    targetDate: '', checks, selected: true, resource: '', bu: '',
+    projectType: '', startDate: '', createdAt: new Date().toISOString()
+  };
+  projects.push(newP);
+  saveProjects();
+  renderDashboard();
+  // Focus first input of new row
+  const tbody = document.getElementById('projectTbody');
+  const rows = tbody.querySelectorAll('tr[data-pid]');
+  if (rows.length) {
+    const lastRow = rows[rows.length - 1];
+    lastRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    const inp = lastRow.querySelector('input.cell-input');
+    if (inp) setTimeout(() => inp.focus(), 150);
+  }
+}
+
+/* ── Resource / BU / Progress Filters ── */
+function saveResourceField(id, value) {
+  const p = projects.find(p => p.id === id);
+  if (!p) return;
+  p.resource = value.trim();
+  saveProjects();
+  refreshSideFilters();
+}
+function saveBuField(id, value) {
+  const p = projects.find(p => p.id === id);
+  if (!p) return;
+  p.bu = value.trim();
+  saveProjects();
+  refreshSideFilters();
+}
+function saveProjectTypeField(id, value) {
+  const p = projects.find(p => p.id === id);
+  if (!p) return;
+  p.projectType = value.trim();
+  saveProjects();
+  refreshSideFilters();
+}
+function saveStartDateField(id, value) {
+  const p = projects.find(p => p.id === id);
+  if (!p) return;
+  p.startDate = value;
+  saveProjects();
+  // refresh lead time cell without full re-render
+  const tr = document.querySelector(`#projectTbody tr[data-pid="${id}"]`);
+  if (tr) {
+    const cells = tr.querySelectorAll('td');
+    const ltCell = cells[cells.length - 1];
+    if (ltCell) ltCell.querySelector('span').textContent = calcLeadTimeWeeks(value);
+  }
+}
+function calcLeadTimeWeeks(startDate) {
+  if (!startDate) return '?';
+  const ms = Date.now() - new Date(startDate + 'T00:00:00').getTime();
+  if (ms < 0) return '?';
+  const weeks = Math.floor(ms / (7 * 24 * 60 * 60 * 1000));
+  return weeks === 0 ? '< 1w' : `${weeks}w`;
+}
+
+let activeResourceFilter    = '';
+let activeBuFilter          = '';
+let activeProgressFilter    = '';
+let activeProjectTypeFilter = '';
+let activePctFilter         = '';
+
+function refreshSideFilters() {
+  // Resource dropdown
+  const rSel = document.getElementById('resourceFilter');
+  if (rSel) {
+    const prev = rSel.value;
+    const words = new Set();
+    projects.forEach(p =>
+      (p.resource || '').split(/[,\s]+/).map(w => w.trim()).filter(Boolean).forEach(w => words.add(w))
+    );
+    rSel.innerHTML = '<option value="">? All ?</option>' +
+      [...words].sort((a,b) => a.localeCompare(b))
+        .map(w => `<option value="${escapeHtml(w)}" ${prev===w?'selected':''}>${escapeHtml(w)}</option>`)
+        .join('');
+    activeResourceFilter = rSel.value;
+  }
+
+  // BU dropdown
+  const bSel = document.getElementById('buFilter');
+  if (bSel) {
+    const prev = bSel.value;
+    const vals = new Set();
+    projects.forEach(p => { if (p.bu && p.bu.trim()) vals.add(p.bu.trim()); });
+    bSel.innerHTML = '<option value="">? All ?</option>' +
+      [...vals].sort((a,b) => a.localeCompare(b))
+        .map(v => `<option value="${escapeHtml(v)}" ${prev===v?'selected':''}>${escapeHtml(v)}</option>`)
+        .join('');
+    activeBuFilter = bSel.value;
+  }
+
+  // Project Type dropdown
+  const ptSel = document.getElementById('projectTypeFilter');
+  if (ptSel) {
+    const prev = ptSel.value;
+    const vals = new Set();
+    projects.forEach(p => { if (p.projectType && p.projectType.trim()) vals.add(p.projectType.trim()); });
+    ptSel.innerHTML = '<option value="">? All ?</option>' +
+      [...vals].sort((a,b) => a.localeCompare(b))
+        .map(v => `<option value="${escapeHtml(v)}" ${prev===v?'selected':''}>${escapeHtml(v)}</option>`)
+        .join('');
+    activeProjectTypeFilter = ptSel.value;
+  }
+
+  applyAllFilters();
+}
+
+/* alias so existing HTML onchange calls still work */
+function refreshResourceFilter() { refreshSideFilters(); }
+
+function applyResourceFilter(word) {
+  activeResourceFilter = word;
+  applyAllFilters();
+}
+function applyBuFilter(word) {
+  activeBuFilter = word;
+  applyAllFilters();
+}
+function applyProgressFilter(val) {
+  activeProgressFilter = val;
+  applyAllFilters();
+}
+function applyProjectTypeFilter(val) {
+  activeProjectTypeFilter = val;
+  applyAllFilters();
+}
+function applyPctFilter(val) {
+  activePctFilter = val;
+  applyAllFilters();
+}
+
+function applyAllFilters() {
+  projects.forEach(p => {
+    const tr = document.querySelector(`#projectTbody tr[data-pid="${p.id}"]`);
+    if (!tr) return;
+    let ok = true;
+    if (activeResourceFilter) {
+      const rWords = (p.resource || '').split(/[,\s]+/).map(w => w.trim()).filter(Boolean);
+      if (!rWords.includes(activeResourceFilter)) ok = false;
+    }
+    if (ok && activeBuFilter) {
+      if ((p.bu || '').trim() !== activeBuFilter) ok = false;
+    }
+    if (ok && activeProgressFilter) {
+      const pct = overallPercent(p);
+      if (activeProgressFilter === '0'    && pct !== 0)                  ok = false;
+      if (activeProgressFilter === 'prog' && (pct === 0 || pct === 100)) ok = false;
+      if (activeProgressFilter === '100'  && pct !== 100)                ok = false;
+    }
+    if (ok && activeProjectTypeFilter) {
+      if ((p.projectType || '').trim() !== activeProjectTypeFilter) ok = false;
+    }
+    if (ok && activePctFilter) {
+      const pct = overallPercent(p);
+      if (activePctFilter === '0'     && pct !== 0)              ok = false;
+      if (activePctFilter === '1-33'  && !(pct >= 1  && pct <= 33))  ok = false;
+      if (activePctFilter === '34-66' && !(pct >= 34 && pct <= 66))  ok = false;
+      if (activePctFilter === '67-99' && !(pct >= 67 && pct <= 99))  ok = false;
+      if (activePctFilter === '100'   && pct !== 100)            ok = false;
+    }
+    tr.style.display = ok ? '' : 'none';
+  });
+}
+
+/* ── PPT Row Selection ── */
+function toggleSelected(id, val) {
+  const p = projects.find(p => p.id === id);
+  if (!p) return;
+  p.selected = val;
+  saveProjects();
+  const chkAll = document.getElementById('chkAll');
+  const allSel  = projects.every(p => p.selected !== false);
+  const noneSel = projects.every(p => p.selected === false);
+  chkAll.checked = allSel;
+  chkAll.indeterminate = !allSel && !noneSel;
+}
+function toggleAllSelected(val) {
+  projects.forEach(p => p.selected = val);
+  saveProjects();
+  renderDashboard();
+}
+
+/* ── Inline Name Edit ── */
+function startEditName(id) {
+  const cell = document.getElementById('pcell_' + id);
+  cell.querySelector('.product-name').style.display = 'none';
+  cell.querySelector('.btn-pencil').style.display = 'none';
+  const inp = document.getElementById('ninput_' + id);
+  inp.style.display = 'block';
+  inp.focus(); inp.select();
+}
+function finishEditName(id, value) {
+  const p = projects.find(p => p.id === id);
+  if (p) { p.name = value.trim() || p.name; saveProjects(); }
+  const cell = document.getElementById('pcell_' + id);
+  if (!cell) return;
+  cell.querySelector('.product-name').textContent = p ? p.name : value;
+  cell.querySelector('.product-name').style.display = '';
+  cell.querySelector('.btn-pencil').style.display = '';
+  document.getElementById('ninput_' + id).style.display = 'none';
+  if (sidePanelProjectId === id && p)
+    document.getElementById('sidePanelTitle').textContent = p.name;
+}
+function cancelEditName(id) {
+  const p = projects.find(p => p.id === id);
+  const inp = document.getElementById('ninput_' + id);
+  if (inp && p) inp.value = p.name;
+  const cell = document.getElementById('pcell_' + id);
+  if (!cell) return;
+  cell.querySelector('.product-name').style.display = '';
+  cell.querySelector('.btn-pencil').style.display = '';
+  if (inp) inp.style.display = 'none';
+}
+
+/* ── Inline Field Save (publication / purpose / targetDate) ── */
+function saveField(id, field, value) {
+  const p = projects.find(p => p.id === id);
+  if (!p) return;
+  p[field] = (typeof value === 'string') ? value.trim() : value;
+  saveProjects();
+}
+
+/* ── Side Panel ── */
+function openSidePanel(id) {
+  sidePanelProjectId = id;
+  const p = projects.find(p => p.id === id);
+  if (!p) return;
+  document.getElementById('sidePanelTitle').textContent = p.name;
+  document.getElementById('sidePanelPercent').textContent = `전체 진행률: ${overallPercent(p)}%`;
+  document.getElementById('sidePanelChecklist').innerHTML = buildKanban(p, 'toggleSideCheck');
+  document.getElementById('sideOverlay').classList.add('show');
+  document.getElementById('sidePanel').classList.add('open');
+}
+function closeSidePanel() {
+  sidePanelProjectId = null;
+  document.getElementById('sideOverlay').classList.remove('show');
+  document.getElementById('sidePanel').classList.remove('open');
+}
+function toggleSideCheck(key, val) {
+  if (!sidePanelProjectId) return;
+  const p = projects.find(p => p.id === sidePanelProjectId);
+  if (!p) return;
+  p.checks[key] = val ? true : false;
+  saveProjects();
+  // 카드 클래스 갱신
+  const el = document.querySelector(`#sidePanelChecklist .kanban-card[data-key="${key}"]`);
+  if (el) {
+    el.classList.remove('checked','pb-checked');
+    if (val) el.classList.add('checked');
+  }
+  document.getElementById('sidePanelPercent').textContent = `전체 진행률: ${overallPercent(p)}%`;
+  updateKanbanCounts('sidePanelChecklist', p, getProjectStages(p));
+  refreshProjectRow(sidePanelProjectId);
+}
+
+/* ── Full Detail View ── */
+function showDetail(id, pushHistory = true) {
+  currentProjectId = id;
+  const p = projects.find(p => p.id === id);
+  if (!p) return;
+  closeSidePanel();
+  document.getElementById('dashboard').style.display = 'none';
+  document.getElementById('deletedSection').style.display = 'none';
+  document.getElementById('detail').style.display = 'block';
+  document.getElementById('detailTitle').textContent = p.name;
+  const sub = [p.publication, p.purpose].filter(Boolean).join('  ·  ');
+  document.getElementById('detailSubtitle').textContent = sub;
+  document.title = p.name + ' ? TW Project Manager';
+  projectEditing = false;
+  document.getElementById('checklist').innerHTML = buildKanban(p, 'toggleCheck');
+  renderStandardChecklist();
+  if (pushHistory) history.pushState({ view: 'detail', id }, '', '');
+}
+function toggleCheck(key, val) {
+  const p = projects.find(p => p.id === currentProjectId);
+  if (!p) return;
+  p.checks[key] = val ? true : false;
+  saveProjects();
+  const el = document.querySelector(`#checklist .kanban-card[data-key="${key}"]`);
+  if (el) {
+    el.classList.remove('checked','pb-checked');
+    if (val) el.classList.add('checked');
+  }
+  updateKanbanCounts('checklist', p, getProjectStages(p));
+  refreshProjectRow(currentProjectId);
+}
+function showDashboard(pushHistory = true) {
+  currentProjectId = null;
+  document.title = 'TW Project Manager';
+  renderDashboard();
+  if (pushHistory) history.pushState({ view: 'dashboard' }, '', '');
+}
+
+window.addEventListener('popstate', e => {
+  const state = e.state;
+  if (state && state.view === 'detail' && state.id) {
+    showDetail(state.id, false);
+  } else {
+    showDashboard(false);
+  }
+});
+
+/* Update stage count badges without full re-render */
+function updateKanbanCounts(containerId, p, stages) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  const cols = container.querySelectorAll('.kanban-col');
+  cols.forEach((col, i) => {
+    const stage = stages[i];
+    if (!stage) return;
+    const done = stage.items.filter(k => p.checks[k]).length;
+    const badge = col.querySelector('.kanban-stage-count');
+    if (badge) badge.textContent = `${done}/${stage.items.length}`;
+    const allDone = done === stage.items.length;
+    col.classList.toggle('done-col', allDone);
+  });
+}
+
+/* ── PPT Export ── */
+function exportToPPT() {
+  const exportList = projects.filter(p => p.selected !== false);
+  if (exportList.length === 0) { alert('PPT에 포함할 프로젝트가 없습니다.\n체크박스를 하나 이상 선택해주세요.'); return; }
+
+  const slideTitle = document.querySelector('#dashboard h2')?.textContent.trim() || '[Technical Publication] IBU Status';
+
+  const pres = new PptxGenJS();
+  pres.layout = 'LAYOUT_WIDE'; // 13.33" × 7.5"
+  const slide = pres.addSlide();
+
+  /* ── 상단 파란 바 ── */
+  slide.addShape(pres.ShapeType.rect, {
+    x:0, y:0, w:13.33, h:0.07,
+    fill:{color:'3B82F6'}, line:{color:'3B82F6', pt:0}
+  });
+
+  /* ── 슬라이드 제목 ── */
+  slide.addText(slideTitle, {
+    x:0.4, y:0.1, w:12.5, h:0.9,
+    fontSize:32, bold:true, color:'1F2937', fontFace:'Arial', valign:'bottom'
+  });
+
+  /* ── 범례 (WIP / Completed / * Core Task) ── */
+  const LY = 1.06;
+  slide.addShape(pres.ShapeType.rect, { x:9.3,  y:LY, w:0.2, h:0.2, fill:{color:'BDD7EE'}, line:{color:'9DBAD2', pt:1} });
+  slide.addText('WIP',        { x:9.55, y:LY-0.01, w:0.55, h:0.22, fontSize:9.5, color:'374151', fontFace:'Arial' });
+  slide.addShape(pres.ShapeType.rect, { x:10.15, y:LY, w:0.2, h:0.2, fill:{color:'1F3864'}, line:{color:'1F3864', pt:1} });
+  slide.addText('Completed',  { x:10.4, y:LY-0.01, w:1.0,  h:0.22, fontSize:9.5, color:'374151', fontFace:'Arial' });
+  slide.addText('* Core Task',{ x:11.45, y:LY-0.01, w:1.4,  h:0.22, fontSize:9.5, color:'374151', fontFace:'Arial' });
+
+  /* ── 셀 스타일 상수 ── */
+  const BDR_W = { type:'solid', pt:0.5, color:'FFFFFF' }; // 헤더 내부(흰색)
+  const BDR_G = { type:'solid', pt:0.5, color:'CBD5E1' }; // 데이터(회색)
+
+  const HDR  = { fill:{color:'1F3864'}, color:'FFFFFF', bold:true,
+                 align:'center', valign:'middle', fontSize:14, fontFace:'Arial', border:BDR_W };
+  const CELL = { fill:{color:'FFFFFF'}, color:'1F2937',
+                 align:'left',   valign:'middle', fontSize:14, fontFace:'Arial', border:BDR_G };
+  const DONE = { fill:{color:'1F3864'}, color:'FFFFFF', bold:true,
+                 align:'center', valign:'middle', fontSize:14, fontFace:'Arial', border:BDR_W };
+  const WIP  = { fill:{color:'BDD7EE'}, color:'1F3864', bold:true,
+                 align:'center', valign:'middle', fontSize:14, fontFace:'Arial', border:BDR_G };
+  const NONE = { fill:{color:'FFFFFF'}, color:'BCBCBC', bold:false,
+                 align:'center', valign:'middle', fontSize:14, fontFace:'Arial', border:BDR_G };
+
+  function stageCell(p, si) {
+    const { done, total } = stageProgress(p, STAGES[si]);
+    if (done === total) return { text:String(si+1), options:DONE };
+    if (done > 0)       return { text:String(si+1), options:WIP  };
+    return                     { text:String(si+1), options:NONE };
+  }
+
+  /* ── 헤더 1행 ── */
+  // colW: [2.8, 3.2, 1.7, 0.62×5=3.1, 1.7] = 12.5"
+  const hRow1 = [
+    { text:'Product',       options:HDR },
+    { text:'Publication',   options:HDR },
+    { text:'Purpose',       options:HDR },
+    { text:'Progress Rate', options:{...HDR, colspan:5} },
+    { text:'Target Date',   options:HDR },
+  ];
+
+  /* ── 데이터 행 ── */
+  const dataRows = exportList.map(p => {
+    const dateStr = p.targetDate
+      ? new Date(p.targetDate+'T00:00:00')
+          .toLocaleDateString('en-US', {month:'long', year:'numeric'})
+      : '';
+    return [
+      { text:p.name        ||'', options:CELL },
+      { text:p.publication ||'', options:CELL },
+      { text:p.purpose     ||'', options:{...CELL, align:'center'} },
+      stageCell(p,0), stageCell(p,1), stageCell(p,2), stageCell(p,3), stageCell(p,4),
+      { text:dateStr,            options:{...CELL, align:'center'} },
+    ];
+  });
+
+  slide.addTable([hRow1, ...dataRows], {
+    x:0.365, y:1.42, w:12.6,
+    colW:[2.9, 3.2, 1.7, 0.62, 0.62, 0.62, 0.62, 0.62, 1.7],
+    rowH:0.38,
+    fontFace:'Arial', fontSize:14, valign:'middle',
+    border:{ type:'solid', pt:0.5, color:'CBD5E1' },
+  });
+
+  /* ── 푸터 ── */
+  slide.addShape(pres.ShapeType.rect, {
+    x:0.4, y:7.08, w:0.05, h:0.32,
+    fill:{color:'3B82F6'}, line:{color:'3B82F6', pt:0}
+  });
+  slide.addText('Park Systems',
+    { x:0.5, y:7.07, w:2.0, h:0.18, fontSize:10, bold:true,  color:'1F2937', fontFace:'Arial' });
+  slide.addText('Enabling Nanoscale Advances',
+    { x:0.5, y:7.23, w:2.8, h:0.16, fontSize:7.5, italic:true, color:'6B7280', fontFace:'Arial' });
+  slide.addText('Copyright Park Systems Corp., All rights reserved.  |  1',
+    { x:8.8, y:7.13, w:4.1, h:0.2, fontSize:8, color:'9CA3AF', align:'right', fontFace:'Arial' });
+
+  pres.writeFile({ fileName:`ProjectStatus_${new Date().toISOString().slice(0,10)}.pptx` });
+}
+
+/* ── Deleted List ── */
+let _deletedListOpen = true;
+
+function renderDeletedList() {
+  const section = document.getElementById('deletedSection');
+  if (!section) return;
+  if (deletedProjects.length === 0) { section.style.display = 'none'; return; }
+  section.style.display = '';
+
+  document.getElementById('deletedSectionTitle').textContent =
+    `?? 삭제된 프로젝트 (${deletedProjects.length})`;
+
+  const checks0 = () => { const c={}; 'abcdefghijklmn'.split('').forEach(k=>c[k]=false); return c; };
+  const tbody = document.getElementById('deletedTbody');
+  tbody.innerHTML = deletedProjects.map(p => {
+    const checks = p.checks || checks0();
+    const fakeP = Object.assign({}, p, { checks });
+    const dt = new Date(p.deletedAt);
+    const deletedStr = `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')} ${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
+    return `<tr data-del-pid="${p.id}" style="opacity:0.78;">
+      <td style="text-align:center;">
+        <input type="checkbox" disabled style="width:15px;height:15px;accent-color:#3b82f6;opacity:0.4;" />
+      </td>
+      <td>
+        <div class="product-cell">
+          <input class="cell-input cell-input-name" value="${escapeHtml(p.name||'')}" disabled
+            style="color:#6b7280;" />
+          <button class="btn-side-open" onclick="openDeletedSidePanel('${p.id}')" title="체크리스트 보기">?</button>
+        </div>
+      </td>
+      <td><input class="cell-input" value="${escapeHtml(p.publication||'')}" disabled style="color:#6b7280;" /></td>
+      <td><input class="cell-input" value="${escapeHtml(p.purpose||'')}" disabled style="color:#6b7280;" /></td>
+      <td><div class="progress-bar">${renderProgressBarStatic(fakeP)}</div></td>
+      <td><input type="date" class="cell-input cell-input-date" value="${p.targetDate||''}" disabled style="color:#9ca3af;" /></td>
+      <td class="td-actions" style="border-right:3px solid var(--accent);"><div class="td-actions-inner">
+        <button class="btn-icon btn-icon-detail" onclick="openDeletedDetail('${p.id}')" title="체크리스트 상세보기" style="visibility:hidden;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><line x1="9" y1="9" x2="15" y2="9"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="12" y2="17"/></svg>
+        </button>
+        <button class="btn-icon btn-icon-restore" onclick="restoreProject('${p.id}')" title="되돌리기">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+        </button>
+      </div></td>
+      <td style="background:#f8fbff;"><input class="cell-input" value="${escapeHtml(p.resource||'')}" disabled style="color:#6b7280;" /></td>
+      <td style="background:#f8fbff;"><input class="cell-input" value="${escapeHtml(p.bu||'')}" disabled style="color:#6b7280;" /></td>
+      <td style="background:#f8fbff;text-align:center;">${renderStatusBadge(fakeP)}</td>
+      <td style="background:#f8fbff;"><input class="cell-input" value="${escapeHtml(p.projectType||'')}" disabled style="color:#6b7280;" /></td>
+      <td style="background:#f8fbff;text-align:center;">
+        <span style="font-size:13px;font-weight:400;color:#6b7280;">${overallPercent(fakeP)}%</span>
+      </td>
+      <td style="background:#f8fbff;"><input type="date" class="cell-input cell-input-date" value="${p.startDate||''}" disabled style="color:#9ca3af;" /></td>
+      <td style="background:#f8fbff;text-align:center;">
+        <span style="font-size:13px;font-weight:400;color:#6b7280;">${calcLeadTimeWeeks(p.startDate)}</span>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function toggleDeletedList() {
+  _deletedListOpen = !_deletedListOpen;
+  document.getElementById('deletedListBody').style.display = _deletedListOpen ? '' : 'none';
+  document.getElementById('deletedToggleBtn').textContent = _deletedListOpen ? '▲ 접기' : '▼ 펼치기';
+}
+
+function restoreProject(id) {
+  const idx = deletedProjects.findIndex(p => p.id === id);
+  if (idx === -1) return;
+  const p = deletedProjects[idx];
+  const checks = {};
+  ITEMS.forEach(it => checks[it.key] = false);
+  projects.push({
+    id: 'p_' + Date.now(), name: p.name, publication: p.publication,
+    purpose: p.purpose, targetDate: '', checks, selected: true,
+    resource: p.resource||'', bu: p.bu||'', projectType: p.projectType||'',
+    startDate: '', createdAt: new Date().toISOString()
+  });
+  deletedProjects.splice(idx, 1);
+  saveProjects();
+  try { localStorage.setItem(DELETED_KEY, JSON.stringify(deletedProjects)); } catch {}
+  renderDashboard();
+  renderDeletedList();
+}
+
+function clearDeletedList(e) {
+  e.stopPropagation();
+  if (!confirm('삭제 목록을 전체 지우시겠습니까?')) return;
+  deletedProjects = [];
+  try { localStorage.removeItem(DELETED_KEY); } catch {}
+  renderDeletedList();
+}
+
+/* ── Data Export / Import ── */
+function exportData() {
+  const payload = {
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    projects: projects,
+    deletedProjects: deletedProjects
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `tw_pm_backup_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const payload = JSON.parse(e.target.result);
+      if (!payload.projects || !Array.isArray(payload.projects))
+        throw new Error('올바른 백업 파일이 아닙니다.');
+      if (!confirm(`백업 파일을 불러오면 현재 데이터가 교체됩니다.\n활성 프로젝트 ${payload.projects.length}개, 삭제 목록 ${(payload.deletedProjects||[]).length}개\n\n계속하시겠습니까?`)) return;
+      projects = payload.projects;
+      deletedProjects = payload.deletedProjects || [];
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(projects));
+      localStorage.setItem(DELETED_KEY, JSON.stringify(deletedProjects));
+      renderDashboard();
+      renderDeletedList();
+      window._loadColWidths && window._loadColWidths();
+    } catch (err) {
+      alert('파일을 읽는 중 오류가 발생했습니다:\n' + err.message);
+    }
+    event.target.value = '';
+  };
+  reader.readAsText(file);
+}
+
+/* ── Utils ── */
+/* ── Standard Checklist ── */
+const STD_KEY       = 'tw_pm_standard_checks';
+const STD_ITEMS_KEY = 'tw_pm_standard_items';
+let stdEditing = false;
+
+function loadStdChecks() {
+  try { return JSON.parse(localStorage.getItem(STD_KEY)) || {}; } catch { return {}; }
+}
+function saveStdChecks(checks) {
+  localStorage.setItem(STD_KEY, JSON.stringify(checks));
+}
+function loadStdItems() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(STD_ITEMS_KEY));
+    if (saved && saved.length) return saved;
+  } catch {}
+  return ITEMS.map(it => ({ key: it.key, title: it.title, desc: it.desc }));
+}
+function saveStdItems(items) {
+  localStorage.setItem(STD_ITEMS_KEY, JSON.stringify(items));
+}
+
+function toggleStdCheck(key, val) {
+  const checks = loadStdChecks();
+  checks[key] = val;
+  saveStdChecks(checks);
+  const el = document.querySelector(`#standardChecklist .kanban-card[data-key="${key}"]`);
+  if (el) el.classList.toggle('checked', val);
+  updateStdCounts();
+}
+function updateStdCounts() {
+  const checks = loadStdChecks();
+  document.querySelectorAll('#standardChecklist .kanban-col').forEach((col, i) => {
+    const stage = KANBAN_STAGES[i];
+    if (!stage) return;
+    const done = stage.items.filter(k => checks[k]).length;
+    const badge = col.querySelector('.kanban-stage-count');
+    if (badge) badge.textContent = `${done}/${stage.items.length}`;
+    col.classList.toggle('done-col', done === stage.items.length);
+  });
+}
+
+function buildStandardKanban(editable) {
+  const checks      = loadStdChecks();
+  const stdItems    = loadStdItems();
+  const stdMap      = Object.fromEntries(stdItems.map(it => [it.key, it]));
+  const activeStages = getActiveStages();
+
+  const stdEditBtn = `<div class="checklist-edit-row"><button class="btn-pencil-edit ${editable?'editing':''}" onclick="toggleStdEdit()" title="Standard Checklist 수정">${PENCIL_SVG}${editable?'&nbsp;완료':''}</button></div>`;
+  return stdEditBtn + '<div class="kanban-board mono">' +
+    activeStages.map((stage, stageIdx) => {
+      const done  = stage.items.filter(k => checks[k]).length;
+      const total = stage.items.length;
+      const allDone = done === total;
+      const colClass = allDone ? 'done-col' : done > 0 ? 'wip-col' : '';
+
+      const cards = stage.items.map(key => {
+        const it = stdMap[key]; if (!it) return '';
+        const checked = checks[key];
+        const uid = 'std_' + key;
+
+        if (editable) {
+          return `<div class="kanban-card" data-key="${key}" style="flex-direction:column;gap:6px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:6px;">
+              <input type="checkbox" disabled style="width:13px;height:13px;opacity:0.3;flex-shrink:0;" />
+              <span style="flex:1;font-size:10px;color:#a1a1aa;font-weight:500;text-transform:uppercase;letter-spacing:0.5px;">${escapeHtml(key)}</span>
+              <button onclick="deleteStdItem('${key}')" title="항목 삭제"
+                style="background:none;border:none;color:#ef4444;font-size:14px;cursor:pointer;padding:0 2px;line-height:1;flex-shrink:0;">✕</button>
+            </div>
+            <input class="std-edit-input" data-key="${key}" data-field="title"
+              value="${escapeHtml(it.title)}"
+              placeholder="항목 제목"
+              onblur="saveStdField('${key}','title',this.value)"
+              onkeydown="if(event.key==='Enter')this.blur()"
+              style="width:100%;border:none;border-bottom:1.5px solid #d4d4d8;background:transparent;
+                font-family:inherit;font-size:12px;color:#3f3f46;padding:3px 2px;outline:none;border-radius:0;" />
+            <textarea class="std-edit-input" data-key="${key}" data-field="desc"
+              placeholder="설명 (선택사항)"
+              onblur="saveStdField('${key}','desc',this.value)"
+              style="width:100%;border:1px solid #e4e4e7;border-radius:5px;background:#fafafa;
+                font-family:inherit;font-size:11px;color:#71717a;padding:5px 7px;outline:none;
+                resize:none;height:52px;line-height:1.4;">${escapeHtml(it.desc||'')}</textarea>
+          </div>`;
+        }
+
+        return `<div class="kanban-card ${checked?'checked':''}" data-key="${key}">
+          <input type="checkbox" ${checked?'checked':''} onchange="toggleStdCheck('${key}',this.checked)" />
+          <div style="flex:1;min-width:0;">
+            <div class="kanban-card-title-row">
+              <span class="kanban-card-title">${escapeHtml(it.title)}</span>
+              ${it.desc ? `<button class="btn-info" onclick="toggleTooltip('${uid}',event)" title="설명 보기">ℹ</button>` : ''}
+            </div>
+            ${it.desc ? `<div class="kanban-card-tooltip" id="tip_${uid}">${escapeHtml(it.desc)}</div>` : ''}
+          </div>
+        </div>`;
+      }).join('');
+
+      const addBtn = editable ? `
+        <button onclick="addStdItem(${stageIdx})"
+          style="margin:4px 7px 7px;width:calc(100% - 14px);border:1.5px dashed #d4d4d8;background:none;
+            color:#a1a1aa;font-size:18px;border-radius:6px;cursor:pointer;padding:3px 0;
+            font-family:inherit;transition:all 0.12s;"
+          onmouseover="this.style.borderColor='#71717a';this.style.color='#52525b';"
+          onmouseout="this.style.borderColor='#d4d4d8';this.style.color='#a1a1aa';">＋</button>` : '';
+
+      return `<div class="kanban-col ${colClass}">
+        <div class="kanban-col-header">
+          <span class="kanban-stage-num">${stage.num}</span>
+          <span class="kanban-stage-name">${stage.label}</span>
+          <span class="kanban-stage-count">${done}/${total}</span>
+        </div>
+        <div class="kanban-cards">${cards}</div>
+        ${addBtn}
+      </div>`;
+    }).join('') + '</div>';
+}
+
+function saveStdField(key, field, value) {
+  const items = loadStdItems();
+  const item = items.find(it => it.key === key);
+  if (item) { item[field] = value.trim(); saveStdItems(items); }
+}
+
+function addStdItem(stageIdx) {
+  const newKey = 'c_' + Date.now();
+  const items  = loadStdItems();
+  items.push({ key: newKey, title: '', desc: '' });
+  saveStdItems(items);
+
+  const stages = getActiveStages();
+  stages[stageIdx].items.push(newKey);
+  saveStdStages(stages);
+
+  renderStandardChecklist();
+  // 새 항목 제목 입력란에 포커스
+  setTimeout(() => {
+    const inp = document.querySelector(`#standardChecklist .kanban-card[data-key="${newKey}"] input.std-edit-input`);
+    if (inp) inp.focus();
+  }, 50);
+}
+
+function deleteStdItem(key) {
+  const items  = loadStdItems();
+  saveStdItems(items.filter(it => it.key !== key));
+
+  const stages = getActiveStages();
+  stages.forEach(s => { s.items = s.items.filter(k => k !== key); });
+  saveStdStages(stages);
+
+  const checks = loadStdChecks();
+  delete checks[key];
+  saveStdChecks(checks);
+
+  renderStandardChecklist();
+}
+
+function renderStandardChecklist() {
+  document.getElementById('standardChecklist').innerHTML = buildStandardKanban(stdEditing);
+}
+function toggleStdEdit() {
+  stdEditing = !stdEditing;
+  renderStandardChecklist();
+}
+
+function toggleTooltip(uid, e) {
+  e.stopPropagation();
+  const tip = document.getElementById('tip_' + uid);
+  if (!tip) return;
+  const isOpen = tip.classList.contains('show');
+  document.querySelectorAll('.kanban-card-tooltip.show').forEach(t => t.classList.remove('show'));
+  if (!isOpen) tip.classList.add('show');
+}
+document.addEventListener('click', () => {
+  document.querySelectorAll('.kanban-card-tooltip.show').forEach(t => t.classList.remove('show'));
+});
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+/* ── Keyboard ── */
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { closeSidePanel(); }
+});
+
+/* ── Column Resize ── */
+(function initColResize() {
+  const COL_STORAGE = 'tw_pm_col_widths';
+  const MIN_W = 40;
+
+  function saveCols() {
+    const cols = document.querySelectorAll('#mainTable colgroup col');
+    const widths = [...cols].map(c => parseInt(c.style.width) || 0);
+    try { localStorage.setItem(COL_STORAGE, JSON.stringify(widths)); } catch {}
+  }
+
+  function syncDeletedCols() {
+    const mainCols = document.querySelectorAll('#mainTable colgroup col');
+    const delCols  = document.querySelectorAll('#deletedTable colgroup col');
+    mainCols.forEach((c, i) => { if (delCols[i]) delCols[i].style.width = c.style.width; });
+  }
+
+  function loadCols() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(COL_STORAGE));
+      if (!saved || !saved.length) return;
+      const cols = document.querySelectorAll('#mainTable colgroup col');
+      saved.forEach((w, i) => { if (cols[i] && w >= MIN_W) cols[i].style.width = w + 'px'; });
+    } catch {}
+    syncDeletedCols();
+  }
+
+  window._syncDeletedCols = syncDeletedCols;
+
+  function attachHandlers() {
+    document.querySelectorAll('.col-resizer').forEach(handle => {
+      handle.addEventListener('mousedown', function(e) {
+        e.preventDefault();
+        const colIdx = parseInt(this.dataset.col);
+        const col = document.getElementById('col' + colIdx);
+        if (!col) return;
+        const startX = e.clientX;
+        const startW = parseInt(col.style.width) || col.getBoundingClientRect().width;
+        this.classList.add('resizing');
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+
+        function onMove(ev) {
+          const newW = Math.max(MIN_W, startW + ev.clientX - startX);
+          col.style.width = newW + 'px';
+          const delCol = document.querySelectorAll('#deletedTable colgroup col')[colIdx];
+          if (delCol) delCol.style.width = newW + 'px';
+        }
+        function onUp() {
+          handle.classList.remove('resizing');
+          document.body.style.cursor = '';
+          document.body.style.userSelect = '';
+          saveCols();
+          document.removeEventListener('mousemove', onMove);
+          document.removeEventListener('mouseup', onUp);
+        }
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup', onUp);
+      });
+    });
+  }
+
+  // Expose so renderDashboard can re-attach after re-render
+  window._attachColResizeHandlers = attachHandlers;
+  window._loadColWidths = loadCols;
+})();
+
+async function init() {
+  showSyncStatus('불러오는 중...', 'var(--amber)');
+  const serverData = await fetchFromServer();
+  if (serverData && Array.isArray(serverData.projects)) {
+    projects = serverData.projects;
+    deletedProjects = serverData.deletedProjects || [];
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(projects)); } catch {}
+    showSyncStatus('✓ 서버에서 불러옴', 'var(--green)');
+  } else {
+    let _stored = null;
+    try { _stored = JSON.parse(localStorage.getItem(STORAGE_KEY)); } catch {}
+    projects = (_stored && _stored.length > 0) ? _stored : _defaults;
+    showSyncStatus('오프라인 모드', 'var(--amber)');
+  }
+  renderDashboard();
+  renderDeletedList();
+  window._loadColWidths && window._loadColWidths();
+  window._attachColResizeHandlers && window._attachColResizeHandlers();
+}
+init();
+</script>
+</body>
+</html>
