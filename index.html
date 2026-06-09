@@ -1295,9 +1295,18 @@ function toggleAdminMode() {
     if (fbUnsubscribe) { fbUnsubscribe(); fbUnsubscribe = null; }
     showSyncStatus('🔒 관리자 모드 ON — 공유 저장 차단', '#f59e0b');
   } else {
-    // 리스너 재개
+    // 공유 데이터 다시 불러와서 로컬 테스트 데이터 덮어쓰기
+    fetchFromServer().then(data => {
+      if (data && Array.isArray(data.projects)) {
+        projects = data.projects;
+        deletedProjects = data.deletedProjects || [];
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(projects)); } catch {}
+        renderDashboard(); renderDeletedList(); renderBoardSections();
+      }
+    }).catch(() => {});
+    // 실시간 리스너 재개
     listenFirebase();
-    showSyncStatus('🔓 관리자 모드 OFF — 공유 저장 재개', 'var(--green)');
+    showSyncStatus('🔓 관리자 모드 OFF — 공유 데이터 복원됨', 'var(--green)');
   }
 }
 
@@ -1783,6 +1792,7 @@ async function fetchFromServer() {
 
 async function saveToServer() {
   if (!API_URL) return;
+  if (adminMode) return; // 🔒 관리자 모드: 공유 저장 차단
   try {
     await fetch(API_URL, {
       method: 'POST',
@@ -1807,6 +1817,7 @@ async function downloadServerData() {
 }
 
 async function uploadChanges() {
+  if (adminMode) { alert('🔒 관리자 모드 ON — 공유 저장이 차단되어 있습니다.'); return; }
   const btn = document.getElementById('uploadBtn');
   const orig = btn.textContent;
   btn.textContent = '⏳ 업로드 중...';
@@ -2194,6 +2205,20 @@ function clickProgressBar(id, stageNum, fromHeader = false) {
   if (currentProjectId === id) {
     document.getElementById('checklist').innerHTML = buildKanban(p, 'toggleCheck');
   }
+  // Project Checklist 페이지: 해당 프로젝트 칸반 블록만 재렌더링
+  const blk = document.querySelector(`#checklistPageContent .cl-project-block[data-pid="${id}"]`);
+  if (blk) {
+    const kanbanWrapper = blk.querySelector('.kanban-board')?.parentElement;
+    if (kanbanWrapper) {
+      kanbanWrapper.innerHTML = buildKanban(p, 'toggleCheckNav_' + id);
+      window['toggleCheckNav_' + id] = (key, val) => {
+        p.checks[key] = val ? true : false;
+        saveProjects();
+        const el = document.querySelector(`#checklistPageContent .kanban-card[data-key="${key}"]`);
+        if (el) { el.classList.toggle('checked', !!val); }
+      };
+    }
+  }
 }
 
 /* ── Lightweight row refresh (progress bar + status badge + pct) ── */
@@ -2201,13 +2226,12 @@ function refreshProjectRow(id) {
   const p = projects.find(p => p.id === id);
   const tr = document.querySelector(`#projectTbody tr[data-pid="${id}"]`);
   if (!p || !tr) return;
-  const tds = tr.querySelectorAll('td');
-  // col 4 = Progress
-  tds[4].querySelector('.progress-bar').innerHTML = renderProgressBar(p);
-  // col 11 = Status badge
-  tds[11].innerHTML = renderStatusBadge(p);
-  // col 13 = Progress %
-  tds[13].querySelector('span').textContent = overallPercent(p) + '%';
+  const pbCell = tr.querySelector('[data-field="progress"] .progress-bar');
+  if (pbCell) pbCell.innerHTML = renderProgressBar(p);
+  const badgeTd = tr.querySelector('[data-col="status"]');
+  if (badgeTd) badgeTd.innerHTML = renderStatusBadge(p);
+  const pctSpan = tr.querySelector('[data-col="pct"] span');
+  if (pctSpan) pctSpan.textContent = overallPercent(p) + '%';
 }
 
 /* ── Project-specific items/stages helpers ── */
@@ -2654,12 +2678,12 @@ function renderDashboard() {
         placeholder="예: IBU"
         onblur="saveBuField('${p.id}',this.value)"
         onkeydown="if(event.key==='Enter')this.blur()" /></td>
-      <td style="background:#f8fbff;text-align:center;">${renderStatusBadge(p)}</td>
+      <td data-col="status" style="background:#f8fbff;text-align:center;">${renderStatusBadge(p)}</td>
       <td style="background:#f8fbff;"><input class="cell-input" value="${escapeHtml(p.projectType||'')}"
         placeholder="예: New, Update"
         onblur="saveProjectTypeField('${p.id}',this.value)"
         onkeydown="if(event.key==='Enter')this.blur()" /></td>
-      <td style="background:#f8fbff;text-align:center;">
+      <td data-col="pct" style="background:#f8fbff;text-align:center;">
         <span style="font-size:15px;font-weight:400;color:var(--accent);">${overallPercent(p)}%</span>
       </td>
       <td style="background:#f8fbff;">
@@ -2913,7 +2937,7 @@ function clearAllHistory() {
   // 이력 로그 삭제 (로컬 + Firebase)
   localStorage.removeItem(HISTORY_KEY);
   _currentHistoryLog = [];
-  if (fbDb && useFirebase) {
+  if (fbDb && useFirebase && !adminMode) {
     fbDb.doc('tw-pm/history').delete().catch(() => {});
   }
   document.getElementById('historyPanelBody').innerHTML = '<p class="history-empty">아직 이력이 없습니다.</p>';
@@ -4222,9 +4246,9 @@ function renderBoardSection(type) {
       </div></td>
       <td style="background:#f8fbff;"><input class="cell-input" value="${escapeHtml(p.resource||'')}" placeholder="예: Alice" onblur="saveResourceField('${p.id}',this.value)" onkeydown="if(event.key==='Enter')this.blur()" /></td>
       <td style="background:#f8fbff;"><input class="cell-input" value="${escapeHtml(p.bu||'')}" placeholder="예: IBU" onblur="saveBuField('${p.id}',this.value)" onkeydown="if(event.key==='Enter')this.blur()" /></td>
-      <td style="background:#f8fbff;text-align:center;">${renderStatusBadge(p)}</td>
+      <td data-col="status" style="background:#f8fbff;text-align:center;">${renderStatusBadge(p)}</td>
       <td style="background:#f8fbff;"><input class="cell-input" value="${escapeHtml(p.projectType||'')}" placeholder="예: New" onblur="saveProjectTypeField('${p.id}',this.value)" onkeydown="if(event.key==='Enter')this.blur()" /></td>
-      <td style="background:#f8fbff;text-align:center;"><span style="font-size:15px;font-weight:400;color:var(--accent);">${overallPercent(p)}%</span></td>
+      <td data-col="pct" style="background:#f8fbff;text-align:center;"><span style="font-size:15px;font-weight:400;color:var(--accent);">${overallPercent(p)}%</span></td>
       <td style="background:#f8fbff;"><input type="${p.startDate?'date':'text'}" class="cell-input cell-input-date" value="${p.startDate||''}" placeholder="YYYY-MM-DD" onfocus="this.type='date'" onblur="if(!this.value)this.type='text'" onchange="saveStartDateField('${p.id}',this.value)" /></td>
       <td style="background:#f8fbff;text-align:center;"><span style="font-size:15px;font-weight:400;color:var(--text-secondary);">${calcLeadTimeWeeks(p.startDate)}</span></td>
       <td style="background:#f8fbff;"><input class="cell-input" value="${escapeHtml(p.publicationType||'')}" placeholder="예: IOM" onblur="savePublicationTypeField('${p.id}',this.value)" onkeydown="if(event.key==='Enter')this.blur()" /></td>
