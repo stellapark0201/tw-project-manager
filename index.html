@@ -1044,11 +1044,11 @@
   </div>
 
   <!-- Deleted Projects List -->
-  <div id="deletedSection" class="deleted-section" style="display:none;">
+  <div id="deletedSection" class="deleted-section" style="display:none;opacity:0.72;filter:grayscale(0.3);">
     <div class="deleted-section-head" onclick="toggleDeletedList()">
-      <h3 id="deletedSectionTitle">보고 제외</h3>
+      <h3 id="deletedSectionTitle" style="color:var(--text-secondary);">🗑 Deleted Projects</h3>
       <button class="deleted-toggle-btn" id="deletedToggleBtn">▲ 접기</button>
-      <button class="deleted-clear-btn" onclick="clearDeletedList(event)">전체 지우기</button>
+      <button class="deleted-clear-btn" onclick="clearDeletedList(event)">전체 영구 삭제</button>
     </div>
     <div id="deletedListBody">
       <div class="table-wrap" style="overflow-x:auto;">
@@ -4273,7 +4273,7 @@ function renderDeletedList() {
   section.style.display = '';
 
   document.getElementById('deletedSectionTitle').textContent =
-    `보고 제외 (${pageDeleted.length})`;
+    `🗑 Deleted Projects (${pageDeleted.length})`;
 
   const checks0 = () => { const c={}; 'abcdefghijklmn'.split('').forEach(k=>c[k]=false); return c; };
   const tbody = document.getElementById('deletedTbody');
@@ -4299,8 +4299,12 @@ function renderDeletedList() {
       <td><div class="progress-bar">${renderProgressBarStatic(fakeP)}</div></td>
       <td><div class="td-target-date">
         <input type="text" class="cell-input" value="${p.targetDate||''}" disabled style="color:#9ca3af;" />
-        <button class="btn-icon btn-icon-restore" onclick="restoreProject('${p.id}')" title="되돌리기">
+        <button class="btn-icon btn-icon-restore" onclick="restoreProject('${p.id}')" title="복원">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+        </button>
+        <button class="btn-icon btn-icon-trash" onclick="permanentDeleteFromList('${p.id}')" title="영구 삭제"
+          style="color:#ef4444;margin-left:2px;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
         </button>
       </div></td>
       <td><input type="text" class="cell-input" value="${p.releaseDate||''}" disabled style="color:#9ca3af;" /></td>
@@ -4351,6 +4355,16 @@ function restoreProject(id) {
   try { localStorage.setItem(DELETED_KEY, JSON.stringify(deletedProjects)); } catch {}
   renderDashboard();
   renderDeletedList(); renderBoardSections();
+}
+
+function permanentDeleteFromList(id) {
+  const p = deletedProjects.find(x => x.id === id);
+  if (!p) return;
+  if (!confirm(`"${p.name || '(이름없음)'}"을(를) 영구 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) return;
+  deletedProjects = deletedProjects.filter(x => x.id !== id);
+  try { localStorage.setItem(DELETED_KEY, JSON.stringify(deletedProjects)); } catch {}
+  saveProjects('영구 삭제', p.name || '');
+  renderDeletedList();
 }
 
 function clearDeletedList(e) {
