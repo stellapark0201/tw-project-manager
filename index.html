@@ -820,6 +820,13 @@
   /* 업데이트 배너 버튼 (파란 계열) */
   /* ── 다중 선택 필터 ── */
   .mf-wrap { position:relative; }
+  .focus-res-chip {
+    font-size:13px; padding:4px 12px; border:1px solid var(--border);
+    border-radius:20px; background:var(--surface); color:var(--text-secondary);
+    cursor:pointer; font-family:inherit; transition:all 0.13s;
+  }
+  .focus-res-chip:hover { border-color:var(--accent); color:var(--accent); }
+  .focus-res-chip.active { background:var(--accent); border-color:var(--accent); color:#fff; font-weight:500; }
   .mf-btn {
     font-size:12px; padding:2px 7px; border:1px solid rgba(255,255,255,0.20);
     border-radius:0; background:rgba(255,255,255,0.06); color:rgba(255,255,255,0.8);
@@ -892,7 +899,7 @@
 
 
 <header>
-  <h1>TW Project Manager</h1>
+  <h1 onclick="navTo('status')" style="cursor:pointer;" title="홈 (Status)">TW Project Manager</h1>
   <div class="header-actions">
     <button id="adminModeBtn" class="btn-util btn-icon-only" onclick="toggleAdminMode()" title="관리자 모드 ON: 공유 데이터에 저장되지 않음"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg></button>
     <span id="connectionStatus" style="font-size:12px;padding:3px 8px;border-radius:0;background:rgba(255,255,255,0.08);color:rgba(255,255,255,0.7);">연결 중...</span>
@@ -942,6 +949,7 @@
       <button onclick="openHistoryPanel()" title="수정 이력" style="background:none;border:none;cursor:pointer;color:var(--text-muted);font-size:13px;padding:2px 6px;border-radius:5px;display:flex;align-items:center;gap:4px;transition:all 0.13s;" onmouseover="this.style.background='var(--surface-2)';this.style.color='var(--text-secondary)'" onmouseout="this.style.background='none';this.style.color='var(--text-muted)'">🕐 이력</button>
       <div id="historyUserBadges" style="display:flex;gap:5px;align-items:center;"></div>
     </div>
+    <div id="statusResourceFilter" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;"></div>
     <div class="table-wrap" style="overflow-x:auto;">
       <table class="project-table" id="mainTable">
         <colgroup>
@@ -986,7 +994,7 @@
             <th style="background:var(--header-bg);">Target Date<div class="col-resizer" data-col="5"></div></th>
             <th style="background:var(--header-bg);">Release<div class="col-resizer" data-col="6"></div></th>
             <th style="background:var(--header-bg);padding:0;overflow:hidden;border:none;"></th>
-            <th style="background:var(--header-bg);border-right:3px solid var(--accent);">RMQY<div class="col-resizer" data-col="8"></div></th>
+            <th style="background:var(--header-bg);border-right:3px solid var(--accent);">Report<div class="col-resizer" data-col="8"></div></th>
             <th style="background:var(--analysis-bg);">
               <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-start;">
                 <span>Resource</span>
@@ -1105,7 +1113,7 @@
               <th style="background:var(--header-bg);">Target Date</th>
               <th style="background:var(--header-bg);">Release</th>
               <th style="background:var(--header-bg);padding:0;overflow:hidden;border:none;"></th>
-              <th style="background:var(--header-bg);border-right:3px solid var(--accent);">RMQY</th>
+              <th style="background:var(--header-bg);border-right:3px solid var(--accent);">Report</th>
               <th style="background:var(--analysis-bg);">Resource</th>
               <th style="background:var(--analysis-bg);">BU</th>
               <th style="background:var(--analysis-bg);">Status</th>
@@ -1189,10 +1197,11 @@
 
 <!-- Focus Projects Page -->
 <div id="page-focus" style="display:none;" class="container">
-  <div style="display:flex;align-items:baseline;gap:16px;margin:0 0 20px;">
+  <div style="display:flex;align-items:baseline;gap:16px;margin:0 0 14px;">
     <h2 style="font-size:21px;font-weight:500;color:var(--text-primary);margin:0;letter-spacing:-0.3px;">Focus Projects</h2>
     <span id="focusCount" style="font-size:14px;color:var(--text-muted);"></span>
   </div>
+  <div id="focusResourceFilter" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;"></div>
   <div class="table-wrap" style="overflow-x:auto;">
     <table class="project-table" id="focusTable">
       <tbody id="focusTbody"></tbody>
@@ -2455,7 +2464,16 @@ function buildKanban(p, toggleFnName) {
         <button class="btn-pencil-edit ${projectEditing?'editing':''}" onclick="toggleProjectEdit()" title="체크리스트 수정">${PENCIL_SVG}${projectEditing?'&nbsp;완료':''}</button>
        </div>`;
 
-  return editBtn + '<div class="kanban-board">' +
+  const pct = overallPercent(p);
+  const progressBar = `<div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;padding:6px 2px;">
+    <span style="font-size:13px;color:var(--text-muted);white-space:nowrap;">Progress (%)</span>
+    <div style="flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden;">
+      <div style="width:${pct}%;height:100%;background:${pct===100?'var(--green)':'var(--accent)'};border-radius:3px;transition:width 0.3s;"></div>
+    </div>
+    <span style="font-size:15px;font-weight:600;color:${pct===100?'var(--green)':'var(--accent)'};min-width:36px;text-align:right;">${pct}%</span>
+  </div>`;
+
+  return editBtn + progressBar + '<div class="kanban-board">' +
     stages.map((stage, stageIdx) => {
       const isLoop = stage.num === 3;
       const { done, total } = isLoop
@@ -2765,9 +2783,22 @@ function renderDashboard() {
       <td></td>
       <td class="td-actions" style="border-right:3px solid var(--accent);"><div class="td-actions-inner">
         <div class="td-actions-btns">
-          <button class="btn-board ${(p.boardTypes||[]).includes('M')?'active-M':''}" onclick="moveToBoardSection('${p.id}','M')" title="월례회 보고">M</button>
-          <button class="btn-board ${(p.boardTypes||[]).includes('Q')?'active-Q':''}" onclick="moveToBoardSection('${p.id}','Q')" title="이사회 보고">Q</button>
-          <button class="btn-board ${(p.boardTypes||[]).includes('Y')?'active-Y':''}" onclick="moveToBoardSection('${p.id}','Y')" title="연말 보고">Y</button>
+          <div style="display:flex;align-items:center;gap:4px;">
+            <button class="btn-board ${['M','Q','Y'].some(t=>(p.boardTypes||[]).includes(t))?'active-M':''}" onclick="toggleBoardDate('${p.id}','M',this)" title="월례회 보고">M</button>
+            <input type="text" class="cell-input" value="${(p.boardDates||{}).M||''}" placeholder="YYYY-MM-DD" oninput="autoFormatDate(this)" onblur="saveBoardDateField('${p.id}','M',this.value)" onkeydown="if(event.key==='Enter')this.blur()" style="display:${(p.boardTypes||[]).includes('M')?'block':'none'};min-width:90px;" />
+          </div>
+          <div style="display:flex;align-items:center;gap:4px;">
+            <button class="btn-board ${['Q','Y'].some(t=>(p.boardTypes||[]).includes(t))?'active-Q':''}" onclick="toggleBoardDate('${p.id}','Q',this)" title="이사회 보고">Q</button>
+            <input type="text" class="cell-input" value="${(p.boardDates||{}).Q||''}" placeholder="YYYY-MM-DD" oninput="autoFormatDate(this)" onblur="saveBoardDateField('${p.id}','Q',this.value)" onkeydown="if(event.key==='Enter')this.blur()" style="display:${(p.boardTypes||[]).includes('Q')?'block':'none'};min-width:90px;" />
+          </div>
+          <div style="display:flex;align-items:center;gap:4px;">
+            <button class="btn-board ${(p.boardTypes||[]).includes('Y')?'active-Y':''}" onclick="toggleBoardDate('${p.id}','Y',this)" title="연말 보고">Y</button>
+            <input type="text" class="cell-input" value="${(p.boardDates||{}).Y||''}" placeholder="YYYY-MM-DD" oninput="autoFormatDate(this)" onblur="saveBoardDateField('${p.id}','Y',this.value)" onkeydown="if(event.key==='Enter')this.blur()" style="display:${(p.boardTypes||[]).includes('Y')?'block':'none'};min-width:90px;" />
+          </div>
+          <div style="display:flex;gap:3px;margin-top:2px;">
+            <button class="btn-icon" onclick="moveRowSection('${p.id}',-1)" title="위 섹션으로" style="padding:2px 4px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg></button>
+            <button class="btn-icon" onclick="moveRowSection('${p.id}',1)" title="아래 섹션으로" style="padding:2px 4px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
+          </div>
         </div>
       </div></td>
       <td style="background:#f8fbff;"><input class="cell-input" value="${escapeHtml(p.resource||'')}"
@@ -2813,6 +2844,14 @@ function renderDashboard() {
 
   insertCutLine();
   initMainRowDrag();
+
+  // 리소스 필터 칩 렌더링 & 현재 필터 재적용
+  const mainList = projects.filter(p =>
+    !['M','Q','Y'].some(t => (p.boardTypes||[]).includes(t)) &&
+    (p.pageId || 1) === currentStatusPage
+  );
+  renderStatusResourceFilter(mainList);
+  if (_statusResourceFilter.size > 0) filterStatusResource('__keep__');
 }
 
 function insertCutLine() {
@@ -3480,7 +3519,7 @@ function addInlineRow() {
   const newP = {
     id: 'p_' + Date.now(), name: '', publication: '', purpose: '',
     targetDate: '', checks, selected: true, resource: '', bu: '',
-    projectType: '', startDate: '', boardTypes: [], releaseDate: '', pageId: currentStatusPage, createdAt: new Date().toISOString()
+    projectType: '', startDate: '', boardTypes: [], boardDates: {}, releaseDate: '', pageId: currentStatusPage, createdAt: new Date().toISOString()
   };
   projects.push(newP);
   saveProjects();
@@ -3978,11 +4017,14 @@ window.addEventListener('resize', () => {
 
 window.addEventListener('popstate', e => {
   const hash = location.hash.replace('#', '');
-  if (hash.startsWith('detail/')) {
-    const id = hash.replace('detail/', '');
-    showDetail(id, false);
+  if (e.state && e.state.view === 'nav' && e.state.page) {
+    navTo(e.state.page, false);
+  } else if (hash.startsWith('detail/')) {
+    showDetail(hash.replace('detail/', ''), false);
   } else if (e.state && e.state.view === 'detail' && e.state.id) {
     showDetail(e.state.id, false);
+  } else if (hash && ['status','checklist','dashboard','completed','focus','pptformat','ghoffice'].includes(hash)) {
+    navTo(hash, false);
   } else {
     showDashboard(false);
   }
@@ -4180,6 +4222,72 @@ function moveToBoardSection(pid, type) {
   renderBoardSections();
 }
 
+function moveRowSection(pid, dir) {
+  const p = projects.find(p => p.id === pid);
+  if (!p) return;
+  if (!p.boardTypes) p.boardTypes = [];
+  const order = ['M', 'Q', 'Y'];
+  // 현재 가장 높은 단계 파악
+  let curLevel = -1; // -1 = In Active
+  order.forEach((t, i) => { if (p.boardTypes.includes(t)) curLevel = i; });
+
+  const nextLevel = curLevel + dir;
+  if (nextLevel < -1 || nextLevel >= order.length) return; // 범위 초과
+
+  if (dir === 1) {
+    // 아래로: 다음 단계 추가 (누적)
+    const addType = order[nextLevel];
+    if (!p.boardTypes.includes(addType)) p.boardTypes.push(addType);
+    p.boardTypes.sort((a, b) => order.indexOf(a) - order.indexOf(b));
+  } else {
+    // 위로: 현재 최고 단계 제거
+    const removeType = order[curLevel];
+    p.boardTypes = p.boardTypes.filter(t => t !== removeType);
+    if (p.boardDates) delete p.boardDates[removeType];
+  }
+
+  saveProjects();
+  renderDashboard();
+  renderBoardSections();
+}
+
+function toggleBoardDate(pid, type, btn) {
+  const p = projects.find(p => p.id === pid);
+  if (!p) return;
+  if (!p.boardDates) p.boardDates = {};
+  const isActive = (p.boardTypes || []).includes(type);
+  const inp = btn.nextElementSibling;
+  if (isActive) {
+    p.boardTypes = (p.boardTypes || []).filter(t => t !== type);
+    p.boardDates[type] = '';
+    if (inp) { inp.style.display = 'none'; inp.value = ''; }
+    saveProjects();
+    renderDashboard();
+    renderBoardSections();
+  } else {
+    if (inp) { inp.style.display = 'block'; setTimeout(() => inp.focus(), 50); }
+  }
+}
+
+function saveBoardDateField(pid, type, value) {
+  const p = projects.find(p => p.id === pid);
+  if (!p) return;
+  if (!p.boardDates) p.boardDates = {};
+  value = value.trim();
+  p.boardDates[type] = value;
+  if (value) {
+    if (!p.boardTypes) p.boardTypes = [];
+    if (!p.boardTypes.includes(type)) p.boardTypes.push(type);
+    const order = ['M','Q','Y'];
+    p.boardTypes.sort((a,b) => order.indexOf(a) - order.indexOf(b));
+  } else {
+    p.boardTypes = (p.boardTypes || []).filter(t => t !== type);
+  }
+  saveProjects();
+  renderDashboard();
+  renderBoardSections();
+}
+
 function toggleReleaseDate(pid, btn) {
   const td = btn.closest('td[data-release]');
   const inp = td?.querySelector('input[type="text"]');
@@ -4328,9 +4436,22 @@ function renderBoardSection(type) {
       <td></td>
       <td class="td-actions" style="border-right:3px solid var(--accent);"><div class="td-actions-inner">
         <div class="td-actions-btns">
-          <button class="btn-board ${(p.boardTypes||[]).includes('M')?'active-M':''}" onclick="moveToBoardSection('${p.id}','M')" title="월례회 보고">M</button>
-          <button class="btn-board ${(p.boardTypes||[]).includes('Q')?'active-Q':''}" onclick="moveToBoardSection('${p.id}','Q')" title="이사회 보고">Q</button>
-          <button class="btn-board ${(p.boardTypes||[]).includes('Y')?'active-Y':''}" onclick="moveToBoardSection('${p.id}','Y')" title="연말 보고">Y</button>
+          <div style="display:flex;align-items:center;gap:4px;">
+            <button class="btn-board ${['M','Q','Y'].some(t=>(p.boardTypes||[]).includes(t))?'active-M':''}" onclick="toggleBoardDate('${p.id}','M',this)" title="월례회 보고">M</button>
+            <input type="text" class="cell-input" value="${(p.boardDates||{}).M||''}" placeholder="YYYY-MM-DD" oninput="autoFormatDate(this)" onblur="saveBoardDateField('${p.id}','M',this.value)" onkeydown="if(event.key==='Enter')this.blur()" style="display:${(p.boardTypes||[]).includes('M')?'block':'none'};min-width:90px;" />
+          </div>
+          <div style="display:flex;align-items:center;gap:4px;">
+            <button class="btn-board ${['Q','Y'].some(t=>(p.boardTypes||[]).includes(t))?'active-Q':''}" onclick="toggleBoardDate('${p.id}','Q',this)" title="이사회 보고">Q</button>
+            <input type="text" class="cell-input" value="${(p.boardDates||{}).Q||''}" placeholder="YYYY-MM-DD" oninput="autoFormatDate(this)" onblur="saveBoardDateField('${p.id}','Q',this.value)" onkeydown="if(event.key==='Enter')this.blur()" style="display:${(p.boardTypes||[]).includes('Q')?'block':'none'};min-width:90px;" />
+          </div>
+          <div style="display:flex;align-items:center;gap:4px;">
+            <button class="btn-board ${(p.boardTypes||[]).includes('Y')?'active-Y':''}" onclick="toggleBoardDate('${p.id}','Y',this)" title="연말 보고">Y</button>
+            <input type="text" class="cell-input" value="${(p.boardDates||{}).Y||''}" placeholder="YYYY-MM-DD" oninput="autoFormatDate(this)" onblur="saveBoardDateField('${p.id}','Y',this.value)" onkeydown="if(event.key==='Enter')this.blur()" style="display:${(p.boardTypes||[]).includes('Y')?'block':'none'};min-width:90px;" />
+          </div>
+          <div style="display:flex;gap:3px;margin-top:2px;">
+            <button class="btn-icon" onclick="moveRowSection('${p.id}',-1)" title="위 섹션으로" style="padding:2px 4px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg></button>
+            <button class="btn-icon" onclick="moveRowSection('${p.id}',1)" title="아래 섹션으로" style="padding:2px 4px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
+          </div>
         </div>
       </div></td>
       <td style="background:#f8fbff;"><input class="cell-input" value="${escapeHtml(p.resource||'')}" placeholder="?? Alice" onblur="saveResourceField('${p.id}',this.value)" onkeydown="if(event.key==='Enter')this.blur()" /></td>
@@ -4396,14 +4517,32 @@ function renderDeletedList() {
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
         </button>
       </div></td>
-      <td><input type="text" class="cell-input" value="${p.releaseDate||''}" disabled style="color:#9ca3af;" /></td>
+      <td data-release style="white-space:nowrap;">
+        <div style="display:flex;align-items:center;gap:5px;">
+          <button class="btn-board ${p.releaseDate?'active-R':''}" disabled style="flex-shrink:0;opacity:0.5;">R</button>
+          <input type="text" class="cell-input" value="${p.releaseDate||''}" disabled
+            style="display:${p.releaseDate?'block':'none'};min-width:95px;color:#9ca3af;" />
+        </div>
+      </td>
       <td></td>
       <td class="td-actions" style="border-right:3px solid var(--accent);"><div class="td-actions-inner">
-        <div class="td-actions-btns" style="opacity:0.4;">
-          <button class="btn-board ${(p.boardTypes||[]).includes('R')?'active-R':''}" disabled>R</button>
-          <button class="btn-board ${(p.boardTypes||[]).includes('M')?'active-M':''}" disabled>M</button>
-          <button class="btn-board ${(p.boardTypes||[]).includes('Q')?'active-Q':''}" disabled>Q</button>
-          <button class="btn-board ${(p.boardTypes||[]).includes('Y')?'active-Y':''}" disabled>Y</button>
+        <div class="td-actions-btns">
+          <div style="display:flex;align-items:center;gap:4px;">
+            <button class="btn-board ${['M','Q','Y'].some(t=>(p.boardTypes||[]).includes(t))?'active-M':''}" disabled style="opacity:0.5;">M</button>
+            <input type="text" class="cell-input" value="${(p.boardDates||{}).M||''}" disabled style="display:${(p.boardTypes||[]).includes('M')?'block':'none'};min-width:90px;color:#9ca3af;" />
+          </div>
+          <div style="display:flex;align-items:center;gap:4px;">
+            <button class="btn-board ${['Q','Y'].some(t=>(p.boardTypes||[]).includes(t))?'active-Q':''}" disabled style="opacity:0.5;">Q</button>
+            <input type="text" class="cell-input" value="${(p.boardDates||{}).Q||''}" disabled style="display:${(p.boardTypes||[]).includes('Q')?'block':'none'};min-width:90px;color:#9ca3af;" />
+          </div>
+          <div style="display:flex;align-items:center;gap:4px;">
+            <button class="btn-board ${(p.boardTypes||[]).includes('Y')?'active-Y':''}" disabled style="opacity:0.5;">Y</button>
+            <input type="text" class="cell-input" value="${(p.boardDates||{}).Y||''}" disabled style="display:${(p.boardTypes||[]).includes('Y')?'block':'none'};min-width:90px;color:#9ca3af;" />
+          </div>
+          <div style="display:flex;gap:3px;margin-top:2px;">
+            <button class="btn-icon" onclick="moveRowSection('${p.id}',-1)" title="위 섹션으로" style="padding:2px 4px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg></button>
+            <button class="btn-icon" onclick="moveRowSection('${p.id}',1)" title="아래 섹션으로" style="padding:2px 4px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
+          </div>
         </div>
       </div></td>
       <td style="background:#f8fbff;"><input class="cell-input" value="${escapeHtml(p.resource||'')}" disabled style="color:#6b7280;" /></td>
@@ -5202,7 +5341,7 @@ document.addEventListener('keydown', e => {
       const cols = document.querySelectorAll('#mainTable colgroup col');
       saved.forEach((w, i) => { if (i !== 7 && cols[i] && w >= MIN_W) cols[i].style.width = w + 'px'; });
     } catch {}
-    // 7번(Release-RMQY 사이 spacer) 컬럼은 항상 0 고정
+    // 7번(Release-Report 사이 spacer) 컬럼은 항상 0 고정
     const spacer = document.getElementById('col7');
     if (spacer) spacer.style.width = '0';
     syncAllTables();
@@ -5444,7 +5583,7 @@ function renderPageNavDots() {
 }
 
 /* ── Nav Bar ── */
-function navTo(page) {
+function navTo(page, pushHistory = true) {
   document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
   document.getElementById('nav-' + page)?.classList.add('active');
 
@@ -5459,6 +5598,8 @@ function navTo(page) {
   document.getElementById('page-ghoffice').style.display    = 'none';
   document.getElementById('page-completed').style.display   = 'none';
   document.getElementById('page-focus').style.display       = 'none';
+
+  if (pushHistory) history.pushState({ view: 'nav', page }, '', '#' + page);
 
   if (page === 'status') {
     renderDashboard();
@@ -5565,11 +5706,88 @@ function showCompletedPage() {
 }
 
 /* ── PPT Preview (A): 자동 생성 + 다운로드 ── */
+let _focusResourceFilter = new Set();
+let _statusResourceFilter = new Set();
+
+function filterStatusResource(name) {
+  if (name === '__all__') {
+    _statusResourceFilter.clear();
+  } else if (name !== '__keep__') {
+    if (_statusResourceFilter.has(name)) _statusResourceFilter.delete(name);
+    else _statusResourceFilter.add(name);
+  }
+  const allActive = _statusResourceFilter.size === 0;
+  document.querySelectorAll('#statusResourceFilter .focus-res-chip').forEach(el => {
+    if (el.dataset.name === '__all__') el.classList.toggle('active', allActive);
+    else el.classList.toggle('active', _statusResourceFilter.has(el.dataset.name));
+  });
+  document.querySelectorAll('#projectTbody tr[data-pid]').forEach(tr => {
+    const p = projects.find(p => p.id === tr.dataset.pid);
+    if (!p) return;
+    const res = (p.resource || '').split(/[,、\s]+/).map(s => s.trim()).filter(Boolean);
+    tr.style.display = (allActive || res.some(r => _statusResourceFilter.has(r))) ? '' : 'none';
+  });
+}
+
+function renderStatusResourceFilter(list) {
+  const filterEl = document.getElementById('statusResourceFilter');
+  if (!filterEl) return;
+  const resSet = new Set();
+  list.forEach(p => (p.resource||'').split(/[,、\s]+/).map(s=>s.trim()).filter(Boolean).forEach(r=>resSet.add(r)));
+  if (resSet.size === 0) { filterEl.innerHTML=''; filterEl.style.display='none'; return; }
+  const chips = [`<button class="focus-res-chip${_statusResourceFilter.size===0?' active':''}" data-name="__all__" onclick="filterStatusResource('__all__')">All</button>`];
+  [...resSet].sort().forEach(r =>
+    chips.push(`<button class="focus-res-chip${_statusResourceFilter.has(r)?' active':''}" data-name="${escapeHtml(r)}" onclick="filterStatusResource('${escapeHtml(r)}')">${escapeHtml(r)}</button>`)
+  );
+  filterEl.innerHTML = chips.join('');
+  filterEl.style.display = '';
+}
+
+function filterFocusResource(name) {
+  if (name === '__all__') {
+    _focusResourceFilter.clear();
+  } else {
+    if (_focusResourceFilter.has(name)) _focusResourceFilter.delete(name);
+    else _focusResourceFilter.add(name);
+  }
+  const allActive = _focusResourceFilter.size === 0;
+  document.querySelectorAll('#focusResourceFilter .focus-res-chip').forEach(el => {
+    if (el.dataset.name === '__all__') el.classList.toggle('active', allActive);
+    else el.classList.toggle('active', _focusResourceFilter.has(el.dataset.name));
+  });
+  const focus = projects.filter(p => (p.coreStages||[]).length > 0);
+  document.querySelectorAll('#focusTbody tr[data-pid]').forEach(tr => {
+    const p = focus.find(p => p.id === tr.dataset.pid);
+    if (!p) return;
+    const res = (p.resource || '').split(/[,、\s]+/).map(s => s.trim()).filter(Boolean);
+    tr.style.display = (allActive || res.some(r => _focusResourceFilter.has(r))) ? '' : 'none';
+  });
+}
+
 function showFocusPage() {
   document.getElementById('page-focus').style.display = '';
+  _focusResourceFilter = new Set();
 
   const focus = projects.filter(p => (p.coreStages||[]).length > 0);
   document.getElementById('focusCount').textContent = `${focus.length}개`;
+
+  // 리소스 목록 수집 & 필터 칩 렌더링
+  const resSet = new Set();
+  focus.forEach(p => {
+    (p.resource || '').split(/[,、\s]+/).map(s => s.trim()).filter(Boolean).forEach(r => resSet.add(r));
+  });
+  const filterEl = document.getElementById('focusResourceFilter');
+  if (resSet.size > 0) {
+    const chips = [`<button class="focus-res-chip active" data-name="__all__" onclick="filterFocusResource('__all__')">All</button>`];
+    [...resSet].sort().forEach(r =>
+      chips.push(`<button class="focus-res-chip" data-name="${escapeHtml(r)}" onclick="filterFocusResource('${escapeHtml(r)}')">${escapeHtml(r)}</button>`)
+    );
+    filterEl.innerHTML = chips.join('');
+    filterEl.style.display = '';
+  } else {
+    filterEl.innerHTML = '';
+    filterEl.style.display = 'none';
+  }
 
   const table = document.getElementById('focusTable');
   const tbody = document.getElementById('focusTbody');
