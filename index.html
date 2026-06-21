@@ -154,6 +154,59 @@
   .cl-std-header { font-size: 18px; font-weight: 600; color: var(--text-secondary); margin: 0 0 12px; }
   .page-empty { text-align:center; padding:80px 0; color:var(--text-muted); font-size:16px; }
 
+  /* ── Resource Dashboard ── */
+  .db-card {
+    background:var(--surface); border-radius:var(--radius); padding:18px 20px;
+    box-shadow:var(--shadow-sm); border:1px solid var(--border);
+  }
+  .db-card-title {
+    font-size:14px; font-weight:600; color:var(--text-secondary);
+    margin-bottom:14px; letter-spacing:0.2px;
+  }
+  .db-summary-card {
+    flex:1; min-width:140px; background:var(--surface);
+    border-radius:var(--radius); padding:16px 20px;
+    box-shadow:var(--shadow-sm); border:1px solid var(--border);
+    display:flex; flex-direction:column; gap:4px;
+  }
+  .db-summary-card .db-val {
+    font-size:28px; font-weight:700; line-height:1;
+  }
+  .db-summary-card .db-label {
+    font-size:12px; color:var(--text-muted);
+  }
+  .db-bar-row { display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+  .db-bar-name { font-size:13px; color:var(--text-secondary); min-width:72px; text-align:right; flex-shrink:0; }
+  .db-bar-track { flex:1; height:10px; background:var(--border); border-radius:5px; overflow:hidden; position:relative; }
+  .db-bar-fill { height:100%; border-radius:5px; transition:width 0.4s; }
+  .db-bar-count { font-size:12px; color:var(--text-muted); min-width:28px; text-align:right; flex-shrink:0; }
+  .db-need-row {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:8px 10px; border-radius:7px; margin-bottom:7px;
+    font-size:13px;
+  }
+  .db-need-row.high   { background:#fef2f2; border:1px solid #fecaca; }
+  .db-need-row.medium { background:#fffbeb; border:1px solid #fde68a; }
+  .db-need-row.ok     { background:#f0fdf4; border:1px solid #bbf7d0; }
+  .db-badge { font-size:11px; font-weight:600; padding:2px 8px; border-radius:10px; white-space:nowrap; }
+  .db-badge.high   { background:#fee2e2; color:#991b1b; }
+  .db-badge.medium { background:#fef3c7; color:#92400e; }
+  .db-badge.ok     { background:#dcfce7; color:#14532d; }
+  .db-detail-table { width:100%; border-collapse:collapse; font-size:13px; }
+  .db-detail-table th {
+    background:var(--surface-2); color:var(--text-muted); font-weight:500;
+    padding:7px 12px; text-align:left; border-bottom:1px solid var(--border); font-size:12px;
+  }
+  .db-detail-table td { padding:7px 12px; border-bottom:1px solid var(--border-subtle); vertical-align:top; }
+  .db-detail-table tr:hover td { background:var(--surface-2); }
+  .db-proj-chip {
+    display:inline-block; font-size:11px; padding:2px 7px;
+    border-radius:10px; background:var(--accent-light); color:var(--accent);
+    border:1px solid rgba(37,99,235,0.15); margin:2px; white-space:nowrap; cursor:pointer;
+  }
+  .db-proj-chip.done { background:#f0fdf4; color:#16a34a; border-color:#bbf7d0; }
+  .db-proj-chip.report { background:#ede9fe; color:#6d28d9; border-color:#c4b5fd; }
+
   /* ── Nav Bar ── */
   .nav-bar {
     background: #292929;
@@ -1179,7 +1232,37 @@
 
 <!-- Dashboard Page -->
 <div id="page-dashboard" style="display:none;" class="container">
-  <p class="page-empty">Dashboard — 준비 중 🚧</p>
+  <div style="display:flex;align-items:baseline;gap:16px;margin:0 0 20px;">
+    <h2 style="font-size:21px;font-weight:500;color:var(--text-primary);margin:0;letter-spacing:-0.3px;">Resource Dashboard</h2>
+    <span style="font-size:13px;color:var(--text-muted);">인력 현황 및 충원 분석</span>
+  </div>
+
+  <!-- 요약 카드 -->
+  <div id="db-summary" style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:24px;"></div>
+
+  <!-- 인력별 부하 -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:24px;">
+    <div class="db-card">
+      <div class="db-card-title">인력별 프로젝트 현황</div>
+      <div id="db-resource-bars"></div>
+    </div>
+    <div class="db-card">
+      <div class="db-card-title">인력 충원 필요도</div>
+      <div id="db-need-panel"></div>
+    </div>
+  </div>
+
+  <!-- 상세 테이블 -->
+  <div class="db-card" style="margin-bottom:24px;">
+    <div class="db-card-title">인력별 담당 프로젝트 목록</div>
+    <div id="db-detail-table"></div>
+  </div>
+
+  <!-- 미배정 프로젝트 -->
+  <div class="db-card">
+    <div class="db-card-title">리소스 미배정 프로젝트 <span id="db-unassigned-count" style="font-size:12px;color:var(--red);font-weight:400;margin-left:6px;"></span></div>
+    <div id="db-unassigned"></div>
+  </div>
 </div>
 
 <!-- Completed Project List Page -->
@@ -5607,6 +5690,7 @@ function navTo(page, pushHistory = true) {
     showChecklistPage();
   } else if (page === 'dashboard') {
     document.getElementById('page-dashboard').style.display = '';
+    showDashboardPage();
   } else if (page === 'completed') {
     showCompletedPage();
   } else if (page === 'focus') {
@@ -5619,6 +5703,122 @@ function navTo(page, pushHistory = true) {
 }
 
 /* ── Completed Project List ── */
+function showDashboardPage() {
+  const all = projects;
+  const active = all.filter(p => overallPercent(p) < 100);
+  const done   = all.filter(p => overallPercent(p) === 100);
+  const inReport = all.filter(p => (p.boardTypes||[]).length > 0);
+  const unassigned = all.filter(p => !(p.resource||'').trim());
+
+  // ── 요약 카드 ──
+  const summaryData = [
+    { val: all.length,        label: '전체 프로젝트',  color: 'var(--accent)' },
+    { val: active.length,     label: '진행 중',        color: '#f59e0b' },
+    { val: done.length,       label: '완료',           color: 'var(--green)' },
+    { val: inReport.length,   label: '보고 대상',      color: '#7c3aed' },
+    { val: unassigned.length, label: '리소스 미배정',  color: 'var(--red)' },
+  ];
+  document.getElementById('db-summary').innerHTML = summaryData.map(d => `
+    <div class="db-summary-card">
+      <div class="db-val" style="color:${d.color};">${d.val}</div>
+      <div class="db-label">${d.label}</div>
+    </div>`).join('');
+
+  // ── 리소스별 집계 ──
+  const resMap = {}; // { name: { total, active, done, report, projects[] } }
+  all.forEach(p => {
+    const names = (p.resource||'').split(/[,、\s]+/).map(s=>s.trim()).filter(Boolean);
+    if (!names.length) return;
+    names.forEach(name => {
+      if (!resMap[name]) resMap[name] = { total:0, active:0, done:0, report:0, projects:[] };
+      const pct = overallPercent(p);
+      resMap[name].total++;
+      if (pct === 100) resMap[name].done++;
+      else resMap[name].active++;
+      if ((p.boardTypes||[]).length > 0) resMap[name].report++;
+      resMap[name].projects.push(p);
+    });
+  });
+  const resEntries = Object.entries(resMap).sort((a,b) => b[1].total - a[1].total);
+  const maxTotal = resEntries.length ? resEntries[0][1].total : 1;
+
+  // ── 인력별 프로젝트 바 차트 ──
+  const LOAD_THRESHOLD_HIGH = 5;   // 이상 = 충원 필요
+  const LOAD_THRESHOLD_MED  = 3;   // 이상 = 주의
+  const colors = ['#3b82f6','#10b981','#f59e0b','#8b5cf6','#ef4444','#06b6d4','#ec4899','#84cc16'];
+
+  document.getElementById('db-resource-bars').innerHTML = resEntries.length
+    ? resEntries.map(([name, d], i) => {
+        const pct = Math.round(d.total / maxTotal * 100);
+        const col = colors[i % colors.length];
+        return `<div class="db-bar-row">
+          <div class="db-bar-name">${escapeHtml(name)}</div>
+          <div class="db-bar-track">
+            <div class="db-bar-fill" style="width:${pct}%;background:${col};"></div>
+          </div>
+          <div class="db-bar-count" style="color:${col};font-weight:600;">${d.total}</div>
+        </div>
+        <div style="display:flex;gap:12px;margin:-4px 0 8px 82px;font-size:11px;color:var(--text-muted);">
+          <span>진행 <b style="color:var(--text-secondary);">${d.active}</b></span>
+          <span>완료 <b style="color:var(--green);">${d.done}</b></span>
+          <span>보고 <b style="color:#7c3aed;">${d.report}</b></span>
+        </div>`;
+      }).join('')
+    : '<p style="color:var(--text-muted);font-size:13px;">리소스가 배정된 프로젝트가 없습니다.</p>';
+
+  // ── 충원 필요도 패널 ──
+  document.getElementById('db-need-panel').innerHTML = resEntries.length
+    ? resEntries.map(([name, d]) => {
+        const level = d.active >= LOAD_THRESHOLD_HIGH ? 'high'
+                    : d.active >= LOAD_THRESHOLD_MED  ? 'medium' : 'ok';
+        const label = level === 'high' ? '충원 필요' : level === 'medium' ? '주의' : '적정';
+        const ratio = `진행 ${d.active}건 / 전체 ${d.total}건`;
+        return `<div class="db-need-row ${level}">
+          <div>
+            <span style="font-weight:600;">${escapeHtml(name)}</span>
+            <span style="font-size:11px;color:var(--text-muted);margin-left:8px;">${ratio}</span>
+          </div>
+          <span class="db-badge ${level}">${label}</span>
+        </div>`;
+      }).join('')
+    + `<div style="margin-top:14px;font-size:11px;color:var(--text-muted);border-top:1px solid var(--border);padding-top:10px;">
+        기준: 진행 중 ${LOAD_THRESHOLD_HIGH}건 이상 → 충원 필요 / ${LOAD_THRESHOLD_MED}건 이상 → 주의
+       </div>`
+    : '<p style="color:var(--text-muted);font-size:13px;">데이터 없음</p>';
+
+  // ── 상세 테이블 ──
+  document.getElementById('db-detail-table').innerHTML = resEntries.length ? `
+    <table class="db-detail-table">
+      <thead><tr>
+        <th style="width:90px;">리소스</th>
+        <th>진행 중 프로젝트</th>
+        <th>완료 프로젝트</th>
+        <th style="width:60px;text-align:center;">보고</th>
+      </tr></thead>
+      <tbody>${resEntries.map(([name, d]) => {
+        const activeProjs = d.projects.filter(p => overallPercent(p) < 100);
+        const doneProjs   = d.projects.filter(p => overallPercent(p) === 100);
+        const chips = (arr, cls) => arr.map(p =>
+          `<span class="db-proj-chip ${cls}" onclick="navTo('status');setTimeout(()=>showDetail('${p.id}'),100)" title="${escapeHtml(p.name)}">${escapeHtml(p.name||'(이름없음)')}</span>`
+        ).join('');
+        return `<tr>
+          <td style="font-weight:600;white-space:nowrap;">${escapeHtml(name)}</td>
+          <td>${chips(activeProjs,'') || '<span style="color:var(--text-muted);font-size:12px;">없음</span>'}</td>
+          <td>${chips(doneProjs,'done') || '<span style="color:var(--text-muted);font-size:12px;">없음</span>'}</td>
+          <td style="text-align:center;">${d.report > 0 ? `<span style="color:#7c3aed;font-weight:600;">${d.report}</span>` : '—'}</td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table>` : '<p style="color:var(--text-muted);font-size:13px;">없음</p>';
+
+  // ── 미배정 프로젝트 ──
+  document.getElementById('db-unassigned-count').textContent = unassigned.length ? `(${unassigned.length}건)` : '';
+  document.getElementById('db-unassigned').innerHTML = unassigned.length
+    ? `<div style="display:flex;flex-wrap:wrap;gap:6px;">${unassigned.map(p =>
+        `<span class="db-proj-chip" onclick="navTo('status');setTimeout(()=>showDetail('${p.id}'),100)">${escapeHtml(p.name||'(이름없음)')}</span>`
+      ).join('')}</div>`
+    : '<p style="color:var(--green);font-size:13px;">✓ 모든 프로젝트에 리소스가 배정되었습니다.</p>';
+}
+
 function showCompletedPage() {
   document.getElementById('page-completed').style.display = '';
 
