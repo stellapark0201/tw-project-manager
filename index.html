@@ -1090,12 +1090,12 @@
 </header>
 
 <nav class="nav-bar">
-  <div class="nav-item active" id="nav-status" onclick="goHome()" title="홈 — Status 페이지" style="display:inline-flex;align-items:center;gap:5px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 11 12 2 21 11"/><line x1="5" y1="11" x2="5" y2="21"/><line x1="19" y1="11" x2="19" y2="21"/><line x1="5" y1="21" x2="19" y2="21"/></svg>홈</div>
-  <div class="nav-item" id="nav-checklist" onclick="navTo('checklist')">Progress Overview</div>
-  <div class="nav-item" id="nav-dashboard" onclick="navTo('dashboard')">Dashboard</div>
-  <div class="nav-item" id="nav-completed" onclick="navTo('completed')">Completed Project List</div>
+  <div class="nav-item active" id="nav-status" onclick="goHome()" title="홈 — Status 페이지" style="display:inline-flex;align-items:center;gap:5px;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 11 12 2 21 11"/><line x1="5" y1="11" x2="5" y2="21"/><line x1="19" y1="11" x2="19" y2="21"/><line x1="5" y1="21" x2="19" y2="21"/></svg>Active Projects</div>
+  <div class="nav-item" id="nav-optask" onclick="navTo('optask')">Operational Tasks</div>
   <div class="nav-item" id="nav-focus" onclick="navTo('focus')">Focus Projects</div>
-  <div class="nav-item" id="nav-optask" onclick="navTo('optask')">Operational Task</div>
+  <div class="nav-item" id="nav-checklist" onclick="navTo('checklist')">Progress</div>
+  <div class="nav-item" id="nav-completed" onclick="navTo('completed')">Completed Projects</div>
+  <div class="nav-item" id="nav-dashboard" onclick="navTo('dashboard')">Dashboard</div>
   <div class="nav-item" id="nav-pptformat" onclick="navTo('pptformat')" style="margin-left:auto;">PPT Preview</div>
   <div class="nav-item" id="nav-ghoffice" onclick="navTo('ghoffice')">GitHub Office Online</div>
 </nav>
@@ -1162,9 +1162,9 @@
             <th style="text-align:center;background:var(--header-bg);">
               <div style="display:flex;align-items:center;justify-content:center;gap:4px;">
                 <span class="drag-handle" style="visibility:hidden;pointer-events:none;"></span>
-                <input type="checkbox" id="chkAll" title="전체 선택/해제"
+                <input type="checkbox" id="chkAll" title="이 표 전체 선택/해제"
                   style="width:15px;height:15px;accent-color:var(--accent);cursor:pointer;margin:0;"
-                  onchange="toggleAllSelected(this.checked)" />
+                  onchange="toggleAllSelected(this.checked, this)" />
                 <span style="display:inline-block;width:24px;flex-shrink:0;visibility:hidden;"></span>
                 <span style="display:inline-block;width:26px;flex-shrink:0;visibility:hidden;"></span>
               </div>
@@ -1413,7 +1413,7 @@
 <!-- Completed Project List Page -->
 <div id="page-completed" style="display:none;" class="container">
   <div style="display:flex;align-items:center;gap:16px;margin:0 0 20px;position:relative;">
-    <h2 id="cpPageLabel" style="font-size:21px;font-weight:500;color:var(--text-primary);margin:0;letter-spacing:-0.3px;">연말 보고 대상</h2>
+    <h2 id="cpPageLabel" style="font-size:21px;font-weight:500;color:var(--text-primary);margin:0;letter-spacing:-0.3px;">보고 대상 전체</h2>
     <span id="completedYCount" style="font-size:14px;color:var(--text-muted);"></span>
     <div class="page-nav" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);">
       <button class="page-nav-arrow" onclick="gotoCpPage(currentCpPage - 1)" title="이전">&#8592;</button>
@@ -2094,6 +2094,7 @@ function listenFirebase() {
     ensureAllSelected();
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(projects)); } catch {}
     renderDashboard(); renderDeletedList(); renderBoardSections();
+    refreshActiveView(); // 현재 보고 있는 페이지(completed/focus/dashboard 등)도 최신 데이터로 갱신
     updateConnectionStatus('realtime');
   }, err => {
     console.warn('Firebase listener error:', err.code, err.message);
@@ -2124,6 +2125,7 @@ function switchToPolling() {
       if (d.projects.length === 0 && Array.isArray(projects) && projects.length > 0) return;
       projects = d.projects; deletedProjects = d.deletedProjects||[];
       renderDashboard(); renderDeletedList(); renderBoardSections();
+      refreshActiveView();
     }
   }, 30000);
 }
@@ -4581,24 +4583,47 @@ function applyAllFilters() {
 }
 
 /* ── PPT Row Selection ── */
+// 표의 헤더 체크박스를 그 표 행들의 선택 상태에 맞춤 (전체=checked, 일부=indeterminate, 없음=unchecked)
+function syncHeaderCheckbox(table) {
+  if (!table) return;
+  const head = table.querySelector('thead input[type="checkbox"]');
+  if (!head) return;
+  const chks = [...table.querySelectorAll('tbody tr[data-pid] input[type="checkbox"]')];
+  if (!chks.length) { head.checked = false; head.indeterminate = false; return; }
+  const allSel  = chks.every(cb => cb.checked);
+  const noneSel = chks.every(cb => !cb.checked);
+  head.checked = allSel;
+  head.indeterminate = !allSel && !noneSel;
+}
+
 function toggleSelected(id, val) {
   const p = projects.find(p => p.id === id);
   if (!p) return;
   p.selected = !!val;
   // 로컬에만 저장 (re-render 없음)
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(projects)); } catch {}
-  // chkAll 상태 업데이트
+  // 클릭한 행이 속한 표의 헤더 체크박스 상태 갱신
   try {
-    const chkAll = document.getElementById('chkAll');
-    if (!chkAll) return;
-    const mainProjects = projects.filter(q => !q.boardTypes || !q.boardTypes.length);
-    const allSel  = mainProjects.every(q => q.selected !== false);
-    const noneSel = mainProjects.every(q => q.selected === false);
-    chkAll.checked = allSel;
-    chkAll.indeterminate = !allSel && !noneSel;
+    const tr = document.querySelector(`tr[data-pid="${id}"]`);
+    const table = tr && tr.closest('table');
+    if (table) syncHeaderCheckbox(table);
   } catch(e) {}
 }
-function toggleAllSelected(val) {
+function toggleAllSelected(val, el) {
+  // el = 클릭한 헤더 체크박스. 해당 표(tbody)의 행만 선택/해제 (표 단위).
+  const table = el && el.closest && el.closest('table');
+  if (table) {
+    table.querySelectorAll('tbody tr[data-pid]').forEach(tr => {
+      const p = projects.find(q => q.id === tr.dataset.pid);
+      if (p) p.selected = !!val;
+      const cb = tr.querySelector('input[type="checkbox"]');
+      if (cb) cb.checked = !!val;
+    });
+    if (el) { el.checked = !!val; el.indeterminate = false; }
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(projects)); } catch {}
+    return;
+  }
+  // 폴백 (el 없을 때): 전체
   projects.forEach(p => p.selected = val);
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(projects)); } catch {}
   renderDashboard();
@@ -5672,6 +5697,7 @@ function renderBoardSection(type) {
       tbl.appendChild(tb);
       wrap.appendChild(tbl);
       container.appendChild(wrap);
+      syncHeaderCheckbox(tbl); // 헤더 체크박스를 이 표 행들의 선택 상태에 맞춤
       lastTb = tb;
     });
     initBoardRowDrag(type);
@@ -5684,6 +5710,7 @@ function renderBoardSection(type) {
   } else {
     tbody.innerHTML = list.map(makeBoardRowHTML).join('');
     initBoardRowDrag(type);
+    if (table) syncHeaderCheckbox(table);
   }
 
   if (!_boardOpen[type]) {
@@ -7230,6 +7257,17 @@ function navTo(page, pushHistory = true) {
   }
 }
 
+// 현재 보고 있는 페이지를 최신 projects 데이터로 다시 그림 (같은 데이터를 모든 화면에 반영)
+function refreshActiveView() {
+  const an = document.querySelector('.nav-item.active');
+  const page = (an?.id || 'nav-status').replace('nav-', '');
+  if (page === 'checklist')      showChecklistPage();
+  else if (page === 'dashboard') showDashboardPage();
+  else if (page === 'completed') showCompletedPage();
+  else if (page === 'focus')     showFocusPage();
+  // status는 renderDashboard로 이미 갱신됨. optask는 별도 데이터(opProjects).
+}
+
 /* ── Operational Task Page ── */
 function saveOpProjects(label, detail, id, snap) {
   localStorage.setItem(OP_PROJECTS_KEY, JSON.stringify(opProjects));
@@ -7717,7 +7755,7 @@ function showDashboardPage() {
 }
 
 let currentCpPage = 1;
-const CP_PAGE_LABELS = ['연말 보고 대상', '대시보드'];
+const CP_PAGE_LABELS = ['보고 대상 전체', '대시보드'];
 
 function gotoCpPage(n) {
   currentCpPage = ((n - 1 + 2) % 2) + 1;
@@ -7735,11 +7773,10 @@ function showCompletedPage() {
   document.getElementById('page-completed').style.display = '';
   _renderCpDots();
 
-  const tableOrder = ['M', 'Q', 'Y'];
+  // 홈 Completed의 월례회(M)/이사회(Q)/연말(Y) 보고 대상을 구분 없이 모두 포함
   const list = projects.filter(p => {
     const bt = p.boardTypes || [];
-    const topStage = tableOrder.slice().reverse().find(t => bt.includes(t));
-    return topStage === 'Y' && (p.pageId || 1) === currentStatusPage;
+    return (bt.includes('M') || bt.includes('Q') || bt.includes('Y')) && (p.pageId || 1) === currentStatusPage;
   });
 
   document.getElementById('completedYCount').textContent =
@@ -7761,66 +7798,43 @@ function showCompletedPage() {
   tablePane.innerHTML = '';
 
   if (!list.length) {
-    tablePane.innerHTML = '<p style="color:var(--text-muted);font-size:13px;padding:20px 0;">연말 보고 대상 항목이 없습니다.</p><button class="btn-add-row" onclick="addCpYInlineRow()" title="새 행 추가">＋</button>';
+    tablePane.innerHTML = '<p style="color:var(--text-muted);font-size:13px;padding:20px 0;">보고 대상 항목이 없습니다.</p><button class="btn-add-row" onclick="addCpYInlineRow()" title="새 행 추가">＋</button>';
     return;
   }
 
-  const groups = {};
-  list.forEach(p => {
-    const date = (p.boardDates || {}).Y || '';
-    if (!groups[date]) groups[date] = [];
-    groups[date].push(p);
-  });
-  const sortedDates = Object.keys(groups).sort((a, b) => {
-    if (!a) return 1; if (!b) return -1; return b.localeCompare(a);
-  });
+  // M/Q/Y 구분 없이 하나의 표에 모두 표시
   const mainTable = document.getElementById('mainTable');
-  let lastTb = null;
-  sortedDates.forEach((date, idx) => {
-    if (date) {
-      const titleEl = document.createElement('p');
-      titleEl.className = 'board-date-title';
-      titleEl.textContent = `Publications for the Annual Report on ${date}`;
-      tablePane.appendChild(titleEl);
-    }
-    const wrap = document.createElement('div');
-    wrap.className = 'table-wrap';
-    wrap.style.overflowX = 'auto';
-    const tbl = document.createElement('table');
-    tbl.className = 'project-table board-table-cpY';
-    if (mainTable) {
-      tbl.appendChild(mainTable.querySelector('colgroup').cloneNode(true));
-      tbl.appendChild(mainTable.querySelector('thead').cloneNode(true));
-    }
-    const tb = document.createElement('tbody');
-    tb.id = `cpYTbody_${idx}`;
-    tb.innerHTML = groups[date].map(makeBoardRowHTML).join('');
-    // In active 표와 동일하게 각 표 안 마지막 행에 + 버튼 추가
-    const addTr = document.createElement('tr');
-    addTr.className = 'add-row-tr';
-    addTr.innerHTML = `<td colspan="15"><button class="btn-add-row" onclick="addCpYInlineRow()" title="새 행 추가">＋</button></td>`;
-    tb.appendChild(addTr);
-    tbl.appendChild(tb);
-    wrap.appendChild(tbl);
-    tablePane.appendChild(wrap);
-    lastTb = tb;
-    initRowDrag(`cpYTbody_${idx}`, (srcId, tgtId) => {
-      const si = projects.findIndex(q => q.id === srcId);
-      const ti = projects.findIndex(q => q.id === tgtId);
-      if (si === -1 || ti === -1) return;
-      const snap = JSON.parse(JSON.stringify(projects[si]));
-      const [m] = projects.splice(si, 1);
-      projects.splice(ti, 0, m);
-      saveProjects('순서 변경', `[연말 보고 대상] ${projects[ti]?.name||''} 순서 변경`, srcId, snap);
-      showCompletedPage();
-    });
-  });
-  if (!lastTb) {
-    const cpAddWrap = document.createElement('div');
-    cpAddWrap.style.marginTop = '8px';
-    cpAddWrap.innerHTML = `<button class="btn-add-row" onclick="addCpYInlineRow()" title="새 행 추가">＋</button>`;
-    tablePane.appendChild(cpAddWrap);
+  const wrap = document.createElement('div');
+  wrap.className = 'table-wrap';
+  wrap.style.overflowX = 'auto';
+  const tbl = document.createElement('table');
+  tbl.className = 'project-table board-table-cpY';
+  if (mainTable) {
+    tbl.appendChild(mainTable.querySelector('colgroup').cloneNode(true));
+    tbl.appendChild(mainTable.querySelector('thead').cloneNode(true));
   }
+  const tb = document.createElement('tbody');
+  tb.id = 'cpYTbody_0';
+  tb.innerHTML = list.map(makeBoardRowHTML).join('');
+  // In active 표와 동일하게 표 안 마지막 행에 + 버튼 추가
+  const addTr = document.createElement('tr');
+  addTr.className = 'add-row-tr';
+  addTr.innerHTML = `<td colspan="15"><button class="btn-add-row" onclick="addCpYInlineRow()" title="새 행 추가">＋</button></td>`;
+  tb.appendChild(addTr);
+  tbl.appendChild(tb);
+  wrap.appendChild(tbl);
+  tablePane.appendChild(wrap);
+  syncHeaderCheckbox(tbl); // 헤더 체크박스를 이 표 행들의 선택 상태에 맞춤
+  initRowDrag('cpYTbody_0', (srcId, tgtId) => {
+    const si = projects.findIndex(q => q.id === srcId);
+    const ti = projects.findIndex(q => q.id === tgtId);
+    if (si === -1 || ti === -1) return;
+    const snap = JSON.parse(JSON.stringify(projects[si]));
+    const [m] = projects.splice(si, 1);
+    projects.splice(ti, 0, m);
+    saveProjects('순서 변경', `[보고 대상] ${projects[ti]?.name||''} 순서 변경`, srcId, snap);
+    showCompletedPage();
+  });
   if (window._syncDeletedCols) window._syncDeletedCols();
 }
 
