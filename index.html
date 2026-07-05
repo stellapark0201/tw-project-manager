@@ -1079,6 +1079,7 @@
     </div>
     <button class="btn-util btn-icon-only" onclick="firebasePull()" title="Firebase에서 불러오기 — 최신 저장 데이터로 덮어씀"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14.9A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M12 21v-9"/><path d="m8 16 4 5 4-5"/></svg></button>
     <button class="btn-util btn-icon-only" onclick="firebasePush()" title="Firebase로 업로드 — 현재 데이터를 Firebase에 저장"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14.9A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M12 12v9"/><path d="m16 17-4-5-4 5"/></svg></button>
+    <button class="btn-util btn-icon-only" onclick="chooseBackupFolder()" title="백업 폴더 지정/변경 — 업로드 시 이 폴더에 JSON 백업이 쌓임"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2z"/></svg></button>
     <button class="btn-util btn-icon-only" onclick="refreshCurrentPage()" title="현재 페이지 새로고침"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M8 16H3v5"/></svg></button>
     <button class="btn-ppt btn-icon-only" onclick="showPPTPreview()" title="PPT 미리보기 및 내보내기"><svg width="22" height="18" viewBox="0 0 32 26" fill="none"><path d="M2 2h19l7 5v17a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z" fill="rgba(255,255,255,0.2)" stroke="rgba(255,255,255,0.85)" stroke-width="1.5"/><path d="M21 2v5h7" stroke="rgba(255,255,255,0.85)" stroke-width="1.5" fill="rgba(255,255,255,0.2)"/><text x="2" y="21" font-size="17" font-weight="900" font-family="Arial" fill="white">P</text><text x="14" y="21" font-size="9" font-weight="600" font-family="Arial" fill="rgba(255,255,255,0.8)">pt</text></svg></button>
     <button class="btn-util btn-icon-only" id="spUploadBtn" onclick="uploadToSharePoint()" title="SharePoint: PPT + JSON을 SharePoint에 업로드"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg></button>
@@ -2317,10 +2318,12 @@ async function firebasePush() {
   const modeNote = adminMode ? '\n⚠️ 테스트 모드이지만 강제로 Firebase에 저장합니다.' : '';
   const confirmed = confirm('현재 데이터를 Firebase에 저장합니다. 기존 Firebase 데이터를 덮어씁니다. 계속할까요?' + modeNote);
   if (!confirmed) { showSyncStatus('취소됨', 'var(--text-muted)'); return; }
+  // 첫 실행 시 백업 폴더 선택창을 사용자 클릭 제스처 안에서 미리 띄움 (네트워크 await 전)
+  await getBackupDirHandle(true);
   showSyncStatus('Firebase로 저장 중...', 'var(--amber)');
   try {
     await fbDb.doc(FB_DATA_PATH).set({ projects, deletedProjects, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
-    const backupName = saveLocalBackup(); // 로컬에 JSON 백업 파일 자동 저장
+    const backupName = await saveLocalBackup(false); // 이미 확보한 폴더에 저장 (추가 프롬프트 없음)
     showSyncStatus(backupName ? `✓ Firebase 저장 + 로컬 백업(${backupName})` : '✓ Firebase에 저장됨', 'var(--green)');
     if (!adminMode) listenFirebase();
   } catch (e) {
@@ -5824,25 +5827,109 @@ function clearDeletedList(e) {
   renderDeletedList(); renderBoardSections();
 }
 
-/* ── 자동 로컬 백업 (Firebase 업로드/Ctrl+S 시 함께 실행) ── */
-function saveLocalBackup() {
+/* ── 자동 로컬 백업 (Firebase 업로드/Ctrl+S 시 함께 실행) ──
+   지정한 폴더("Upload to Firebase")에 쌓임. 폴더 핸들은 IndexedDB에 저장해 재사용.
+   File System Access API 미지원/거부 시 기존 다운로드(Downloads) 방식으로 대체. */
+const BACKUP_DIR_DB = 'tw_pm_backup_dir';
+const BACKUP_DIR_STORE = 'handles';
+const BACKUP_DIR_KEY = 'uploadToFirebaseDir';
+
+function _idbOpen() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(BACKUP_DIR_DB, 1);
+    req.onupgradeneeded = () => req.result.createObjectStore(BACKUP_DIR_STORE);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+async function _idbGet(key) {
+  const db = await _idbOpen();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(BACKUP_DIR_STORE, 'readonly').objectStore(BACKUP_DIR_STORE).get(key);
+    tx.onsuccess = () => resolve(tx.result);
+    tx.onerror = () => reject(tx.error);
+  });
+}
+async function _idbSet(key, val) {
+  const db = await _idbOpen();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(BACKUP_DIR_STORE, 'readwrite');
+    tx.objectStore(BACKUP_DIR_STORE).put(val, key);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+// 저장 폴더 핸들 확보 (없으면 사용자에게 폴더 선택 요청). allowPrompt=false면 조용히 있는 것만 사용.
+async function getBackupDirHandle(allowPrompt) {
   try {
-    const payload = {
-      version: 1,
-      exportedAt: new Date().toISOString(),
-      projects: projects,
-      deletedProjects: deletedProjects
-    };
-    const now = new Date();
-    const pad = n => String(n).padStart(2, '0');
-    const stamp = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
-    const fileName = `tw_pm_backup_${stamp}.json`;
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    let h = await _idbGet(BACKUP_DIR_KEY);
+    if (h) {
+      let perm = await h.queryPermission({ mode: 'readwrite' });
+      if (perm === 'granted') return h;
+      if (allowPrompt) {
+        perm = await h.requestPermission({ mode: 'readwrite' });
+        if (perm === 'granted') return h;
+      }
+      return null;
+    }
+    if (allowPrompt && window.showDirectoryPicker) {
+      h = await window.showDirectoryPicker({ id: 'twpmBackup', mode: 'readwrite' });
+      await _idbSet(BACKUP_DIR_KEY, h);
+      return h;
+    }
+  } catch (e) { console.warn('백업 폴더 핸들 확보 실패:', e); }
+  return null;
+}
+
+// 백업 폴더를 지금 지정/변경 (설정용, 사용자 제스처 필요)
+async function chooseBackupFolder() {
+  if (!window.showDirectoryPicker) {
+    alert('이 브라우저는 폴더 지정 저장을 지원하지 않습니다. (Chrome/Edge 권장)\n백업은 다운로드 폴더에 저장됩니다.');
+    return;
+  }
+  try {
+    const h = await window.showDirectoryPicker({ id: 'twpmBackup', mode: 'readwrite' });
+    await _idbSet(BACKUP_DIR_KEY, h);
+    showSyncStatus(`✓ 백업 폴더 지정됨: ${h.name}`, 'var(--green)');
+  } catch (e) {
+    if (e.name !== 'AbortError') alert('폴더 지정 실패: ' + e.message);
+  }
+}
+
+async function saveLocalBackup(allowPrompt) {
+  const payload = {
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    projects: projects,
+    deletedProjects: deletedProjects
+  };
+  const now = new Date();
+  const pad = n => String(n).padStart(2, '0');
+  const stamp = `${now.getFullYear()}-${pad(now.getMonth()+1)}-${pad(now.getDate())}_${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
+  const fileName = `tw_pm_backup_${stamp}.json`;
+  const content = JSON.stringify(payload, null, 2);
+
+  // 1) 지정 폴더에 저장 시도
+  try {
+    const dir = await getBackupDirHandle(allowPrompt !== false);
+    if (dir) {
+      const fh = await dir.getFileHandle(fileName, { create: true });
+      const w = await fh.createWritable();
+      await w.write(content);
+      await w.close();
+      return fileName + ` → ${dir.name}`;
+    }
+  } catch (e) { console.warn('지정 폴더 저장 실패, 다운로드로 대체:', e); }
+
+  // 2) 폴백: 다운로드 폴더로 저장
+  try {
+    const blob = new Blob([content], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url; a.download = fileName; a.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
-    return fileName;
+    return fileName + ' (Downloads)';
   } catch (e) {
     console.warn('로컬 백업 저장 실패:', e);
     return null;
