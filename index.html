@@ -156,7 +156,7 @@
   .ppt-tbl td.tc   { text-align:center; }
   .ppt-tbl td.tpd  { background:#F2F2F2; }
   .ppt-tbl td.tdone{ background:#1F3864; color:#fff; text-align:center; font-weight:700; position:relative; }
-  .ppt-tbl td.twip { background:#BDD7EE; color:#1F3864; text-align:center; font-weight:700; position:relative; }
+  .ppt-tbl td.twip { background:#B0BEC5; color:#1F3864; text-align:center; font-weight:700; position:relative; }
   .ppt-tbl td.tnone{ background:#fff; color:#BCBCBC; text-align:center; position:relative; }
   .ppt-core-mark { position:absolute; top:0; right:2px; font-size:5px; }
 
@@ -672,21 +672,6 @@
   .history-item-link { cursor:pointer; transition:border-color 0.13s, background 0.13s; }
   .history-item-link:hover { background:var(--accent-light); border-color:var(--accent); }
 
-  /* ── Stage Context Menu ── */
-  .stage-ctx-menu {
-    position:fixed; z-index:9999; display:none;
-    background:var(--surface); border:1px solid var(--border);
-    border-radius:0; box-shadow:var(--shadow-lg);
-    padding:2px 0; min-width:150px; font-size:13px;
-  }
-  .stage-ctx-menu.show { display:block; }
-  .stage-ctx-item {
-    padding:7px 16px; cursor:pointer; color:var(--text-primary);
-    display:flex; align-items:center; gap:8px;
-    transition:background 0.1s;
-  }
-  .stage-ctx-item:hover { background:var(--surface-2); }
-  .stage-ctx-item.remove { color:var(--red); }
 
   /* ── Drag & Drop ── */
   .drag-handle {
@@ -736,15 +721,10 @@
   }
   .progress-segment:hover { filter:brightness(0.93); }
   .progress-segment:last-child { border-right:none; }
-  .progress-segment.ps-wip  { background:#BDD7EE; color:#1F3864; }
-  .progress-segment.ps-done { background:#1F3864; color:#ffffff; }
-  .progress-segment.ps-core { position:relative; }
-  .progress-segment.ps-core::before {
-    content:'*'; position:absolute;
-    top:1px; left:65%;
-    font-size:13px; font-weight:100; line-height:1;
-    pointer-events:none;
-  }
+  .progress-segment.ps-wip  { background:linear-gradient(135deg, #B0BEC5 50%, #f4f4f4 50%); color:#1F3864; }
+  .progress-segment.ps-done { background:#B0BEC5; color:#1F3864; }
+  .progress-segment.ps-core-tri  { background:linear-gradient(135deg, #00aee6 50%, #f4f4f4 50%); color:#1F3864; }
+  .progress-segment.ps-core-full { background:#00aee6; color:#1F3864; }
   /* ? indicator (progress-bar 설정 항목) */
   /* 3-state 커스텀 체크박스 */
   .check-cycle {
@@ -829,8 +809,8 @@
   .kanban-col-header { border-radius:0; }
   .kanban-col-header { border-radius:7px 7px 0 0; }
   .kanban-board > .kanban-col { flex:1 1 0; min-width:0; }
-  .kanban-col.done-col { background:#e8edf5; border-color:#9DBAD2; }
-  .kanban-col.wip-col  { background:#f0f6fb; border-color:#BDD7EE; }
+  .kanban-col.done-col { background:#F1F5F9; border-color:#B0BEC5; }
+  .kanban-col.wip-col  { background:#F1F5F9; border-color:#B0BEC5; }
   .kanban-col-header {
     background: #ffffff; color: #94a3b8; padding:6px 9px;
     display:flex; flex-direction:column; gap:3px; flex-shrink:0;
@@ -839,11 +819,11 @@
   .kanban-col-header-meta {
     display:flex; flex-wrap:wrap; align-items:center; gap:4px;
   }
-  .done-col .kanban-col-header { background: #1F3864; color:rgba(255,255,255,0.9); }
-  .wip-col  .kanban-col-header { background: #BDD7EE; color: #1F3864; }
-  .done-col .kanban-stage-count { background:rgba(255,255,255,0.2); }
+  .done-col .kanban-col-header { background: #B0BEC5; color: #1F3864; }
+  .wip-col  .kanban-col-header { background: #B0BEC5; color: #1F3864; }
+  .done-col .kanban-stage-count { background:rgba(31,56,100,0.15); }
   .wip-col  .kanban-stage-count { background:rgba(31,56,100,0.15); }
-  .done-col .kanban-stage-num   { background:rgba(255,255,255,0.2); }
+  .done-col .kanban-stage-num   { background:rgba(31,56,100,0.15); }
   .wip-col  .kanban-stage-num   { background:rgba(31,56,100,0.15); }
   .kanban-stage-num {
     width:17px; height:17px; background:rgba(255,255,255,0.15); border-radius:0;
@@ -1320,15 +1300,14 @@
     <div class="checklist-header">
       <button class="btn-back-dashboard" onclick="history.back()" title="이전 화면으로">
         <svg width="144" height="48" viewBox="0 0 144 48" xmlns="http://www.w3.org/2000/svg" font-family="Arial" font-size="19" text-anchor="middle">
-          <rect x="0"    y="0" width="24" height="24" rx="3" fill="#1F3864"/>
-          <text x="12"   y="18" fill="#fff">1</text>
-          <rect x="30"   y="0" width="24" height="24" rx="3" fill="#1F3864"/>
-          <text x="42"   y="18" fill="#fff">2</text>
-          <rect x="60"   y="0" width="24" height="24" rx="3" fill="#1F3864"/>
-          <text x="72"   y="18" fill="#fff">3</text>
-          <rect x="90"   y="0" width="24" height="24" rx="3" fill="#BDD7EE"/>
+          <rect x="0"    y="0" width="24" height="24" rx="3" fill="#B0BEC5"/>
+          <text x="12"   y="18" fill="#1F3864">1</text>
+          <rect x="30"   y="0" width="24" height="24" rx="3" fill="#B0BEC5"/>
+          <text x="42"   y="18" fill="#1F3864">2</text>
+          <rect x="60"   y="0" width="24" height="24" rx="3" fill="#B0BEC5"/>
+          <text x="72"   y="18" fill="#1F3864">3</text>
+          <rect x="90"   y="0" width="24" height="24" rx="3" fill="#00aee6"/>
           <text x="102"  y="18" fill="#1F3864">4</text>
-          <text x="111"  y="5"  font-size="11" fill="#1F3864">*</text>
           <rect x="120"  y="0" width="24" height="24" rx="3" fill="#e2e8f0"/>
           <text x="132"  y="18" fill="#94a3b8">5</text>
         </svg>
@@ -1360,6 +1339,9 @@
   <div style="display:flex;align-items:center;gap:16px;margin:0 0 20px;position:relative;">
     <h2 id="clPageLabel" style="font-size:23px;font-weight:500;color:var(--text-primary);margin:0;letter-spacing:-0.3px;flex:1;min-width:0;"></h2>
     <div class="page-nav" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);">
+      <button onclick="goHome()" title="홈 — Status 페이지" style="background:none;border:none;cursor:pointer;padding:2px 4px;display:inline-flex;align-items:center;color:rgba(255,255,255,0.75);margin-right:4px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      </button>
       <button class="page-nav-arrow" onclick="gotoClPage(currentClPage - 1)" title="이전">&#8592;</button>
       <div class="page-nav-dots" id="clNavDots"></div>
       <button class="page-nav-arrow" onclick="gotoClPage(currentClPage + 1)" title="다음">&#8594;</button>
@@ -1416,6 +1398,9 @@
     <h2 id="cpPageLabel" style="font-size:21px;font-weight:500;color:var(--text-primary);margin:0;letter-spacing:-0.3px;">보고 대상 전체</h2>
     <span id="completedYCount" style="font-size:14px;color:var(--text-muted);"></span>
     <div class="page-nav" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);">
+      <button onclick="goHome()" title="홈 — Status 페이지" style="background:none;border:none;cursor:pointer;padding:2px 4px;display:inline-flex;align-items:center;color:rgba(255,255,255,0.75);margin-right:4px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      </button>
       <button class="page-nav-arrow" onclick="gotoCpPage(currentCpPage - 1)" title="이전">&#8592;</button>
       <div class="page-nav-dots" id="cpNavDots"></div>
       <button class="page-nav-arrow" onclick="gotoCpPage(currentCpPage + 1)" title="다음">&#8594;</button>
@@ -1456,9 +1441,17 @@
 
 <!-- Focus Projects Page -->
 <div id="page-focus" style="display:none;" class="container">
-  <div style="display:flex;align-items:baseline;gap:16px;margin:0 0 14px;">
+  <div style="display:flex;align-items:center;gap:16px;margin:0 0 14px;position:relative;">
     <h2 style="font-size:21px;font-weight:500;color:var(--text-primary);margin:0;letter-spacing:-0.3px;">Focus Projects</h2>
     <span id="focusCount" style="font-size:14px;color:var(--text-muted);"></span>
+    <div class="page-nav" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);">
+      <button onclick="goHome()" title="홈 — Status 페이지" style="background:none;border:none;cursor:pointer;padding:2px 4px;display:inline-flex;align-items:center;color:rgba(255,255,255,0.75);margin-right:4px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      </button>
+      <button class="page-nav-arrow" onclick="gotoFocusPage(currentFocusPage - 1)" title="이전">&#8592;</button>
+      <div class="page-nav-dots" id="focusNavDots"></div>
+      <button class="page-nav-arrow" onclick="gotoFocusPage(currentFocusPage + 1)" title="다음">&#8594;</button>
+    </div>
   </div>
   <div id="focusResourceFilter" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;"></div>
   <div class="table-wrap" style="overflow-x:auto;">
@@ -1537,11 +1530,6 @@
     </div>
     <button class="initials-submit" onclick="saveInitials()">저장</button>
   </div>
-</div>
-
-<!-- Stage Context Menu -->
-<div id="stageCtxMenu" class="stage-ctx-menu">
-  <div id="stageCtxToggle" class="stage-ctx-item" onclick="toggleCoreStageFromMenu()"></div>
 </div>
 
 <!-- Side Panel Overlay -->
@@ -1857,8 +1845,8 @@ async function generatePPTBlob() {
   const BDR_W={type:'solid',pt:0.5,color:'FFFFFF'}, BDR_G={type:'solid',pt:0.5,color:'CBD5E1'};
   const HDR={fill:{color:'1F3864'},color:'FFFFFF',bold:true,align:'center',valign:'middle',fontSize:14,fontFace:'Arial',border:BDR_W};
   const CELL={fill:{color:'FFFFFF'},color:'1F2937',align:'left',valign:'middle',fontSize:14,fontFace:'Arial',border:BDR_G};
-  const DONE={fill:{color:'1F3864'},color:'FFFFFF',bold:true,align:'center',valign:'middle',fontSize:14,fontFace:'Arial',border:BDR_W};
-  const WIP={fill:{color:'BDD7EE'},color:'1F3864',bold:true,align:'center',valign:'middle',fontSize:14,fontFace:'Arial',border:BDR_G};
+  const DONE={fill:{color:'B0BEC5'},color:'1F3864',bold:true,align:'center',valign:'middle',fontSize:14,fontFace:'Arial',border:BDR_G};
+  const WIP={fill:{color:'B0BEC5'},color:'1F3864',bold:true,align:'center',valign:'middle',fontSize:14,fontFace:'Arial',border:BDR_G};
   const NONE={fill:{color:'FFFFFF'},color:'BCBCBC',bold:false,align:'center',valign:'middle',fontSize:14,fontFace:'Arial',border:BDR_G};
   function stageCell(p,si){const{done,total}=stageProgress(p,getActiveStages()[si]);if(done===total)return{text:String(si+1),options:DONE};if(done>0)return{text:String(si+1),options:WIP};return{text:String(si+1),options:NONE};}
   const hRow1=[{text:'Product',options:HDR},{text:'Publication',options:HDR},{text:'Purpose',options:HDR},{text:'Progress',options:{...HDR,colspan:5}},{text:'Target Date',options:HDR}];
@@ -2500,6 +2488,7 @@ let _opResourceFilter = new Set();
 const STATUS_PAGE_COUNT = 3;
 let currentStatusPage = 1;
 let currentClPage = 0; // 0=Total, 1=IBU, 2=RBU, 3=OBU
+let currentFocusPage = 3; // 0=IBU, 1=RBU, 2=OBU, 3=Total
 
 let currentProjectId = null;
 let sidePanelProjectId = null;
@@ -2657,6 +2646,12 @@ function overallPercent(project) {
 function getPbState(project, stageNum) {
   return (project.pbStates && project.pbStates[stageNum]) || 0;
 }
+// Focus Projects 판정: Progress Bar에서 실제 하늘색(#00aee6, pbCore 삼각형/전체)으로 표시되는 프로젝트
+// (ps-wip/ps-done은 회색으로 변경되어 더 이상 "하늘색"이 아님 — renderProgressBar의 cls 분기 참고)
+function isFocusProject(p) {
+  const pbCore = p.pbCore || {};
+  return Object.keys(pbCore).some(k => pbCore[k] === 1 || pbCore[k] === 2);
+}
 // pbState(0~3) 색상 상태 매핑. 0 흰색 / 1,3 하늘색 / 2 네이비
 // [주의] Progress Bar(psClassFromState)와 Project Checklist 칸반 헤더(pbStateToColClass)는 항상 동일한 상태(p.pbStates)와 같은 규칙으로 매핑돼야 한다.
 // 색상 순환/별표 로직·설정 변경 시 clickProgressBar와 함께 일관되게 수정해야 함
@@ -2668,27 +2663,27 @@ function psClassFromState(state) {
 function renderProgressBar(project) {
   const stages = getActiveStages();
   const displayStates = getDisplayStates(project, stages);
-  const cs = project.coreStages || [];
+  const pbCore = project.pbCore || {};
   return stages.map((stage, i) => {
-    const cls = psClassFromState(displayStates[i]);
+    const core = pbCore[stage.num] || 0;
+    const cls = core === 1 ? 'ps-core-tri' : core === 2 ? 'ps-core-full' : psClassFromState(displayStates[i]);
     const { done, total } = stageProgress(project, stage);
-    const coreCls = cs.includes(stage.num) ? ' ps-core' : '';
-    return `<div class="progress-segment ${cls}${coreCls}"
-      title="${stage.label}: ${done}/${total} — 클릭으로 전환 / 우클릭 * 설정"
+    return `<div class="progress-segment ${cls}"
+      title="${stage.label}: ${done}/${total} — 클릭으로 전환(전체→삼각형→원래대로) / 우클릭으로 파란색 순환(전체→삼각형→원래대로)"
       onclick="clickProgressBar('${project.id}',${stage.num})"
-      oncontextmenu="showStageCtxMenu(event,'${project.id}',${stage.num})">${stage.num}</div>`;
+      oncontextmenu="toggleProgressBarCore(event,'${project.id}',${stage.num})">${stage.num}</div>`;
   }).join('');
 }
 
 /* ── Read-only progress bar (deleted rows) ── */
 function renderProgressBarStatic(project) {
-  const cs = project.coreStages || [];
+  const pbCore = project.pbCore || {};
   return getActiveStages().map(stage => {
+    const core = pbCore[stage.num] || 0;
     const state = getPbState(project, stage.num);
     const { done, total } = stageProgress(project, stage);
-    const cls = psClassFromState(state);
-    const coreCls = cs.includes(stage.num) ? ' ps-core' : '';
-    return `<div class="progress-segment ${cls}${coreCls}" style="cursor:default;"
+    const cls = core === 1 ? 'ps-core-tri' : core === 2 ? 'ps-core-full' : psClassFromState(state);
+    return `<div class="progress-segment ${cls}" style="cursor:default;"
       title="${stage.label}: ${done}/${total}">${stage.num}</div>`;
   }).join('');
 }
@@ -2786,27 +2781,27 @@ function clickProgressBar(id, stageNum, fromHeader = false) {
 
   if (!p.pbStates) p.pbStates = {};
 
-  // Stage 1이 네이비(2)일 때 클릭 → 전체 초기화
-  if (stageNum === 1 && (p.pbStates[1] || 0) === 2) {
+  // Stage 1이 삼각형(1, 순환의 마지막 단계)일 때 클릭 → 전체 초기화
+  if (stageNum === 1 && (p.pbStates[1] || 0) === 1) {
     resetAllStages(p);
   } else {
-    // 4단계 색상 순환: 0 흰색 →1 하늘색→2 네이비→3 하늘색→0 흰색
+    // 3단계 순환: 0 없음 → 2 전체 색상 → 1 삼각형(절반) → 0 없음
     const cur = p.pbStates[stageNum] || 0;
-    const next = (cur + 1) % 4;
+    const next = cur === 0 ? 2 : (cur === 2 ? 1 : 0);
     p.pbStates[stageNum] = next;
 
     if (next === 0) {
-      // 흰색으로 복귀: pb 마크 제거 (true로 직접 체크한 항목은 유지)
+      // 없음으로 복귀: pb 마크 제거 (true로 직접 체크한 항목은 유지)
       stage.items.forEach(k => { if (p.checks[k] === 'pb') p.checks[k] = false; });
     } else if (next === 2) {
-      // 네이비: 모든 항목 pb로 채우기
+      // 전체 색상: 모든 항목 pb로 채우기
       stage.items.forEach(k => { p.checks[k] = 'pb'; });
-    } else if (next === 1 || next === 3) {
-      // 캐스케이드: 하위 스테이지도 네이비 + 전부 pb
+    } else if (next === 1) {
+      // 삼각형(절반): 첫 항목만 pb
       stage.items.forEach((k, i) => { p.checks[k] = i === 0 ? 'pb' : false; });
     }
 
-    // 작은 단계에 색상이 들어가면, 그보다 큰 단계는 무조건 네이비로 채워짐
+    // 작은 단계에 색상이 들어가면, 그보다 큰 단계는 무조건 전체 색상으로 채워짐
     if (next > 0) {
       allProjectStages.forEach(s => {
         if (s.num < stageNum) {
@@ -4076,88 +4071,27 @@ function toggleKanbanCoreStar(pid, stageNum) {
     document.getElementById('sidePanelChecklist').innerHTML = buildKanban(p, 'toggleSideCheck');
 }
 
-/* ── Stage Context Menu (우클릭 * 토글) ── */
-let _ctxPid = null, _ctxStage = null;
-
-function showStageCtxMenu(e, pid, stageNum) {
+/* ── Progress Bar 우클릭 → 파란색 순환 (전체 → 삼각형 → 원래대로) ──
+   pbState(회색 삼각형/전체)와는 독립된 오버레이. 켜져 있는 동안은 그 모양대로 파란색으로 보이고,
+   원래대로(0)가 되면 원래 pbState 기반 회색 표시로 복귀한다. */
+function toggleProgressBarCore(e, pid, stageNum) {
   e.preventDefault();
   e.stopPropagation();
-  _ctxPid   = pid;
-  _ctxStage = stageNum;
 
   const p = projects.find(p => p.id === pid);
   if (!p) return;
+  if (!p.pbCore) p.pbCore = {};
 
-  const isCore = (p.coreStages||[]).includes(stageNum);
-  const item   = document.getElementById('stageCtxToggle');
-  if (isCore) {
-    item.innerHTML = `<span style="color:var(--red);">✕</span> ${stageNum}단계 * 제거`;
-    item.className = 'stage-ctx-item remove';
-  } else {
-    item.innerHTML = `<span>*</span> ${stageNum}단계 * 추가`;
-    item.className = 'stage-ctx-item';
-  }
-
-  const menu = document.getElementById('stageCtxMenu');
-  menu.style.left = e.clientX + 'px';
-  menu.style.top  = e.clientY + 'px';
-  menu.classList.add('show');
-}
-
-function toggleCoreStageFromMenu() {
-  const p = projects.find(p => p.id === _ctxPid);
-  if (!p || _ctxStage == null) return;
-  if (!p.coreStages) p.coreStages = [];
-
-  const idx = p.coreStages.indexOf(_ctxStage);
-  if (idx >= 0) {
-    p.coreStages.splice(idx, 1);       // 이미 있으면 제거
-  } else {
-    p.coreStages = [_ctxStage];        // 기존 * 모두 제거 후 이것만 추가
-    if (!p.pbStates) p.pbStates = {};
-    // 흰색(0) 단계에 * 추가 시 자동으로 하늘색(1)으로 변경
-    if ((p.pbStates[_ctxStage] || 0) === 0) {
-      p.pbStates[_ctxStage] = 1;
-    }
-    const stages = getProjectStages(p);
-    // 작은 숫자 스탭 모두 채워지게 (네이비)
-    for (let n = 1; n < _ctxStage; n++) {
-      p.pbStates[n] = 2;
-      const s = stages.find(st => st.num === n);
-      if (s) s.items.forEach(k => { p.checks[k] = 'pb'; });
-    }
-    // 더 높은 스탭 모두 흰색으로 강제 변경
-    for (let n = _ctxStage + 1; n <= 5; n++) {
-      p.pbStates[n] = 0;
-      const s = stages.find(st => st.num === n);
-      if (s) s.items.forEach(k => { if (p.checks[k] === 'pb') p.checks[k] = false; });
-    }
-  }
+  const cur = p.pbCore[stageNum] || 0;
+  const next = cur === 0 ? 2 : (cur === 2 ? 1 : 0);
+  if (next > 0) p.pbCore = {};   // 프로젝트당 한 번에 하나의 스테이지만 파란색 표시
+  p.pbCore[stageNum] = next;
+  p.coreStages = next > 0 ? [stageNum] : [];   // 칸반 헤더 별표 아이콘과 동기화
 
   saveProjects();
   renderDashboard();
   renderBoardSections();
-  // 칸반??갱신
-  if (currentProjectId === _ctxPid) {
-    const p2 = projects.find(x => x.id === _ctxPid);
-    if (p2) document.getElementById('checklist').innerHTML = buildKanban(p2, 'toggleCheck');
-  }
-  if (sidePanelProjectId === _ctxPid) {
-    const p2 = projects.find(x => x.id === _ctxPid);
-    if (p2) document.getElementById('sidePanelChecklist').innerHTML = buildKanban(p2, 'toggleSideCheck');
-  }
-  closeStageCtxMenu();
 }
-
-function closeStageCtxMenu() {
-  document.getElementById('stageCtxMenu').classList.remove('show');
-  _ctxPid = _ctxStage = null;
-}
-
-document.addEventListener('click',       closeStageCtxMenu);
-document.addEventListener('contextmenu', e => {
-  if (!e.target.closest('.progress-segment')) closeStageCtxMenu();
-});
 
 /* ── Drag-to-Check (체크박스 드래그 다중 선택) ── */
 (function() {
@@ -4971,13 +4905,14 @@ function buildPptSlideOnPres(pres, exportList, slideTitle, slideNum) {
     fontSize:32, bold:true, color:'1F2937', fontFace:'Arial', valign:'bottom'
   });
 
-  /* ── 범례 (WIP / Completed / * Core Task) ── */
+  /* ── 범례 (WIP / Completed / Core Task) ── */
   const LY = 1.06;
-  slide.addShape(pres.ShapeType.rect, { x:9.3,  y:LY, w:0.2, h:0.2, fill:{color:'BDD7EE'}, line:{color:'9DBAD2', pt:1} });
+  slide.addShape(pres.ShapeType.rect, { x:9.3,  y:LY, w:0.2, h:0.2, fill:{color:'B0BEC5'}, line:{color:'94A3B8', pt:1} });
   slide.addText('WIP',        { x:9.55, y:LY-0.01, w:0.55, h:0.22, fontSize:9.5, color:'374151', fontFace:'Arial' });
-  slide.addShape(pres.ShapeType.rect, { x:10.15, y:LY, w:0.2, h:0.2, fill:{color:'1F3864'}, line:{color:'1F3864', pt:1} });
+  slide.addShape(pres.ShapeType.rect, { x:10.15, y:LY, w:0.2, h:0.2, fill:{color:'B0BEC5'}, line:{color:'94A3B8', pt:1} });
   slide.addText('Completed',  { x:10.4, y:LY-0.01, w:1.0,  h:0.22, fontSize:9.5, color:'374151', fontFace:'Arial' });
-  slide.addText('* Core Task',{ x:11.45, y:LY-0.01, w:1.4,  h:0.22, fontSize:9.5, color:'374151', fontFace:'Arial' });
+  slide.addShape(pres.ShapeType.rect, { x:11.45, y:LY, w:0.2, h:0.2, fill:{color:'00aee6'}, line:{color:'1F3864', pt:1} });
+  slide.addText('Core Task',{ x:11.7, y:LY-0.01, w:1.4,  h:0.22, fontSize:9.5, color:'374151', fontFace:'Arial' });
 
   /* ── 셀 스타일 상수 ── */
   const BDR_W  = { type:'solid', pt:0.5, color:'FFFFFF' };
@@ -4995,28 +4930,50 @@ function buildPptSlideOnPres(pres, exportList, slideTitle, slideNum) {
                  align:'left',   valign:'middle', fontSize:14, fontFace:'Arial', border:BDR_G };
   // Product 컬럼용 (원본 PPTX 스타일 — 연한 파랑 배경)
   const CELL_PROD = { ...CELL, fill:{color:'F2F2F2'} };
-  const DONE = { fill:{color:'1F3864'}, color:'FFFFFF', bold:true,
-                 align:'center', valign:'middle', fontSize:10, fontFace:'Arial', border:BDR_W };
-  const WIP  = { fill:{color:'BDD7EE'}, color:'1F3864', bold:true,
+  const DONE = { fill:{color:'B0BEC5'}, color:'1F3864', bold:true,
+                 align:'center', valign:'middle', fontSize:10, fontFace:'Arial', border:BDR_G };
+  // WIP(삼각형)은 표 셀 자체를 투명하게 두고, 뒤에 삼각형 도형을 겹쳐서 표현 (아래 STAGE_COL_X 등 참고)
+  const WIP  = { fill:{type:'none'}, color:'1F3864', bold:true,
                  align:'center', valign:'middle', fontSize:10, fontFace:'Arial', border:BDR_G };
   const NONE = { fill:{color:'FFFFFF'}, color:'BCBCBC', bold:false,
                  align:'center', valign:'middle', fontSize:10, fontFace:'Arial', border:BDR_G };
+  const CORE = { fill:{color:'00aee6'}, color:'1F3864', bold:true,
+                 align:'center', valign:'middle', fontSize:10, fontFace:'Arial', border:BDR_G };
 
-  // stage 셀 — 숫자만 셀에, * 는 별도 텍스트박스 오버레이로 처리
+  // stage 셀 — 전체 색상만 셀 배경에 직접 채움. 삼각형은 투명 셀 + 별도 도형으로 아래에서 그림
+  // pbCore(우클릭, 0/1/2)가 켜져 있으면 그 모양(삼각형/전체)대로 파란색, 아니면 pbState 기반 회색 표시
   function stageCell(p, si) {
     const stageNum = si + 1;
-    const state    = getPbState(p, stageNum);
-    const baseOpt  = state===2 ? DONE : state===1 ? WIP : NONE;
+    const core  = (p.pbCore||{})[stageNum] || 0;
+    const state = getPbState(p, stageNum);
+    const baseOpt = core === 2 ? CORE
+      : (core === 1 || (core === 0 && state === 1)) ? WIP
+      : (core === 0 && state === 2) ? DONE
+      : NONE;
     return { text: String(stageNum), options:{...baseOpt, fontSize:11} };
   }
 
-  // * 오버레이 상수 (table 배치 후 사용)
+  // 삼각형 셀 위치 계산용 상수 — addTable의 x/colW/rowH와 반드시 일치해야 함
   const STAGE_COL_X  = 0.365 + 4.1 + 3.1 + 1.5; // Progress 컬럼 시작 X
   const STAGE_COL_W  = 0.30;
-  const HDR_ROWS     = 1;
-  const ROW_H_VAL    = 0.35;
-  const HDR_H_VAL    = 0.32;
-  const DATA_START_Y = 1.42 + HDR_H_VAL;
+  const ROW_H        = 0.32;
+  const DATA_START_Y = 1.42 + ROW_H; // 헤더 행 높이만큼 아래
+
+  // 표보다 먼저 그려서, 표의 투명한 삼각형 셀 뒤로 도형이 비치도록 함
+  exportList.forEach((p, rowIdx) => {
+    const rowY = DATA_START_Y + rowIdx * ROW_H;
+    for (let n = 1; n <= 5; n++) {
+      const core = (p.pbCore||{})[n] || 0;
+      const isTriangle = core === 1 || (core === 0 && getPbState(p, n) === 1);
+      if (!isTriangle) continue;
+      slide.addShape(pres.ShapeType.rtTriangle, {
+        x: STAGE_COL_X + (n - 1) * STAGE_COL_W, y: rowY,
+        w: STAGE_COL_W, h: ROW_H,
+        fill: { color: core === 1 ? '00aee6' : 'B0BEC5' },
+        line: { type:'none' },
+      });
+    }
+  });
 
   /* ── 헤더 2행: 1행=컬럼명, 2행=stage 번호 ── */
   // colW: [4.4, 3.1, 1.5, 0.26×5=1.3, 2.3] = 12.6"
@@ -5049,24 +5006,6 @@ function buildPptSlideOnPres(pres, exportList, slideTitle, slideNum) {
     border:{ type:'solid', pt:0.5, color:'CBD5E1' },
   });
 
-  /* ── Core stage * 오버레이 (숫자 오른쪽 상단) ── */
-  exportList.forEach((p, rowIdx) => {
-    const rowY = DATA_START_Y + rowIdx * ROW_H_VAL;
-    (p.coreStages||[]).forEach(stageNum => {
-      const si    = stageNum - 1;
-      const state = getPbState(p, stageNum);
-      const tc    = state===2 ? 'FFFFFF' : state===1 ? '1F3864' : 'BCBCBC';
-      const cellX = STAGE_COL_X + si * STAGE_COL_W;
-      slide.addText('*', {
-        x: cellX + 0.17,
-        y: rowY + 0.01,
-        w: 0.11, h: 0.11,
-        fontSize:7, bold:false, color:tc,
-        align:'left', valign:'top', fontFace:'Arial',
-      });
-    });
-  });
-
   /* ── 푸터 ── */
   slide.addShape(pres.ShapeType.rect, {
     x:0.4, y:7.08, w:0.05, h:0.32,
@@ -5085,12 +5024,14 @@ function buildPptPreviewSlideHTML(exportList, slideTitle, slideNum) {
   const stageNames = ['Preparations','1st Draft','Feedback/Rev.','Final Review','Closing'];
   const rows = exportList.map(p => {
     const stages = [1,2,3,4,5].map(n => {
+      const core = (p.pbCore||{})[n] || 0;
       const state = getPbState(p, n);
-      const isCore = (p.coreStages||[]).includes(n);
-      const bg = state===2 ? '#1F3864' : state===1 ? '#BDD7EE' : '#fff';
-      const color = state===2 ? '#fff' : state===1 ? '#1F3864' : '#bbb';
-      const star = isCore ? `<sup style="font-size:7px;color:${color};line-height:0;">*</sup>` : '';
-      return `<td style="width:5%;text-align:center;background:${bg};color:${color};font-weight:700;font-size:11px;padding:3px 0;">${n}${star}</td>`;
+      const isFull = core === 2 || (core === 0 && state === 2);
+      const isTri  = core === 1 || (core === 0 && state === 1);
+      const solid = core > 0 ? '#00aee6' : '#B0BEC5';
+      const bg = isFull ? solid : isTri ? `linear-gradient(135deg, ${solid} 50%, #fff 50%)` : '#fff';
+      const color = (isFull||isTri) ? '#1F3864' : '#bbb';
+      return `<td style="width:5%;text-align:center;background:${bg};color:${color};font-weight:700;font-size:11px;padding:3px 0;">${n}</td>`;
     }).join('');
     return `<tr>
       <td style="background:#F9FAFB;padding:4px 8px;font-size:12px;color:#1F2937;border-right:1px solid #e2e8f0;">${(() => { const name=(p.name||'').trim(), cust=(p.customer||'').trim(), base=cust?`${name} (${cust})`:name; return p.isNew ? `${base}<span style="color:#EF4444;font-size:7px;margin-left:3px;">NEW</span>` : base; })()}</td>
@@ -5107,9 +5048,9 @@ function buildPptPreviewSlideHTML(exportList, slideTitle, slideNum) {
       <div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:8px;">
         <div style="font-size:20px;font-weight:700;color:#1F2937;">${slideTitle}</div>
         <div style="display:flex;gap:14px;align-items:center;font-size:9px;color:#374151;padding-bottom:2px;">
-          <span><span style="display:inline-block;width:10px;height:10px;background:#BDD7EE;border:1px solid #9DBAD2;vertical-align:middle;margin-right:3px;"></span>WIP</span>
-          <span><span style="display:inline-block;width:10px;height:10px;background:#1F3864;vertical-align:middle;margin-right:3px;"></span>Completed</span>
-          <span style="color:#6B7280;">* Core Task</span>
+          <span><span style="display:inline-block;width:10px;height:10px;background:#B0BEC5;border:1px solid #94A3B8;vertical-align:middle;margin-right:3px;"></span>WIP</span>
+          <span><span style="display:inline-block;width:10px;height:10px;background:#B0BEC5;border:1px solid #94A3B8;vertical-align:middle;margin-right:3px;"></span>Completed</span>
+          <span><span style="display:inline-block;width:10px;height:10px;background:#00aee6;border:1px solid #1F3864;vertical-align:middle;margin-right:3px;"></span>Core Task</span>
         </div>
       </div>
       <table style="width:100%;border-collapse:collapse;border:1px solid #CBD5E1;font-size:12px;">
@@ -7164,6 +7105,21 @@ function renderClNavDots() {
   if (label) label.textContent = CL_TITLES[currentClPage];
 }
 
+function gotoFocusPage(n) {
+  const total = STATUS_PAGE_COUNT + 1; // 0,1,2=IBU/RBU/OBU, 3=Total
+  currentFocusPage = ((n % total) + total) % total;
+  showFocusPage();
+}
+
+function renderFocusNavDots() {
+  const el = document.getElementById('focusNavDots');
+  if (!el) return;
+  const FOCUS_TITLES = ['IBU', 'RBU', 'OBU', 'Total'];
+  el.innerHTML = FOCUS_TITLES.map((title, i) =>
+    `<div class="page-nav-dot ${i === currentFocusPage ? 'active' : ''}" onclick="gotoFocusPage(${i})" title="${title}"></div>`
+  ).join('');
+}
+
 function renderPageNavDots() {
   const el = document.getElementById('pageNavDots');
   if (!el) return;
@@ -7221,7 +7177,7 @@ function navTo(page, pushHistory = true) {
   document.getElementById('nav-' + page)?.classList.add('active');
 
   // 모든 페이지 숨김
-  document.getElementById('mainContainer').style.display    = page === 'checklist' ? 'none' : '';
+  document.getElementById('mainContainer').style.display    = page === 'status' ? '' : 'none';
   document.getElementById('dashboard').style.display        = 'none';
   document.getElementById('detail').style.display           = 'none';
   document.getElementById('completedSection').style.display = 'none';
@@ -7892,7 +7848,7 @@ function filterFocusResource(name) {
     if (el.dataset.name === '__all__') el.classList.toggle('active', allActive);
     else el.classList.toggle('active', _focusResourceFilter.has(el.dataset.name));
   });
-  const focus = projects.filter(p => (p.coreStages||[]).length > 0);
+  const focus = projects.filter(p => isFocusProject(p) && (currentFocusPage === 3 || (p.pageId || 1) === currentFocusPage + 1));
   document.querySelectorAll('#focusTbody tr[data-pid]').forEach(tr => {
     const p = focus.find(p => p.id === tr.dataset.pid);
     if (!p) return;
@@ -7905,26 +7861,25 @@ function showFocusPage() {
   document.getElementById('page-focus').style.display = '';
   _focusResourceFilter = new Set();
 
-  const focus = projects.filter(p => (p.coreStages||[]).length > 0);
+  renderFocusNavDots();
+
+  const focus = projects.filter(p => isFocusProject(p) && (currentFocusPage === 3 || (p.pageId || 1) === currentFocusPage + 1));
   document.getElementById('focusCount').textContent = `${focus.length}개`;
 
-  // 리소스 목록 수집 & 필터 칩 렌더링
+  // 리소스 목록 수집 & 필터 칩 렌더링 (Active Projects와 동일한 고정 이니셜 규칙: STATUS_FIXED_INITIALS 우선 표시, 없는 이니셜은 흐리게)
   const resSet = new Set();
   focus.forEach(p => {
     (p.resource || '').split(/[,、\s]+/).map(s => s.trim()).filter(Boolean).forEach(r => resSet.add(r));
   });
   const filterEl = document.getElementById('focusResourceFilter');
-  if (resSet.size > 0) {
-    const chips = [`<button class="focus-res-chip active" data-name="__all__" onclick="filterFocusResource('__all__')">All</button>`];
-    [...resSet].sort().forEach(r =>
-      chips.push(`<button class="focus-res-chip" data-name="${escapeHtml(r)}" onclick="filterFocusResource('${escapeHtml(r)}')">${escapeHtml(r)}</button>`)
-    );
-    filterEl.innerHTML = chips.join('');
-    filterEl.style.display = '';
-  } else {
-    filterEl.innerHTML = '';
-    filterEl.style.display = 'none';
-  }
+  const extra = [...resSet].filter(r => !STATUS_FIXED_INITIALS.includes(r)).sort();
+  const ordered = [...STATUS_FIXED_INITIALS, ...extra];
+  const chips = [`<button class="focus-res-chip active" data-name="__all__" onclick="filterFocusResource('__all__')">All</button>`];
+  ordered.forEach(r =>
+    chips.push(`<button class="focus-res-chip" data-name="${escapeHtml(r)}" onclick="filterFocusResource('${escapeHtml(r)}')" style="${resSet.has(r)?'':'opacity:0.45;'}">${escapeHtml(r)}</button>`)
+  );
+  filterEl.innerHTML = chips.join('');
+  filterEl.style.display = '';
 
   const table = document.getElementById('focusTable');
   const tbody = document.getElementById('focusTbody');
@@ -7939,7 +7894,7 @@ function showFocusPage() {
   if (window._syncDeletedCols) window._syncDeletedCols();
 
   if (!focus.length) {
-    tbody.innerHTML = `<tr class="empty-row"><td colspan="16">* 로 마킹된 프로젝트가 없습니다.</td></tr>`;
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="16">하늘색(WIP)으로 표시된 프로젝트가 없습니다.</td></tr>`;
     const addTr = document.createElement('tr');
     addTr.className = 'add-row-tr';
     addTr.innerHTML = `<td colspan="16"><button class="btn-add-row" onclick="addFocusInlineRow()" title="새 행 추가">＋</button></td>`;
@@ -8172,7 +8127,7 @@ function showPptFormatPageOld() {
       const s = (n) => {
         const state = getPbState(p, n);
         const isCore = (p.coreStages||[]).includes(n);
-        const bg = state===2 ? '#1F3864' : state===1 ? '#BDD7EE' : '#fff';
+        const bg = state===2 ? '#1F3864' : state===1 ? '#B0BEC5' : '#fff';
         const tc = state===2 ? '#fff'    : state===1 ? '#1F3864' : '#BCBCBC';
         const bd = state===2 ? '1px solid rgba(255,255,255,0.2)' : BDR_G;
         const star = isCore ? `<span style="position:absolute;top:0;right:2px;font-size:5px;color:${tc}">*</span>` : '';
@@ -8195,7 +8150,7 @@ function showPptFormatPageOld() {
         font-size:${Math.round(32*I/72)}px;font-weight:700;color:#1F2937;
         display:flex;align-items:flex-end;overflow:hidden;white-space:nowrap;">${title}</div>
       <div style="position:absolute;left:${px(9.3)}px;top:${px(1.02)}px;display:flex;gap:8px;align-items:center;font-size:6.5px;color:#374151;">
-        <span><span style="display:inline-block;width:9px;height:9px;background:#BDD7EE;border:1px solid #9DBAD2;margin-right:2px;vertical-align:middle;"></span>WIP</span>
+        <span><span style="display:inline-block;width:9px;height:9px;background:#B0BEC5;border:1px solid #94A3B8;margin-right:2px;vertical-align:middle;"></span>WIP</span>
         <span><span style="display:inline-block;width:9px;height:9px;background:#1F3864;margin-right:2px;vertical-align:middle;"></span>Completed</span>
         <span>* Core Task</span>
       </div>
@@ -8376,8 +8331,8 @@ function migrateToTestStorage() {
 async function init() {
   showSyncStatus('불러오는 중...', 'var(--amber)');
 
-  // 최초 마이그레이션: 기존 데이터 → 테스트 스토리지
-  const justMigrated = migrateToTestStorage();
+  // 최초 마이그레이션: 기존 데이터 → 테스트 스토리지 (반환값은 더 이상 Firebase 초기화에 쓰지 않음 — 아래 참고)
+  migrateToTestStorage();
 
   // 테스트 모드(관리자 모드)일 때는 Firebase를 사용하지 않음
   if (adminMode) {
@@ -8415,12 +8370,7 @@ async function init() {
       return;
     }
 
-    if (justMigrated) {
-      // 리얼 데이터 초기화: Firebase를 빈 상태로 덮어씀
-      projects = []; deletedProjects = [];
-      await saveToFirebase();
-      showSyncStatus('✓ 리얼 데이터 초기화 완료', 'var(--green)');
-    } else if (fbData && fbData.projects.length > 0) {
+    if (fbData && fbData.projects.length > 0) {
       // Firebase = 항상 진실 (last write wins) — 로컬 충돌 무시
       projects = fbData.projects;
       deletedProjects = fbData.deletedProjects || [];
