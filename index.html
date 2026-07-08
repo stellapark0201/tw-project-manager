@@ -1359,37 +1359,67 @@
 
 <!-- Dashboard Page -->
 <div id="page-dashboard" style="display:none;" class="container">
-  <div style="display:flex;align-items:baseline;gap:16px;margin:0 0 20px;">
-    <h2 style="font-size:21px;font-weight:500;color:var(--text-primary);margin:0;letter-spacing:-0.3px;">Resource Dashboard</h2>
-    <span style="font-size:13px;color:var(--text-muted);">인력 현황 및 충원 분석</span>
-  </div>
-
-  <!-- 요약 카드 -->
-  <div id="db-summary" style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:24px;"></div>
-
-  <!-- 인력별 부하 -->
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:24px;">
-    <div class="db-card">
-      <div class="db-card-title">인력별 프로젝트 현황</div>
-      <div id="db-resource-bars"></div>
-    </div>
-    <div class="db-card">
-      <div class="db-card-title">인력 충원 필요도</div>
-      <div id="db-need-panel"></div>
+  <div style="display:flex;align-items:center;gap:16px;margin:0 0 20px;position:relative;">
+    <h2 id="dbPageLabel" style="font-size:21px;font-weight:500;color:var(--text-primary);margin:0;letter-spacing:-0.3px;">Resource Dashboard</h2>
+    <span id="dbPageSubtitle" style="font-size:13px;color:var(--text-muted);">인력 현황 및 충원 분석</span>
+    <div class="page-nav" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);">
+      <button onclick="goHome()" title="홈 — Status 페이지" style="background:none;border:none;cursor:pointer;padding:2px 4px;display:inline-flex;align-items:center;color:rgba(255,255,255,0.75);margin-right:4px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      </button>
+      <button class="page-nav-arrow" onclick="gotoDbPage(currentDbPage - 1)" title="이전">&#8592;</button>
+      <div class="page-nav-dots" id="dbNavDots"></div>
+      <button class="page-nav-arrow" onclick="gotoDbPage(currentDbPage + 1)" title="다음">&#8594;</button>
     </div>
   </div>
 
-  <!-- 상세 테이블 -->
-  <div class="db-card" style="margin-bottom:24px;">
-    <div class="db-card-title">인력별 담당 프로젝트 목록</div>
-    <div id="db-detail-table"></div>
+  <!-- Dashboard 페이지 1: Resource Dashboard -->
+  <div id="dbPage0">
+    <!-- 요약 카드 -->
+    <div id="db-summary" style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:24px;"></div>
+
+    <!-- 인력별 부하 -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:24px;">
+      <div class="db-card">
+        <div class="db-card-title">인력별 프로젝트 현황</div>
+        <div id="db-resource-bars"></div>
+      </div>
+      <div class="db-card">
+        <div class="db-card-title">인력 충원 필요도</div>
+        <div id="db-need-panel"></div>
+      </div>
+    </div>
+
+    <!-- 상세 테이블 -->
+    <div class="db-card" style="margin-bottom:24px;">
+      <div class="db-card-title">인력별 담당 프로젝트 목록</div>
+      <div id="db-detail-table"></div>
+    </div>
+
+    <!-- 미배정 프로젝트 -->
+    <div class="db-card">
+      <div class="db-card-title">리소스 미배정 프로젝트 <span id="db-unassigned-count" style="font-size:12px;color:var(--red);font-weight:400;margin-left:6px;"></span></div>
+      <div id="db-unassigned"></div>
+    </div>
   </div>
 
-  <!-- 미배정 프로젝트 -->
-  <div class="db-card">
-    <div class="db-card-title">리소스 미배정 프로젝트 <span id="db-unassigned-count" style="font-size:12px;color:var(--red);font-weight:400;margin-left:6px;"></span></div>
-    <div id="db-unassigned"></div>
+  <!-- Dashboard 페이지 2: Delivery Acceleration -->
+  <div id="dbPage1" style="display:none;">
+    <div class="db-card">
+      <div class="db-card-title">월별 Completed 추이 (2026년 1월 ~ 6월) — IBU / RBU / OBU</div>
+      <div id="db-delivery-chart"></div>
+    </div>
   </div>
+
+  <!-- Dashboard 페이지 3: In Active -->
+  <div id="dbPage2" style="display:none;">
+    <div class="db-card">
+      <div class="db-card-title">In Active Product 개수 — IBU / RBU / OBU</div>
+      <div id="db-inactive-chart"></div>
+    </div>
+  </div>
+
+  <!-- Dashboard 페이지 4: 준비 중 (빈 페이지) -->
+  <div id="dbPage3" style="display:none;"><p style="color:var(--text-muted);font-size:15px;padding:60px 0;text-align:center;">준비 중입니다.</p></div>
 </div>
 
 <!-- Completed Project List Page -->
@@ -2489,6 +2519,8 @@ const STATUS_PAGE_COUNT = 3;
 let currentStatusPage = 1;
 let currentClPage = 0; // 0=Total, 1=IBU, 2=RBU, 3=OBU
 let currentFocusPage = 3; // 0=IBU, 1=RBU, 2=OBU, 3=Total
+const DB_PAGE_COUNT = 4;
+let currentDbPage = 0; // 0=Resource Dashboard, 1~3=준비 중
 
 let currentProjectId = null;
 let sidePanelProjectId = null;
@@ -5078,19 +5110,104 @@ function buildPptPreviewSlideHTML(exportList, slideTitle, slideNum) {
   </div>`;
 }
 
-function showPPTPreview() {
+/* ── PPT Export/Preview 대상: 현재 보고 있는 페이지 기준으로 결정 ──
+   헤더의 PPT 버튼은 페이지 이동 없이 그대로 호출되므로 현재 활성 nav-item으로 판단하면 되지만,
+   상단 nav의 "PPT Preview" 탭으로 들어온 경우엔 그 탭 자체가 활성화되어 원래 보던 페이지를 알 수 없다.
+   그래서 navTo()에서 pptformat으로 이동하기 직전의 페이지를 pptSourcePage에 저장해두고 그걸 사용한다. */
+function getPptExportPage() {
+  const active = document.querySelector('.nav-item.active');
+  const id = (active?.id || 'nav-status').replace('nav-', '');
+  return id === 'pptformat' ? pptSourcePage : id;
+}
+
+const PPT_BU_NAMES = { 1: 'IBU', 2: 'RBU', 3: 'OBU' };
+
+// pageVar: 0,1,2 = IBU/RBU/OBU 중 하나만, 3 = Total(전체 3개)
+function pptBuGroups(pageVar, filterFn, titlePrefix) {
+  const groups = [];
+  for (let pid = 1; pid <= 3; pid++) {
+    if (pageVar !== 3 && pageVar !== pid - 1) continue;
+    const list = projects.filter(p => filterFn(p) && (p.pageId || 1) === pid);
+    if (list.length) groups.push({ title: `${titlePrefix} — ${PPT_BU_NAMES[pid]}`, list });
+  }
+  return groups;
+}
+
+// 현재 페이지가 보여주고 있는 내용 그대로 PPT 대상 데이터를 계산
+function getPptExportGroups() {
+  const page = getPptExportPage();
+  const notReport = p => !['M','Q','Y'].some(t => (p.boardTypes||[]).includes(t));
+
+  if (page === 'optask') {
+    const list = opProjects.filter(p => p.selected !== false);
+    return { kind: 'projects', groups: list.length ? [{ title: 'Operational Tasks', list }] : [] };
+  }
+  if (page === 'focus') {
+    const groups = pptBuGroups(currentFocusPage, p => p.selected !== false && isFocusProject(p), 'Focus Projects');
+    return { kind: 'projects', groups };
+  }
+  if (page === 'checklist') {
+    const groups = pptBuGroups(currentClPage, p => p.selected !== false && notReport(p), 'Progress');
+    return { kind: 'projects', groups };
+  }
+  if (page === 'completed') {
+    const list = projects.filter(p => {
+      const bt = p.boardTypes || [];
+      return (bt.includes('M') || bt.includes('Q') || bt.includes('Y')) && (p.pageId || 1) === currentStatusPage;
+    });
+    return { kind: 'projects', groups: list.length ? [{ title: `보고 대상 — ${PPT_BU_NAMES[currentStatusPage] || ''}`, list }] : [] };
+  }
+  if (page === 'dashboard') {
+    return { kind: 'dashboard', dbPage: currentDbPage };
+  }
+  // 기본값(status 등): Active Projects 전체(IBU/RBU/OBU) — 기존 동작 유지
+  const pageTitles = (() => { try { return JSON.parse(localStorage.getItem('tw_pm_page_titles')) || {}; } catch { return {}; } })();
   const allSelected = projects.filter(p => p.selected !== false);
-  if (!allSelected.length) { alert('PPT에 포함할 프로젝트가 없습니다.\n체크박스를 하나 이상 선택해주세요.'); return; }
-
-  const pageTitles = (() => { try { return JSON.parse(localStorage.getItem('tw_pm_page_titles'))||{}; } catch { return {}; } })();
-
-  let slidesHTML = '';
-  let slideNum = 0;
+  const groups = [];
   for (let pageNum = 1; pageNum <= STATUS_PAGE_COUNT; pageNum++) {
-    const list = allSelected.filter(p => (p.pageId||1) === pageNum);
-    if (!list.length) continue;
-    slideNum++;
-    slidesHTML += buildPptPreviewSlideHTML(list, pageTitles[pageNum] || '[Technical Publication] Status', slideNum);
+    const list = allSelected.filter(p => (p.pageId || 1) === pageNum);
+    if (list.length) groups.push({ title: pageTitles[pageNum] || `[Technical Publication] Status`, list });
+  }
+  return { kind: 'projects', groups };
+}
+
+function buildPptPreviewDashboardHTML(dbPage) {
+  const wrap = (title, inner) => `<div style="background:#fff;border-radius:6px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.15);margin-bottom:20px;font-family:Arial,sans-serif;">
+    <div style="height:5px;background:#3B82F6;"></div>
+    <div style="padding:14px 18px 18px;">
+      <div style="font-size:20px;font-weight:700;color:#1F2937;margin-bottom:10px;">${title}</div>
+      ${inner}
+    </div>
+  </div>`;
+  if (dbPage === 0) {
+    const inner = document.getElementById('dbPage0')?.innerHTML;
+    return inner ? wrap('Resource Dashboard', inner) : null;
+  }
+  if (dbPage === 1) {
+    const inner = document.getElementById('db-delivery-chart')?.innerHTML;
+    return inner ? wrap('Delivery Acceleration', inner) : null;
+  }
+  if (dbPage === 2) {
+    const inner = document.getElementById('db-inactive-chart')?.innerHTML;
+    return inner ? wrap('In Active', inner) : null;
+  }
+  return null;
+}
+
+function showPPTPreview() {
+  const ctx = getPptExportGroups();
+  let slidesHTML = '';
+  let slideCount = 0;
+
+  if (ctx.kind === 'dashboard') {
+    const html = buildPptPreviewDashboardHTML(ctx.dbPage);
+    if (!html) { alert('이 Dashboard 페이지는 아직 준비 중이라 미리 볼 내용이 없습니다.'); return; }
+    slidesHTML = html;
+    slideCount = 1;
+  } else {
+    const groups = ctx.groups || [];
+    if (!groups.length) { alert('PPT에 포함할 데이터가 없습니다.\n체크박스를 하나 이상 선택했는지 확인해주세요.'); return; }
+    groups.forEach(g => { slideCount++; slidesHTML += buildPptPreviewSlideHTML(g.list, g.title, slideCount); });
   }
 
   let modal = document.getElementById('pptPreviewModal');
@@ -5104,7 +5221,7 @@ function showPPTPreview() {
   modal.innerHTML = `
     <div style="width:100%;max-width:860px;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-        <div style="color:#fff;font-size:16px;font-weight:600;">PPT Preview — ${slideNum} slide${slideNum>1?'s':''}</div>
+        <div style="color:#fff;font-size:16px;font-weight:600;">PPT Preview — ${slideCount} slide${slideCount>1?'s':''}</div>
         <div style="display:flex;gap:8px;">
           <button onclick="exportToPPT()" style="background:#3B82F6;color:#fff;border:none;border-radius:6px;padding:7px 16px;font-size:13px;cursor:pointer;font-weight:500;">PPTX 내보내기</button>
           <button onclick="closePPTPreview()" style="background:rgba(255,255,255,0.15);color:#fff;border:1px solid rgba(255,255,255,0.3);border-radius:6px;padding:7px 14px;font-size:13px;cursor:pointer;">닫기</button>
@@ -5140,23 +5257,142 @@ function pptNameRuns(p) {
   ];
 }
 
-function exportToPPT() {
-  const allSelected = projects.filter(p => p.selected !== false);
-  if (!allSelected.length) { alert('PPT에 포함할 프로젝트가 없습니다.\n체크박스를 하나 이상 선택해주세요.'); return; }
+/* ── Dashboard 전용 PPT 슬라이드: 표는 addTable, 그래프는 addChart(네이티브 차트)로 만들어
+   PowerPoint에서 더블클릭 → 데이터 편집이 가능한 "살아있는" 데이터로 내보낸다. ── */
+function pptSlideHeader(pres, slide, title) {
+  slide.addShape(pres.ShapeType.rect, { x:0, y:0, w:13.33, h:0.07, fill:{color:'3B82F6'}, line:{color:'3B82F6', pt:0} });
+  slide.addText(title, { x:0.4, y:0.1, w:12.5, h:0.9, fontSize:32, bold:true, color:'1F2937', fontFace:'Arial', valign:'bottom' });
+}
 
-  const pres = new PptxGenJS();
-  pres.layout = 'LAYOUT_WIDE';
-  const pageTitles = (() => { try { return JSON.parse(localStorage.getItem('tw_pm_page_titles'))||{}; } catch { return {}; } })();
-  let slideNum = 0;
+function addResourceDashboardPptSlide(pres) {
+  const slide = pres.addSlide();
+  pptSlideHeader(pres, slide, 'Resource Dashboard');
 
-  for (let pageNum = 1; pageNum <= STATUS_PAGE_COUNT; pageNum++) {
-    const exportList = allSelected.filter(p => (p.pageId||1) === pageNum);
-    if (!exportList.length) continue;
-    slideNum++;
-    buildPptSlideOnPres(pres, exportList, pageTitles[pageNum] || `[Technical Publication] Status`, slideNum);
+  const resMap = {};
+  projects.forEach(p => {
+    (p.resource || '').split(/[,、\s]+/).map(s => s.trim()).filter(Boolean).forEach(name => {
+      if (!resMap[name]) resMap[name] = { total: 0, active: 0, done: 0, report: 0 };
+      const pct = overallPercent(p);
+      resMap[name].total++;
+      if (pct === 100) resMap[name].done++; else resMap[name].active++;
+      if ((p.boardTypes || []).length > 0) resMap[name].report++;
+    });
+  });
+  const entries = Object.entries(resMap).sort((a, b) => b[1].total - a[1].total);
+
+  if (!entries.length) {
+    slide.addText('리소스가 배정된 프로젝트가 없습니다.', { x:0.5, y:1.4, w:12, h:0.5, fontSize:14, color:'6B7280', fontFace:'Arial' });
+    return slide;
   }
 
-  pres.writeFile({ fileName:`ProjectStatus_${new Date().toISOString().slice(0,10)}.pptx` });
+  const HDR  = { fill:{color:'1F3864'}, color:'FFFFFF', bold:false, align:'center', valign:'middle', fontSize:13, fontFace:'Arial', border:{type:'solid',pt:0.5,color:'FFFFFF'} };
+  const CELL = { fill:{color:'FFFFFF'}, color:'1F2937', align:'center', valign:'middle', fontSize:12, fontFace:'Arial', border:{type:'solid',pt:0.5,color:'CBD5E1'} };
+  const header = [
+    { text:'리소스',   options:{...HDR, align:'left'} },
+    { text:'전체',     options:HDR },
+    { text:'진행 중',  options:HDR },
+    { text:'완료',     options:HDR },
+    { text:'보고 대상', options:HDR },
+  ];
+  const rows = entries.map(([name, d]) => [
+    { text:name,               options:{...CELL, align:'left'} },
+    { text:String(d.total),    options:CELL },
+    { text:String(d.active),   options:CELL },
+    { text:String(d.done),     options:CELL },
+    { text:String(d.report),   options:CELL },
+  ]);
+
+  slide.addTable([header, ...rows], {
+    x:0.5, y:1.3, w:8, colW:[3, 1.25, 1.25, 1.25, 1.25],
+    rowH:0.34, fontFace:'Arial', fontSize:12, valign:'middle',
+    border:{ type:'solid', pt:0.5, color:'CBD5E1' },
+  });
+  return slide;
+}
+
+function addDeliveryChartPptSlide(pres) {
+  const slide = pres.addSlide();
+  pptSlideHeader(pres, slide, 'Delivery Acceleration');
+
+  const months = ['2026-01','2026-02','2026-03','2026-04','2026-05','2026-06'];
+  const monthLabels = ['Jan','Feb','Mar','Apr','May','Jun'];
+  const series = DB_BU_GROUPS.map(([id, label, color]) => ({
+    name: label, color,
+    counts: months.map(m => projects.filter(p => (p.pageId || 1) === id && (p.releaseDate || '').slice(0, 7) === m).length),
+  }));
+  const totalCounts = months.map((_, i) => series.reduce((s, ser) => s + ser.counts[i], 0));
+
+  const chartData = [
+    ...series.map(s => ({ name: s.name, labels: monthLabels, values: s.counts })),
+    { name: 'Total', labels: monthLabels, values: totalCounts },
+  ];
+  const chartColors = [...series.map(s => s.color.replace('#', '')), DB_TOTAL_COLOR.replace('#', '')];
+
+  slide.addChart(pres.ChartType.bar, chartData, {
+    x:0.5, y:1.25, w:12.3, h:5.6,
+    barDir:'col', barGrouping:'clustered',
+    chartColors,
+    showLegend:true, legendPos:'b',
+    showTitle:true, title:'Number of Publications Completed in 2026',
+    catAxisTitle:'Month', showCatAxisTitle:true,
+    valAxisTitle:'Completed', showValAxisTitle:true,
+    showValue:true, dataLabelPosition:'inEnd', dataLabelColor:'FFFFFF', dataLabelFontSize:10, dataLabelFontFace:'Arial', dataLabelFontBold:true,
+    valGridLine: { color:'E2E8F0', size:0.5 },
+    catGridLine: { style:'none' },
+  });
+  return slide;
+}
+
+function addInActiveChartPptSlide(pres) {
+  const slide = pres.addSlide();
+  pptSlideHeader(pres, slide, 'In Active');
+
+  const counts = {};
+  DB_BU_GROUPS.forEach(([id]) => { counts[id] = 0; });
+  projects.forEach(p => {
+    const bt = p.boardTypes || [];
+    if (bt.includes('M') || bt.includes('Q') || bt.includes('Y')) return;
+    const pid = p.pageId || 1;
+    if (counts[pid] !== undefined) counts[pid]++;
+  });
+  const labels = DB_BU_GROUPS.map(([, label]) => label);
+  const values = DB_BU_GROUPS.map(([id]) => counts[id]);
+  const colors = DB_BU_GROUPS.map(([, , color]) => color.replace('#', ''));
+
+  slide.addChart(pres.ChartType.bar, [{ name: 'In Active', labels, values }], {
+    x:0.5, y:1.25, w:12.3, h:5.6,
+    barDir:'col',
+    chartColors: colors,
+    showLegend:false,
+    valAxisTitle:'Product 개수', showValAxisTitle:true,
+    showValue:true, dataLabelPosition:'inEnd', dataLabelColor:'FFFFFF', dataLabelFontSize:11, dataLabelFontFace:'Arial', dataLabelFontBold:true,
+    valGridLine: { color:'E2E8F0', size:0.5 },
+    catGridLine: { style:'none' },
+  });
+  return slide;
+}
+
+function buildPptDeckForExport(pres) {
+  const ctx = getPptExportGroups();
+  if (ctx.kind === 'dashboard') {
+    if (ctx.dbPage === 0) addResourceDashboardPptSlide(pres);
+    else if (ctx.dbPage === 1) addDeliveryChartPptSlide(pres);
+    else if (ctx.dbPage === 2) addInActiveChartPptSlide(pres);
+    else { alert('이 Dashboard 페이지는 아직 준비 중이라 내보낼 내용이 없습니다.'); return false; }
+    return true;
+  }
+  const groups = ctx.groups || [];
+  if (!groups.length) { alert('PPT에 포함할 데이터가 없습니다.\n체크박스를 하나 이상 선택했는지 확인해주세요.'); return false; }
+  groups.forEach((g, i) => buildPptSlideOnPres(pres, g.list, g.title, i + 1));
+  return true;
+}
+
+function exportToPPT() {
+  const pres = new PptxGenJS();
+  pres.layout = 'LAYOUT_WIDE';
+  if (!buildPptDeckForExport(pres)) return;
+  const page = getPptExportPage();
+  pres.writeFile({ fileName:`TW_${page}_${new Date().toISOString().slice(0,10)}.pptx` });
 }
 
 /* ── Deleted List ── */
@@ -7120,6 +7356,19 @@ function renderFocusNavDots() {
   ).join('');
 }
 
+function gotoDbPage(n) {
+  currentDbPage = ((n % DB_PAGE_COUNT) + DB_PAGE_COUNT) % DB_PAGE_COUNT;
+  showDashboardPage();
+}
+
+function renderDbNavDots() {
+  const el = document.getElementById('dbNavDots');
+  if (!el) return;
+  el.innerHTML = Array.from({length: DB_PAGE_COUNT}, (_, i) =>
+    `<div class="page-nav-dot ${i === currentDbPage ? 'active' : ''}" onclick="gotoDbPage(${i})" title="페이지 ${i + 1}"></div>`
+  ).join('');
+}
+
 function renderPageNavDots() {
   const el = document.getElementById('pageNavDots');
   if (!el) return;
@@ -7172,7 +7421,13 @@ function goHome() {
   }
 }
 
+let pptSourcePage = 'status';
 function navTo(page, pushHistory = true) {
+  if (page === 'pptformat') {
+    const cur = document.querySelector('.nav-item.active');
+    const curId = (cur?.id || '').replace('nav-', '');
+    if (curId && curId !== 'pptformat') pptSourcePage = curId;
+  }
   document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
   document.getElementById('nav-' + page)?.classList.add('active');
 
@@ -7595,6 +7850,21 @@ function updateOpStickyOffsets() {
 
 /* ── Completed Project List ── */
 function showDashboardPage() {
+  renderDbNavDots();
+  for (let i = 0; i < DB_PAGE_COUNT; i++) {
+    const el = document.getElementById('dbPage' + i);
+    if (el) el.style.display = i === currentDbPage ? '' : 'none';
+  }
+  const DB_PAGE_TITLES = ['Resource Dashboard', 'Delivery Acceleration', 'In Active', 'Dashboard 4'];
+  const dbLabel = document.getElementById('dbPageLabel');
+  const dbSubtitle = document.getElementById('dbPageSubtitle');
+  dbLabel.textContent = DB_PAGE_TITLES[currentDbPage] || `Dashboard ${currentDbPage + 1}`;
+  dbSubtitle.style.display = currentDbPage === 0 ? '' : 'none';
+
+  if (currentDbPage === 1) { renderDeliveryChart(); return; }
+  if (currentDbPage === 2) { renderInActiveChart(); return; }
+  if (currentDbPage !== 0) return; // 4페이지는 아직 준비 중 (데이터 렌더링 불필요)
+
   const all = projects;
   const active = all.filter(p => overallPercent(p) < 100);
   const done   = all.filter(p => overallPercent(p) === 100);
@@ -7708,6 +7978,134 @@ function showDashboardPage() {
         `<span class="db-proj-chip" onclick="navTo('status');setTimeout(()=>showDetail('${p.id}'),100)">${escapeHtml(p.name||'(이름없음)')}</span>`
       ).join('')}</div>`
     : '<p style="color:var(--green);font-size:13px;">✓ 모든 프로젝트에 리소스가 배정되었습니다.</p>';
+}
+
+// 컬러 차트: Color1 Navy #1E3A8A(IBU) / Color3 Blue #2563EB(RBU) / Color5 Aqua Blue Green #2DD4BF(OBU) / Total은 옅은 회색
+const DB_BU_GROUPS = [ [1, 'IBU', '#1E3A8A'], [2, 'RBU', '#2563EB'], [3, 'OBU', '#2DD4BF'] ];
+const DB_TOTAL_COLOR = '#B0BEC5';
+
+/* ── Dashboard 페이지 2: Delivery Acceleration (월별 Completed 추이) ──
+   "Completed" = releaseDate가 설정된 프로젝트(실제 배포/릴리즈 시점) 기준.
+   체크리스트 100% 완료 시점은 별도로 기록되지 않아 releaseDate를 완료 시점 대용으로 사용함. */
+function renderDeliveryChart() {
+  const months = ['2026-01','2026-02','2026-03','2026-04','2026-05','2026-06'];
+  const monthLabels = ['Jan','Feb','Mar','Apr','May','Jun'];
+
+  const series = DB_BU_GROUPS.map(([id, label, color]) => {
+    const counts = months.map(m =>
+      projects.filter(p => (p.pageId || 1) === id && (p.releaseDate || '').slice(0, 7) === m).length
+    );
+    return { id, label, color, counts, total: counts.reduce((a, b) => a + b, 0) };
+  });
+  const totalSeries = {
+    id: 'total', label: 'Total', color: DB_TOTAL_COLOR,
+    counts: months.map((_, i) => series.reduce((sum, s) => sum + s.counts[i], 0)),
+  };
+  totalSeries.total = totalSeries.counts.reduce((a, b) => a + b, 0);
+  const allSeries = [...series, totalSeries];
+
+  // ── 상단: 꺾은선 그래프 (월별 추이) ──
+  const maxVal = Math.max(1, ...allSeries.flatMap(s => s.counts));
+  const niceMax = Math.max(4, Math.ceil(maxVal / 4) * 4);
+  const W = 600, H = 220, padL = 30, padR = 16, padT = 16, padB = 26;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+  const stepX = plotW / (months.length - 1);
+  const yFor = v => padT + plotH - (v / niceMax) * plotH;
+  const xFor = i => padL + i * stepX;
+
+  const gridLines = Array.from({ length: 5 }, (_, i) => {
+    const v = Math.round(niceMax * i / 4);
+    const y = yFor(v);
+    return `<line x1="${padL}" y1="${y}" x2="${W - padR}" y2="${y}" stroke="var(--border)" stroke-width="1"/>
+      <text x="${padL - 6}" y="${y + 3}" font-size="9" fill="var(--text-muted)" text-anchor="end">${v}</text>`;
+  }).join('');
+
+  const xLabels = monthLabels.map((lbl, i) =>
+    `<text x="${xFor(i)}" y="${H - 8}" font-size="10" fill="var(--text-muted)" text-anchor="middle">${lbl}</text>`
+  ).join('');
+
+  const lines = allSeries.map(s => {
+    const points = s.counts.map((v, i) => `${xFor(i)},${yFor(v)}`).join(' ');
+    const dots = s.counts.map((v, i) =>
+      `<circle cx="${xFor(i)}" cy="${yFor(v)}" r="3.5" fill="${s.color}"><title>${s.label} ${monthLabels[i]}: ${v}건</title></circle>`
+    ).join('');
+    const dash = s.id === 'total' ? ' stroke-dasharray="5,4"' : '';
+    return `<polyline points="${points}" fill="none" stroke="${s.color}" stroke-width="2.5"${dash}/>${dots}`;
+  }).join('');
+
+  const legend = allSeries.map(s =>
+    `<span style="display:inline-flex;align-items:center;gap:6px;margin-right:16px;font-size:12px;color:var(--text-secondary);">
+      <span style="width:10px;height:10px;border-radius:2px;background:${s.color};display:inline-block;"></span>${s.label} (총 ${s.total}건)
+    </span>`
+  ).join('');
+
+  // ── 하단: 월별 그룹 세로 막대 그래프 (1~6월 × IBU/RBU/OBU/Total 4개씩) ──
+  const bW = 620, bH = 220, bPadL = 32, bPadR = 16, bPadT = 16, bPadB = 42;
+  const bPlotW = bW - bPadL - bPadR, bPlotH = bH - bPadT - bPadB;
+  const groupW = bPlotW / months.length;
+  const groupPad = groupW * 0.12;
+  const barGap = 2;
+  const barW = (groupW - groupPad * 2 - barGap * (allSeries.length - 1)) / allSeries.length;
+  const bYFor = v => bPadT + bPlotH - (v / niceMax) * bPlotH;
+
+  const barGridLines = Array.from({ length: 5 }, (_, i) => {
+    const v = Math.round(niceMax * i / 4);
+    const y = bYFor(v);
+    return `<line x1="${bPadL}" y1="${y}" x2="${bW - bPadR}" y2="${y}" stroke="var(--border)" stroke-width="1"/>
+      <text x="${bPadL - 6}" y="${y + 3}" font-size="9" fill="var(--text-muted)" text-anchor="end">${v}</text>`;
+  }).join('');
+
+  const barBaseY = bPadT + bPlotH;
+  const initialY = barBaseY + 10; // 막대 높이(0 포함)와 무관하게 항상 같은 자리에 고정
+  const bars = months.map((m, i) => {
+    const groupX = bPadL + i * groupW + groupPad;
+    const groupBars = allSeries.map((s, j) => {
+      const v = s.counts[i];
+      const x = groupX + j * (barW + barGap);
+      const y = bYFor(v);
+      const h = barBaseY - y;
+      const cx = (x + barW / 2).toFixed(1);
+      const valueLabel = v > 0
+        ? `<text x="${cx}" y="${(y - 3).toFixed(1)}" font-size="8.5" fill="${s.color}" text-anchor="middle">${v}</text>`
+        : '';
+      const initialLabel = `<text x="${cx}" y="${initialY}" font-size="8.5" font-weight="700" fill="#000000" text-anchor="middle">${s.label[0]}</text>`;
+      return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barW.toFixed(1)}" height="${h.toFixed(1)}" fill="${s.color}" rx="1.5"><title>${s.label} ${monthLabels[i]}: ${v}건</title></rect>${valueLabel}${initialLabel}`;
+    }).join('');
+    const labelX = bPadL + i * groupW + groupW / 2;
+    return groupBars + `<text x="${labelX}" y="${bH - 8}" font-size="10" fill="var(--text-muted)" text-anchor="middle">${monthLabels[i]}</text>`;
+  }).join('');
+
+  document.getElementById('db-delivery-chart').innerHTML =
+    `<div style="margin-bottom:12px;">${legend}</div>
+     <svg viewBox="0 0 ${W} ${H}" style="width:100%;max-width:680px;height:auto;">${gridLines}${xLabels}${lines}</svg>
+     <div style="margin-top:22px;padding-top:18px;border-top:1px solid var(--border);">
+       <div class="db-card-title" style="margin-bottom:10px;">Number of Publications Completed in 2026</div>
+       <svg viewBox="0 0 ${bW} ${bH}" style="width:100%;max-width:700px;height:auto;">${barGridLines}${bars}</svg>
+     </div>`;
+}
+
+/* ── Dashboard 페이지 3: In Active (IBU/RBU/OBU별 In Active Product 개수) ──
+   In Active 표(renderDashboard)와 동일한 기준: M/Q/Y 보고 대상으로 이동하지 않은 프로젝트 */
+function renderInActiveChart() {
+  const counts = {};
+  DB_BU_GROUPS.forEach(([id]) => { counts[id] = 0; });
+  projects.forEach(p => {
+    const bt = p.boardTypes || [];
+    if (bt.includes('M') || bt.includes('Q') || bt.includes('Y')) return;
+    const pid = p.pageId || 1;
+    if (counts[pid] !== undefined) counts[pid]++;
+  });
+  const maxVal = Math.max(1, ...Object.values(counts));
+
+  document.getElementById('db-inactive-chart').innerHTML = DB_BU_GROUPS.map(([id, label, color]) => {
+    const val = counts[id];
+    const pct = Math.round(val / maxVal * 100);
+    return `<div class="db-bar-row">
+      <div class="db-bar-name">${label}</div>
+      <div class="db-bar-track"><div class="db-bar-fill" style="width:${pct}%;background:${color};"></div></div>
+      <div class="db-bar-count" style="color:${color};font-weight:600;">${val}</div>
+    </div>`;
+  }).join('');
 }
 
 let currentCpPage = 1;
