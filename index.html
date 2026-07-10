@@ -1381,6 +1381,17 @@
     </div>
   </div>
 
+  <!-- 날짜 범위 필터 -->
+  <div id="dbDateFilterBar" style="display:flex;align-items:center;gap:10px;margin-bottom:18px;flex-wrap:wrap;">
+    <span style="font-size:13px;color:var(--text-muted);font-weight:500;">Target Date 범위</span>
+    <input type="date" id="dbDateFrom" style="padding:4px 8px;border:1px solid var(--border);border-radius:6px;font-size:13px;color:var(--text);background:var(--bg-card);cursor:pointer;" oninput="syncDbDateInputs()" />
+    <span style="color:var(--text-muted);font-size:13px;">~</span>
+    <input type="date" id="dbDateTo" style="padding:4px 8px;border:1px solid var(--border);border-radius:6px;font-size:13px;color:var(--text);background:var(--bg-card);cursor:pointer;" oninput="syncDbDateInputs()" />
+    <button onclick="applyDbDateFilter()" style="padding:4px 14px;background:var(--accent);color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;">Apply</button>
+    <button onclick="clearDbDateFilter()" id="dbDateClearBtn" style="display:none;padding:4px 10px;background:none;border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text-muted);cursor:pointer;">✕ 초기화</button>
+    <span id="dbDateFilterLabel" style="font-size:12px;color:var(--accent);font-weight:500;display:none;"></span>
+  </div>
+
   <!-- Dashboard 페이지 1: Resource Dashboard -->
   <div id="dbPage0">
     <!-- 요약 카드 -->
@@ -2585,6 +2596,63 @@ let currentClPage = 0; // 0=Total, 1=IBU, 2=RBU, 3=OBU
 let currentFocusPage = 3; // 0=IBU, 1=RBU, 2=OBU, 3=Total
 const DB_PAGE_COUNT = 4;
 let currentDbPage = 0; // 0=Resource Dashboard, 1~3=준비 중
+let _dbDateFilter = { from: '', to: '' };
+
+function parseTargetDate(str) {
+  if (!str) return null;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
+  const MON = {jan:'01',feb:'02',mar:'03',apr:'04',may:'05',jun:'06',
+               jul:'07',aug:'08',sep:'09',oct:'10',nov:'11',dec:'12'};
+  const m = str.toLowerCase().match(/([a-z]+)[.\s]*(\d{4})/);
+  if (m && MON[m[1].slice(0,3)]) return `${m[2]}-${MON[m[1].slice(0,3)]}-01`;
+  const y = str.match(/(\d{4})/);
+  if (y) return `${y[1]}-06-01`;
+  return null;
+}
+
+function getDbFilteredProjects() {
+  const { from, to } = _dbDateFilter;
+  if (!from && !to) return projects;
+  return projects.filter(p => {
+    const d = parseTargetDate(p.targetDate);
+    if (!d) return false; // 날짜 없는 건은 범위 필터 시 제외
+    if (from && d < from) return false;
+    if (to   && d > to  ) return false;
+    return true;
+  });
+}
+
+function syncDbDateInputs() {
+  // from > to 방지
+  const f = document.getElementById('dbDateFrom');
+  const t = document.getElementById('dbDateTo');
+  if (f.value && t.value && f.value > t.value) t.value = f.value;
+}
+
+function applyDbDateFilter() {
+  _dbDateFilter.from = document.getElementById('dbDateFrom').value;
+  _dbDateFilter.to   = document.getElementById('dbDateTo').value;
+  const lbl = document.getElementById('dbDateFilterLabel');
+  const clr = document.getElementById('dbDateClearBtn');
+  if (_dbDateFilter.from || _dbDateFilter.to) {
+    lbl.textContent = `(${_dbDateFilter.from || '…'} ~ ${_dbDateFilter.to || '…'}) 필터 적용 중`;
+    lbl.style.display = '';
+    clr.style.display = '';
+  } else {
+    lbl.style.display = 'none';
+    clr.style.display = 'none';
+  }
+  showDashboardPage();
+}
+
+function clearDbDateFilter() {
+  _dbDateFilter = { from: '', to: '' };
+  document.getElementById('dbDateFrom').value = '';
+  document.getElementById('dbDateTo').value = '';
+  document.getElementById('dbDateFilterLabel').style.display = 'none';
+  document.getElementById('dbDateClearBtn').style.display = 'none';
+  showDashboardPage();
+}
 
 let currentProjectId = null;
 let sidePanelProjectId = null;
@@ -5053,7 +5121,7 @@ function buildPptSlideOnPres(pres, exportList, slideTitle, slideNum) {
   const STAGE_COL_X  = 0.365 + 4.1 + 3.1 + 1.5; // Progress 컬럼 시작 X
   const STAGE_COL_W  = 0.30;
   const ROW_H        = 0.32;
-  const DATA_START_Y = 1.42 + ROW_H; // 헤더 행 높이만큼 아래
+  const DATA_START_Y = 1.42 + ROW_H * 2; // 헤더 2행 높이만큼 아래
 
   // 표보다 먼저 그려서, 표의 투명한 삼각형 셀 뒤로 도형이 비치도록 함
   exportList.forEach((p, rowIdx) => {
@@ -5090,8 +5158,6 @@ function buildPptSlideOnPres(pres, exportList, slideTitle, slideNum) {
     { text:'4', options: {...HDR_SM} },
     { text:'5', options: {...HDR_SM} },
   ];
-  const DATA_START_Y = 1.42 + 0.32 * 2;
-
   /* ── 데이터 행 ── */
   const dataRows = exportList.map(p => {
     const dateStr = p.targetDate || '';
@@ -7960,7 +8026,7 @@ function showDashboardPage() {
   if (currentDbPage === 2) { renderInActiveChart(); return; }
   if (currentDbPage !== 0) return; // 4페이지는 아직 준비 중 (데이터 렌더링 불필요)
 
-  const all = projects;
+  const all = getDbFilteredProjects();
   const active = all.filter(p => overallPercent(p) < 100);
   const done   = all.filter(p => overallPercent(p) === 100);
   const inReport = all.filter(p => (p.boardTypes||[]).length > 0);
@@ -8182,19 +8248,32 @@ function renderDeliveryChart() {
 /* ── Dashboard 페이지 3: In Active (IBU/RBU/OBU별 In Active Product 개수) ──
    In Active 표(renderDashboard)와 동일한 기준: M/Q/Y 보고 대상으로 이동하지 않은 프로젝트 */
 function getProjectCurrentStage(p) {
-  // pbStates 기준: 가장 높은 시작된(>=1) 단계. 없으면 0 (Preparation)
-  const pb = p.pbStates || {};
-  let cur = 0;
-  for (let s = 1; s <= 5; s++) {
-    if ((pb[s] || 0) >= 1) cur = s;
+  // 높은 단계부터 내려오면서 처음으로 값이 있는 단계 = 현재 단계
+  // getPbState와 동일하게 pbStates[stageNum] 값 사용
+  for (let s = 5; s >= 1; s--) {
+    if (getPbState(p, s) > 0) return s;
   }
-  return cur;
+  return 0; // 아무 단계도 없으면 Preparation
 }
 
 function renderInActiveChart() {
-  // BU별 단계(0~5) 카운트
-  const STAGE_COLORS = ['#94a3b8','#60a5fa','#34d399','#fbbf24','#f87171','#1E3A8A'];
-  const STAGE_LABELS = ['0: Preparation','1','2','3','4','5'];
+  // 0~3단계: 공통 연한 회색, 4~5단계: BU 주색으로 전환
+  const GRAY_STEPS = ['#e2e8f0', '#d0dae4', '#bfc9d4', '#b8c2cc']; // stage 0(Prep)~3: 연→중간 회색
+  function makeGradient(hex) {
+    const gray = [0xb0, 0xbe, 0xc5]; // stage 3 끝 회색에서 시작
+    const tc   = [parseInt(hex.slice(1,3),16), parseInt(hex.slice(3,5),16), parseInt(hex.slice(5,7),16)];
+    // stage 4,5: gray→BU색으로 t=1,2/2 비율
+    const colorSteps = [1,2].map(t => {
+      const r = Math.round(gray[0] + (tc[0]-gray[0])*t/2);
+      const g = Math.round(gray[1] + (tc[1]-gray[1])*t/2);
+      const b = Math.round(gray[2] + (tc[2]-gray[2])*t/2);
+      return '#' + [r,g,b].map(v=>v.toString(16).padStart(2,'0')).join('');
+    });
+    return [...GRAY_STEPS, ...colorSteps]; // 인덱스 0~5
+  }
+  const BU_GRADIENTS = {};
+  DB_BU_GROUPS.forEach(([id,,color]) => { BU_GRADIENTS[id] = makeGradient(color); });
+  const STAGE_X_LABELS = ['Preparation','1','2','3','4','5'];
 
   // stageCounts[buId][stage] = count
   const stageCounts = {};
@@ -8205,32 +8284,68 @@ function renderInActiveChart() {
     if (bt.includes('M') || bt.includes('Q') || bt.includes('Y')) return;
     const pid = p.pageId || 1;
     if (!stageCounts[pid]) return;
-    const stage = getProjectCurrentStage(p);
-    stageCounts[pid][stage] = (stageCounts[pid][stage] || 0) + 1;
+    // 마지막으로 색칠된 단계(= 현재 단계)에만 카운트
+    const cur = getProjectCurrentStage(p);
+    stageCounts[pid][cur] = (stageCounts[pid][cur] || 0) + 1;
   });
 
-  const maxVal = Math.max(1, ...DB_BU_GROUPS.map(([id]) => Object.values(stageCounts[id]).reduce((a,b)=>a+b,0)));
+  // 모든 BU 전체 단계 카운트 중 최댓값 → 공유 Y축 스케일
+  const globalMax = Math.max(1, ...DB_BU_GROUPS.flatMap(([id]) => Object.values(stageCounts[id])));
+  const CHART_H = 150;
+  const TOP_PAD = 20; // 숫자 표시 여백
+  const BAR_W = 30;
+  const BAR_GAP = 8;
+  const Y_AXIS_W = 32;
+  const X_AXIS_H = 36;
+  const CHART_W = Y_AXIS_W + (BAR_W + BAR_GAP) * 6 - BAR_GAP + 8;
+  // Y축 눈금: 0부터 globalMax까지 정수 눈금
+  const yTickStep = globalMax <= 5 ? 1 : globalMax <= 10 ? 2 : Math.ceil(globalMax / 5);
+  const yTicks = [];
+  for (let v = 0; v <= globalMax; v += yTickStep) yTicks.push(v);
+  if (yTicks[yTicks.length - 1] !== globalMax) yTicks.push(globalMax);
 
-  document.getElementById('db-inactive-chart').innerHTML = DB_BU_GROUPS.map(([id, label, buColor]) => {
+  function oneChart([id, label]) {
     const sc = stageCounts[id];
     const total = Object.values(sc).reduce((a,b)=>a+b,0);
-    const segments = [0,1,2,3,4,5].map(s => {
-      const pct = total > 0 ? (sc[s] / maxVal * 100) : 0;
-      return sc[s] > 0 ? `<div title="Stage ${s === 0 ? 'Preparation' : s}: ${sc[s]}개" style="width:${pct.toFixed(1)}%;height:100%;background:${STAGE_COLORS[s]};display:inline-block;"></div>` : '';
+    const colors = BU_GRADIENTS[id] || BU_GRADIENTS[1];
+
+    const bars = [0,1,2,3,4,5].map((s, i) => {
+      const cnt = sc[s] || 0;
+      const barH = cnt > 0 ? Math.max(3, Math.round(cnt / globalMax * CHART_H)) : 0;
+      const x = Y_AXIS_W + i * (BAR_W + BAR_GAP);
+      const y = TOP_PAD + CHART_H - barH;
+      const midX = x + BAR_W / 2;
+      return `
+        <rect x="${x}" y="${y}" width="${BAR_W}" height="${barH}" fill="${colors[s]}" rx="3"/>
+        ${cnt > 0 ? `<text x="${midX}" y="${y - 4}" text-anchor="middle" font-size="11" font-weight="700" fill="${colors[s]}">${cnt}</text>` : ''}
+        <text x="${midX}" y="${TOP_PAD + CHART_H + 15}" text-anchor="middle" font-size="10" fill="#94a3b8">${s === 0 ? 'Prep' : s}</text>
+      `;
     }).join('');
-    const detail = [0,1,2,3,4,5].filter(s => sc[s] > 0).map(s =>
-      `<span style="color:${STAGE_COLORS[s]};font-weight:600;">${s===0?'Prep':s}</span>:${sc[s]}`
-    ).join('  ');
-    return `<div class="db-bar-row">
-      <div class="db-bar-name" style="color:${buColor};font-weight:600;">${label}</div>
-      <div class="db-bar-track" style="display:flex;">${segments}</div>
-      <div class="db-bar-count" style="color:${buColor};font-weight:600;">${total}</div>
-    </div>
-    <div style="margin:-4px 0 10px 82px;font-size:11px;color:var(--text-muted);">${detail}</div>`;
-  }).join('') + `
-  <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;font-size:11px;">
-    ${[0,1,2,3,4,5].map(s=>`<span><span style="display:inline-block;width:10px;height:10px;background:${STAGE_COLORS[s]};border-radius:2px;margin-right:3px;vertical-align:middle;"></span>${s===0?'Preparation':'Stage '+s}</span>`).join('')}
-  </div>`;
+
+    const gridLines = yTicks.map(v => {
+      const y = TOP_PAD + CHART_H - Math.round(v / globalMax * CHART_H);
+      return `
+        <line x1="${Y_AXIS_W}" y1="${y}" x2="${CHART_W}" y2="${y}" stroke="#e2e8f0" stroke-width="0.5" stroke-dasharray="3,3"/>
+        <text x="${Y_AXIS_W - 4}" y="${y + 4}" text-anchor="end" font-size="10" fill="#94a3b8">${v}</text>
+      `;
+    }).join('');
+
+    return `<div style="display:flex;flex-direction:column;align-items:center;flex:1;min-width:180px;">
+      <div style="font-size:13px;font-weight:700;margin-bottom:6px;">${label} Total ${total}</div>
+      <svg width="${CHART_W}" height="${TOP_PAD + CHART_H + X_AXIS_H}" style="display:block;">
+        ${gridLines}
+        <line x1="${Y_AXIS_W}" y1="${TOP_PAD}" x2="${Y_AXIS_W}" y2="${TOP_PAD + CHART_H}" stroke="#cbd5e1" stroke-width="1"/>
+        <line x1="${Y_AXIS_W}" y1="${TOP_PAD + CHART_H}" x2="${CHART_W}" y2="${TOP_PAD + CHART_H}" stroke="#cbd5e1" stroke-width="1"/>
+        ${bars}
+        <text x="${Y_AXIS_W + ((BAR_W + BAR_GAP) * 6 - BAR_GAP) / 2}" y="${TOP_PAD + CHART_H + X_AXIS_H - 2}" text-anchor="middle" font-size="10" fill="#94a3b8">Progress Stage</text>
+      </svg>
+    </div>`;
+  }
+
+  document.getElementById('db-inactive-chart').innerHTML =
+    `<div style="display:flex;gap:16px;flex-wrap:wrap;justify-content:space-around;padding:8px 0;">` +
+    DB_BU_GROUPS.map(oneChart).join('') +
+    `</div>`;
 }
 
 let currentCpPage = 1;
