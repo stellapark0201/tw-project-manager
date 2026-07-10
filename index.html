@@ -1,5 +1,4 @@
-﻿<!DOCTYPE html>
-<html lang="ko">
+﻿<!DOCTYPE html><html lang="ko">
 <head>
 <meta charset="UTF-8" />
 <title>[Technical Publication] IBU Status</title>
@@ -1339,6 +1338,9 @@
   <div style="display:flex;align-items:center;gap:16px;margin:0 0 20px;position:relative;">
     <h2 id="clPageLabel" style="font-size:23px;font-weight:500;color:var(--text-primary);margin:0;letter-spacing:-0.3px;flex:1;min-width:0;"></h2>
     <div class="page-nav" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);">
+      <button onclick="goHome()" title="홈 — Status 페이지" style="background:none;border:none;cursor:pointer;padding:2px 4px;display:inline-flex;align-items:center;color:rgba(255,255,255,0.75);margin-right:4px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      </button>
       <button class="page-nav-arrow" onclick="gotoClPage(currentClPage - 1)" title="이전">&#8592;</button>
       <div class="page-nav-dots" id="clNavDots"></div>
       <button class="page-nav-arrow" onclick="gotoClPage(currentClPage + 1)" title="다음">&#8594;</button>
@@ -1356,37 +1358,67 @@
 
 <!-- Dashboard Page -->
 <div id="page-dashboard" style="display:none;" class="container">
-  <div style="display:flex;align-items:baseline;gap:16px;margin:0 0 20px;">
-    <h2 style="font-size:21px;font-weight:500;color:var(--text-primary);margin:0;letter-spacing:-0.3px;">Resource Dashboard</h2>
-    <span style="font-size:13px;color:var(--text-muted);">인력 현황 및 충원 분석</span>
-  </div>
-
-  <!-- 요약 카드 -->
-  <div id="db-summary" style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:24px;"></div>
-
-  <!-- 인력별 부하 -->
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:24px;">
-    <div class="db-card">
-      <div class="db-card-title">인력별 프로젝트 현황</div>
-      <div id="db-resource-bars"></div>
-    </div>
-    <div class="db-card">
-      <div class="db-card-title">인력 충원 필요도</div>
-      <div id="db-need-panel"></div>
+  <div style="display:flex;align-items:center;gap:16px;margin:0 0 20px;position:relative;">
+    <h2 id="dbPageLabel" style="font-size:21px;font-weight:500;color:var(--text-primary);margin:0;letter-spacing:-0.3px;">Resource Dashboard</h2>
+    <span id="dbPageSubtitle" style="font-size:13px;color:var(--text-muted);">인력 현황 및 충원 분석</span>
+    <div class="page-nav" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);">
+      <button onclick="goHome()" title="홈 — Status 페이지" style="background:none;border:none;cursor:pointer;padding:2px 4px;display:inline-flex;align-items:center;color:rgba(255,255,255,0.75);margin-right:4px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      </button>
+      <button class="page-nav-arrow" onclick="gotoDbPage(currentDbPage - 1)" title="이전">&#8592;</button>
+      <div class="page-nav-dots" id="dbNavDots"></div>
+      <button class="page-nav-arrow" onclick="gotoDbPage(currentDbPage + 1)" title="다음">&#8594;</button>
     </div>
   </div>
 
-  <!-- 상세 테이블 -->
-  <div class="db-card" style="margin-bottom:24px;">
-    <div class="db-card-title">인력별 담당 프로젝트 목록</div>
-    <div id="db-detail-table"></div>
+  <!-- Dashboard 페이지 1: Resource Dashboard -->
+  <div id="dbPage0">
+    <!-- 요약 카드 -->
+    <div id="db-summary" style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:24px;"></div>
+
+    <!-- 인력별 부하 -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:24px;">
+      <div class="db-card">
+        <div class="db-card-title">인력별 프로젝트 현황</div>
+        <div id="db-resource-bars"></div>
+      </div>
+      <div class="db-card">
+        <div class="db-card-title">인력 충원 필요도</div>
+        <div id="db-need-panel"></div>
+      </div>
+    </div>
+
+    <!-- 상세 테이블 -->
+    <div class="db-card" style="margin-bottom:24px;">
+      <div class="db-card-title">인력별 담당 프로젝트 목록</div>
+      <div id="db-detail-table"></div>
+    </div>
+
+    <!-- 미배정 프로젝트 -->
+    <div class="db-card">
+      <div class="db-card-title">리소스 미배정 프로젝트 <span id="db-unassigned-count" style="font-size:12px;color:var(--red);font-weight:400;margin-left:6px;"></span></div>
+      <div id="db-unassigned"></div>
+    </div>
   </div>
 
-  <!-- 미배정 프로젝트 -->
-  <div class="db-card">
-    <div class="db-card-title">리소스 미배정 프로젝트 <span id="db-unassigned-count" style="font-size:12px;color:var(--red);font-weight:400;margin-left:6px;"></span></div>
-    <div id="db-unassigned"></div>
+  <!-- Dashboard 페이지 2: Delivery Acceleration -->
+  <div id="dbPage1" style="display:none;">
+    <div class="db-card">
+      <div class="db-card-title">월별 Completed 추이 (2026년 1월 ~ 6월) — IBU / RBU / OBU</div>
+      <div id="db-delivery-chart"></div>
+    </div>
   </div>
+
+  <!-- Dashboard 페이지 3: In Active -->
+  <div id="dbPage2" style="display:none;">
+    <div class="db-card">
+      <div class="db-card-title">In Active Product 개수 — IBU / RBU / OBU</div>
+      <div id="db-inactive-chart"></div>
+    </div>
+  </div>
+
+  <!-- Dashboard 페이지 4: 준비 중 (빈 페이지) -->
+  <div id="dbPage3" style="display:none;"><p style="color:var(--text-muted);font-size:15px;padding:60px 0;text-align:center;">준비 중입니다.</p></div>
 </div>
 
 <!-- Completed Project List Page -->
@@ -1395,6 +1427,9 @@
     <h2 id="cpPageLabel" style="font-size:21px;font-weight:500;color:var(--text-primary);margin:0;letter-spacing:-0.3px;">보고 대상 전체</h2>
     <span id="completedYCount" style="font-size:14px;color:var(--text-muted);"></span>
     <div class="page-nav" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);">
+      <button onclick="goHome()" title="홈 — Status 페이지" style="background:none;border:none;cursor:pointer;padding:2px 4px;display:inline-flex;align-items:center;color:rgba(255,255,255,0.75);margin-right:4px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      </button>
       <button class="page-nav-arrow" onclick="gotoCpPage(currentCpPage - 1)" title="이전">&#8592;</button>
       <div class="page-nav-dots" id="cpNavDots"></div>
       <button class="page-nav-arrow" onclick="gotoCpPage(currentCpPage + 1)" title="다음">&#8594;</button>
@@ -1435,9 +1470,17 @@
 
 <!-- Focus Projects Page -->
 <div id="page-focus" style="display:none;" class="container">
-  <div style="display:flex;align-items:baseline;gap:16px;margin:0 0 14px;">
+  <div style="display:flex;align-items:center;gap:16px;margin:0 0 14px;position:relative;">
     <h2 style="font-size:21px;font-weight:500;color:var(--text-primary);margin:0;letter-spacing:-0.3px;">Focus Projects</h2>
     <span id="focusCount" style="font-size:14px;color:var(--text-muted);"></span>
+    <div class="page-nav" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);">
+      <button onclick="goHome()" title="홈 — Status 페이지" style="background:none;border:none;cursor:pointer;padding:2px 4px;display:inline-flex;align-items:center;color:rgba(255,255,255,0.75);margin-right:4px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      </button>
+      <button class="page-nav-arrow" onclick="gotoFocusPage(currentFocusPage - 1)" title="이전">&#8592;</button>
+      <div class="page-nav-dots" id="focusNavDots"></div>
+      <button class="page-nav-arrow" onclick="gotoFocusPage(currentFocusPage + 1)" title="다음">&#8594;</button>
+    </div>
   </div>
   <div id="focusResourceFilter" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;"></div>
   <div class="table-wrap" style="overflow-x:auto;">
@@ -1856,9 +1899,21 @@ const FIREBASE_CONFIG = {
 };
 const FB_DATA_PATH     = 'tw-pm/data';
 const FB_PRESENCE_PATH = 'tw-pm/presence';
+const PERM_DELETED_KEY = 'tw_pm_perm_deleted_ids'; // 영구삭제 ID 목록 (로컬)
+function getPermDeletedIds() {
+  try { return new Set(JSON.parse(localStorage.getItem(PERM_DELETED_KEY)) || []); } catch { return new Set(); }
+}
+function addPermDeletedId(id) {
+  const ids = getPermDeletedIds(); ids.add(id);
+  try { localStorage.setItem(PERM_DELETED_KEY, JSON.stringify([...ids])); } catch {}
+}
+function filterPermDeleted(arr) {
+  const ids = getPermDeletedIds();
+  return (arr || []).filter(p => !ids.has(p.id));
+}
 
 let fbDb = null, fbUnsubscribe = null, presenceUnsub = null;
-let useFirebase = true, pollingTimer = null, _lastSaveTime = 0;
+let useFirebase = true, pollingTimer = null, _lastSaveTime = 0, _lastFbUpdatedAt = '';
 
 // 사용자 정보
 const MY_USER_ID = (() => {
@@ -2044,6 +2099,41 @@ function showConflictDialog(conflicts, fbProjects, fbDeletedProjects) {
 async function saveToFirebase() {
   if (adminMode) return; // 🔒 관리자 모드: 공유 저장 차단
   if (!fbDb || !useFirebase) { saveToServer(); return; }
+
+  // 🛡️ 저장 전 Firebase 최신 updatedAt 확인 — 내 로컬 데이터가 더 오래됐으면 저장 차단
+  try {
+    const snap = await fbDb.doc(FB_DATA_PATH).get();
+    if (snap.exists) {
+      const fbData = snap.data();
+      const fbUpdatedAt = fbData.updatedAt ? (fbData.updatedAt.toDate ? fbData.updatedAt.toDate().toISOString() : fbData.updatedAt) : '';
+      // 로컬 projects 중 가장 최신 updatedAt
+      const localLatest = (projects || []).reduce((max, p) => p.updatedAt > max ? p.updatedAt : max, '');
+      if (fbUpdatedAt && localLatest && fbUpdatedAt > localLatest) {
+        // Firebase가 더 최신 → 내 데이터가 오래된 것. 최신 데이터를 먼저 받아서 병합
+        const incomingProjects = fbData.projects || [];
+        const mergedDeleted2 = filterPermDeleted(fbData.deletedProjects || deletedProjects || []);
+        const deletedIds2 = new Set(mergedDeleted2.map(p => p.id));
+        const incomingMap = new Map(filterPermDeleted(incomingProjects).filter(p => !deletedIds2.has(p.id)).map(p => [p.id, p]));
+        const localMap = new Map(filterPermDeleted(projects || []).filter(p => !deletedIds2.has(p.id)).map(p => [p.id, p]));
+        const allIds = new Set([...incomingMap.keys(), ...localMap.keys()]);
+        const merged = [];
+        allIds.forEach(id => {
+          const fbP = incomingMap.get(id);
+          const localP = localMap.get(id);
+          if (!fbP) { merged.push(localP); return; }
+          if (!localP) { merged.push(fbP); return; }
+          merged.push((fbP.updatedAt || '') >= (localP.updatedAt || '') ? fbP : localP);
+        });
+        projects = merged;
+        deletedProjects = mergedDeleted2;
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(projects)); } catch {}
+        renderDashboard(); renderDeletedList(); renderBoardSections(); refreshActiveView();
+        showSyncStatus('⚠ 팀원 최신 데이터 병합 후 저장', 'var(--amber)');
+        if (_lastFbUpdatedAt !== fbUpdatedAt) _lastFbUpdatedAt = fbUpdatedAt;
+      }
+    }
+  } catch(e) { /* 확인 실패 시 그냥 저장 진행 */ }
+
   _lastSaveTime = Date.now();
   try {
     await fbDb.doc(FB_DATA_PATH).set({ projects, deletedProjects, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
@@ -2055,20 +2145,42 @@ function listenFirebase() {
   if (fbUnsubscribe) fbUnsubscribe();
   fbUnsubscribe = fbDb.doc(FB_DATA_PATH).onSnapshot(snap => {
     if (!snap.exists) return;
-    if (Date.now() - _lastSaveTime < 2000) return; // 내가 방금 저장한 것 무시
+    if (Date.now() - _lastSaveTime < 5000) return; // 내가 방금 저장한 것 무시 (5초로 연장)
     const d = snap.data();
     const incoming = d.projects || [];
-    // 🛡️ 안전장치: Firebase가 비었는데 로컬에 데이터가 있으면 덮어쓰지 않음 (실수/사고로 인한 전체 삭제 전파 방지)
+    // 🛡️ 안전장치: Firebase가 비었는데 로컬에 데이터가 있으면 덮어쓰지 않음
     if (incoming.length === 0 && Array.isArray(projects) && projects.length > 0) {
       showSyncStatus('⚠ Firebase가 비어있음 — 로컬 데이터 보존(덮어쓰기 차단). 복구하려면 Ctrl+S로 업로드하세요.', '#ef4444');
       return;
     }
-    projects = incoming;
-    deletedProjects = d.deletedProjects || [];
+    // 🛡️ updatedAt 비교: Firebase 데이터가 로컬보다 오래됐으면 무시 (오래된 탭이 최신 데이터를 덮어쓰는 것 방지)
+    const fbUpdatedAt = d.updatedAt ? (d.updatedAt.toDate ? d.updatedAt.toDate().toISOString() : d.updatedAt) : '';
+    if (fbUpdatedAt && _lastFbUpdatedAt && fbUpdatedAt <= _lastFbUpdatedAt && Date.now() - _lastSaveTime > 5000) {
+      return; // 이미 받은 것보다 오래된 스냅샷 무시
+    }
+    if (fbUpdatedAt) _lastFbUpdatedAt = fbUpdatedAt;
+    // 🛡️ 프로젝트별 updatedAt 비교: 각 프로젝트마다 더 최신인 것을 유지
+    const mergedDeleted = filterPermDeleted(d.deletedProjects || deletedProjects || []);
+    const deletedIds = new Set(mergedDeleted.map(p => p.id));
+    const incomingMap = new Map(filterPermDeleted(incoming).filter(p => !deletedIds.has(p.id)).map(p => [p.id, p]));
+    const localMap = new Map(filterPermDeleted(projects || []).filter(p => !deletedIds.has(p.id)).map(p => [p.id, p]));
+    const merged = [];
+    const allIds = new Set([...incomingMap.keys(), ...localMap.keys()]);
+    allIds.forEach(id => {
+      const fbP = incomingMap.get(id);
+      const localP = localMap.get(id);
+      if (!fbP) { merged.push(localP); return; }
+      if (!localP) { merged.push(fbP); return; }
+      const fbTs = fbP.updatedAt || '';
+      const localTs = localP.updatedAt || '';
+      merged.push(fbTs >= localTs ? fbP : localP);
+    });
+    projects = merged;
+    deletedProjects = mergedDeleted;
     ensureAllSelected();
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(projects)); } catch {}
     renderDashboard(); renderDeletedList(); renderBoardSections();
-    refreshActiveView(); // 현재 보고 있는 페이지(completed/focus/dashboard 등)도 최신 데이터로 갱신
+    refreshActiveView();
     updateConnectionStatus('realtime');
   }, err => {
     console.warn('Firebase listener error:', err.code, err.message);
@@ -2474,6 +2586,9 @@ let _opResourceFilter = new Set();
 const STATUS_PAGE_COUNT = 3;
 let currentStatusPage = 1;
 let currentClPage = 0; // 0=Total, 1=IBU, 2=RBU, 3=OBU
+let currentFocusPage = 3; // 0=IBU, 1=RBU, 2=OBU, 3=Total
+const DB_PAGE_COUNT = 4;
+let currentDbPage = 0; // 0=Resource Dashboard, 1~3=준비 중
 
 let currentProjectId = null;
 let sidePanelProjectId = null;
@@ -2631,6 +2746,12 @@ function overallPercent(project) {
 function getPbState(project, stageNum) {
   return (project.pbStates && project.pbStates[stageNum]) || 0;
 }
+// Focus Projects 판정: Progress Bar에서 실제 하늘색(#00aee6, pbCore 삼각형/전체)으로 표시되는 프로젝트
+// (ps-wip/ps-done은 회색으로 변경되어 더 이상 "하늘색"이 아님 — renderProgressBar의 cls 분기 참고)
+function isFocusProject(p) {
+  const pbCore = p.pbCore || {};
+  return Object.keys(pbCore).some(k => pbCore[k] === 1 || pbCore[k] === 2);
+}
 // pbState(0~3) 색상 상태 매핑. 0 흰색 / 1,3 하늘색 / 2 네이비
 // [주의] Progress Bar(psClassFromState)와 Project Checklist 칸반 헤더(pbStateToColClass)는 항상 동일한 상태(p.pbStates)와 같은 규칙으로 매핑돼야 한다.
 // 색상 순환/별표 로직·설정 변경 시 clickProgressBar와 함께 일관되게 수정해야 함
@@ -2648,7 +2769,7 @@ function renderProgressBar(project) {
     const cls = core === 1 ? 'ps-core-tri' : core === 2 ? 'ps-core-full' : psClassFromState(displayStates[i]);
     const { done, total } = stageProgress(project, stage);
     return `<div class="progress-segment ${cls}"
-      title="${stage.label}: ${done}/${total} — 클릭으로 전환 / 우클릭으로 파란색 순환(삼각형→전체→원래대로)"
+      title="${stage.label}: ${done}/${total} — 클릭으로 전환(전체→삼각형→원래대로) / 우클릭으로 파란색 순환(전체→삼각형→원래대로)"
       onclick="clickProgressBar('${project.id}',${stage.num})"
       oncontextmenu="toggleProgressBarCore(event,'${project.id}',${stage.num})">${stage.num}</div>`;
   }).join('');
@@ -2760,13 +2881,13 @@ function clickProgressBar(id, stageNum, fromHeader = false) {
 
   if (!p.pbStates) p.pbStates = {};
 
-  // Stage 1이 네이비(2)일 때 클릭 → 전체 초기화
-  if (stageNum === 1 && (p.pbStates[1] || 0) === 2) {
+  // Stage 1이 삼각형(1, 순환의 마지막 단계)일 때 클릭 → 전체 초기화
+  if (stageNum === 1 && (p.pbStates[1] || 0) === 1) {
     resetAllStages(p);
   } else {
-    // 3단계 순환: 0 없음 → 1 삼각형(절반) → 2 전체 색상 → 0 없음
+    // 3단계 순환: 0 없음 → 2 전체 색상 → 1 삼각형(절반) → 0 없음
     const cur = p.pbStates[stageNum] || 0;
-    const next = (cur + 1) % 3;
+    const next = cur === 0 ? 2 : (cur === 2 ? 1 : 0);
     p.pbStates[stageNum] = next;
 
     if (next === 0) {
@@ -4050,7 +4171,7 @@ function toggleKanbanCoreStar(pid, stageNum) {
     document.getElementById('sidePanelChecklist').innerHTML = buildKanban(p, 'toggleSideCheck');
 }
 
-/* ── Progress Bar 우클릭 → 파란색 순환 (삼각형 → 전체 → 원래대로) ──
+/* ── Progress Bar 우클릭 → 파란색 순환 (전체 → 삼각형 → 원래대로) ──
    pbState(회색 삼각형/전체)와는 독립된 오버레이. 켜져 있는 동안은 그 모양대로 파란색으로 보이고,
    원래대로(0)가 되면 원래 pbState 기반 회색 표시로 복귀한다. */
 function toggleProgressBarCore(e, pid, stageNum) {
@@ -4061,7 +4182,8 @@ function toggleProgressBarCore(e, pid, stageNum) {
   if (!p) return;
   if (!p.pbCore) p.pbCore = {};
 
-  const next = ((p.pbCore[stageNum] || 0) + 1) % 3;
+  const cur = p.pbCore[stageNum] || 0;
+  const next = cur === 0 ? 2 : (cur === 2 ? 1 : 0);
   if (next > 0) p.pbCore = {};   // 프로젝트당 한 번에 하나의 스테이지만 파란색 표시
   p.pbCore[stageNum] = next;
   p.coreStages = next > 0 ? [stageNum] : [];   // 칸반 헤더 별표 아이콘과 동기화
@@ -4935,7 +5057,7 @@ function buildPptSlideOnPres(pres, exportList, slideTitle, slideNum) {
   const STAGE_COL_X  = 0.365 + 4.1 + 3.1 + 1.5; // Progress 컬럼 시작 X
   const STAGE_COL_W  = 0.30;
   const ROW_H        = 0.32;
-  const DATA_START_Y = 1.42 + ROW_H * 2; // 헤더 2행 높이만큼 아래
+  const DATA_START_Y = 1.42 + ROW_H; // 헤더 행 높이만큼 아래
 
   // 표보다 먼저 그려서, 표의 투명한 삼각형 셀 뒤로 도형이 비치도록 함
   exportList.forEach((p, rowIdx) => {
@@ -4954,23 +5076,14 @@ function buildPptSlideOnPres(pres, exportList, slideTitle, slideNum) {
   });
 
   /* ── 헤더 2행: 1행=컬럼명, 2행=stage 번호 ── */
-  // colW: [4.1, 3.1, 1.5, 0.30×5=1.5, 2.3] = 12.6"
+  // colW: [4.4, 3.1, 1.5, 0.26×5=1.3, 2.3] = 12.6"
   const H12 = (extra={}) => edgeBorder(false, false, {...HDR, fontSize:12, ...extra});
-  const HDR_SM = { fill:{color:'1F3864'}, color:'FFFFFF', bold:true,
-                   align:'center', valign:'middle', fontSize:10, fontFace:'Arial', border:BDR_W };
   const hRow1 = [
-    { text:'Product',     options: edgeBorder(true,  false, {...HDR, fontSize:12, rowspan:2}) },
-    { text:'Publication', options: H12({rowspan:2}) },
-    { text:'Purpose',     options: H12({rowspan:2}) },
+    { text:'Product',     options: edgeBorder(true,  false, {...HDR, fontSize:12}) },
+    { text:'Publication', options: H12() },
+    { text:'Purpose',     options: H12() },
     { text:'Progress',    options: H12({colspan:5}) },
-    { text:'Target Date', options: edgeBorder(false, true,  {...HDR, fontSize:12, rowspan:2}) },
-  ];
-  const hRow2 = [
-    { text:'1', options: {...HDR_SM} },
-    { text:'2', options: {...HDR_SM} },
-    { text:'3', options: {...HDR_SM} },
-    { text:'4', options: {...HDR_SM} },
-    { text:'5', options: {...HDR_SM} },
+    { text:'Target Date', options: edgeBorder(false, true,  {...HDR, fontSize:12}) },
   ];
 
   /* ── 데이터 행 ── */
@@ -4985,7 +5098,7 @@ function buildPptSlideOnPres(pres, exportList, slideTitle, slideNum) {
     ];
   });
 
-  slide.addTable([hRow1, hRow2, ...dataRows], {
+  slide.addTable([hRow1, ...dataRows], {
     x:0.365, y:1.42, w:12.6,
     colW:[4.1, 3.1, 1.5, 0.30, 0.30, 0.30, 0.30, 0.30, 2.3],
     rowH:0.32,
@@ -5065,19 +5178,104 @@ function buildPptPreviewSlideHTML(exportList, slideTitle, slideNum) {
   </div>`;
 }
 
-function showPPTPreview() {
+/* ── PPT Export/Preview 대상: 현재 보고 있는 페이지 기준으로 결정 ──
+   헤더의 PPT 버튼은 페이지 이동 없이 그대로 호출되므로 현재 활성 nav-item으로 판단하면 되지만,
+   상단 nav의 "PPT Preview" 탭으로 들어온 경우엔 그 탭 자체가 활성화되어 원래 보던 페이지를 알 수 없다.
+   그래서 navTo()에서 pptformat으로 이동하기 직전의 페이지를 pptSourcePage에 저장해두고 그걸 사용한다. */
+function getPptExportPage() {
+  const active = document.querySelector('.nav-item.active');
+  const id = (active?.id || 'nav-status').replace('nav-', '');
+  return id === 'pptformat' ? pptSourcePage : id;
+}
+
+const PPT_BU_NAMES = { 1: 'IBU', 2: 'RBU', 3: 'OBU' };
+
+// pageVar: 0,1,2 = IBU/RBU/OBU 중 하나만, 3 = Total(전체 3개)
+function pptBuGroups(pageVar, filterFn, titlePrefix) {
+  const groups = [];
+  for (let pid = 1; pid <= 3; pid++) {
+    if (pageVar !== 3 && pageVar !== pid - 1) continue;
+    const list = projects.filter(p => filterFn(p) && (p.pageId || 1) === pid);
+    if (list.length) groups.push({ title: `${titlePrefix} — ${PPT_BU_NAMES[pid]}`, list });
+  }
+  return groups;
+}
+
+// 현재 페이지가 보여주고 있는 내용 그대로 PPT 대상 데이터를 계산
+function getPptExportGroups() {
+  const page = getPptExportPage();
+  const notReport = p => !['M','Q','Y'].some(t => (p.boardTypes||[]).includes(t));
+
+  if (page === 'optask') {
+    const list = opProjects.filter(p => p.selected !== false);
+    return { kind: 'projects', groups: list.length ? [{ title: 'Operational Tasks', list }] : [] };
+  }
+  if (page === 'focus') {
+    const groups = pptBuGroups(currentFocusPage, p => p.selected !== false && isFocusProject(p), 'Focus Projects');
+    return { kind: 'projects', groups };
+  }
+  if (page === 'checklist') {
+    const groups = pptBuGroups(currentClPage, p => p.selected !== false && notReport(p), 'Progress');
+    return { kind: 'projects', groups };
+  }
+  if (page === 'completed') {
+    const list = projects.filter(p => {
+      const bt = p.boardTypes || [];
+      return (bt.includes('M') || bt.includes('Q') || bt.includes('Y')) && (p.pageId || 1) === currentStatusPage;
+    });
+    return { kind: 'projects', groups: list.length ? [{ title: `보고 대상 — ${PPT_BU_NAMES[currentStatusPage] || ''}`, list }] : [] };
+  }
+  if (page === 'dashboard') {
+    return { kind: 'dashboard', dbPage: currentDbPage };
+  }
+  // 기본값(status 등): Active Projects 전체(IBU/RBU/OBU) — 기존 동작 유지
+  const pageTitles = (() => { try { return JSON.parse(localStorage.getItem('tw_pm_page_titles')) || {}; } catch { return {}; } })();
   const allSelected = projects.filter(p => p.selected !== false);
-  if (!allSelected.length) { alert('PPT에 포함할 프로젝트가 없습니다.\n체크박스를 하나 이상 선택해주세요.'); return; }
-
-  const pageTitles = (() => { try { return JSON.parse(localStorage.getItem('tw_pm_page_titles'))||{}; } catch { return {}; } })();
-
-  let slidesHTML = '';
-  let slideNum = 0;
+  const groups = [];
   for (let pageNum = 1; pageNum <= STATUS_PAGE_COUNT; pageNum++) {
-    const list = allSelected.filter(p => (p.pageId||1) === pageNum);
-    if (!list.length) continue;
-    slideNum++;
-    slidesHTML += buildPptPreviewSlideHTML(list, pageTitles[pageNum] || '[Technical Publication] Status', slideNum);
+    const list = allSelected.filter(p => (p.pageId || 1) === pageNum);
+    if (list.length) groups.push({ title: pageTitles[pageNum] || `[Technical Publication] Status`, list });
+  }
+  return { kind: 'projects', groups };
+}
+
+function buildPptPreviewDashboardHTML(dbPage) {
+  const wrap = (title, inner) => `<div style="background:#fff;border-radius:6px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.15);margin-bottom:20px;font-family:Arial,sans-serif;">
+    <div style="height:5px;background:#3B82F6;"></div>
+    <div style="padding:14px 18px 18px;">
+      <div style="font-size:20px;font-weight:700;color:#1F2937;margin-bottom:10px;">${title}</div>
+      ${inner}
+    </div>
+  </div>`;
+  if (dbPage === 0) {
+    const inner = document.getElementById('dbPage0')?.innerHTML;
+    return inner ? wrap('Resource Dashboard', inner) : null;
+  }
+  if (dbPage === 1) {
+    const inner = document.getElementById('db-delivery-chart')?.innerHTML;
+    return inner ? wrap('Delivery Acceleration', inner) : null;
+  }
+  if (dbPage === 2) {
+    const inner = document.getElementById('db-inactive-chart')?.innerHTML;
+    return inner ? wrap('In Active', inner) : null;
+  }
+  return null;
+}
+
+function showPPTPreview() {
+  const ctx = getPptExportGroups();
+  let slidesHTML = '';
+  let slideCount = 0;
+
+  if (ctx.kind === 'dashboard') {
+    const html = buildPptPreviewDashboardHTML(ctx.dbPage);
+    if (!html) { alert('이 Dashboard 페이지는 아직 준비 중이라 미리 볼 내용이 없습니다.'); return; }
+    slidesHTML = html;
+    slideCount = 1;
+  } else {
+    const groups = ctx.groups || [];
+    if (!groups.length) { alert('PPT에 포함할 데이터가 없습니다.\n체크박스를 하나 이상 선택했는지 확인해주세요.'); return; }
+    groups.forEach(g => { slideCount++; slidesHTML += buildPptPreviewSlideHTML(g.list, g.title, slideCount); });
   }
 
   let modal = document.getElementById('pptPreviewModal');
@@ -5091,7 +5289,7 @@ function showPPTPreview() {
   modal.innerHTML = `
     <div style="width:100%;max-width:860px;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-        <div style="color:#fff;font-size:16px;font-weight:600;">PPT Preview — ${slideNum} slide${slideNum>1?'s':''}</div>
+        <div style="color:#fff;font-size:16px;font-weight:600;">PPT Preview — ${slideCount} slide${slideCount>1?'s':''}</div>
         <div style="display:flex;gap:8px;">
           <button onclick="exportToPPT()" style="background:#3B82F6;color:#fff;border:none;border-radius:6px;padding:7px 16px;font-size:13px;cursor:pointer;font-weight:500;">PPTX 내보내기</button>
           <button onclick="closePPTPreview()" style="background:rgba(255,255,255,0.15);color:#fff;border:1px solid rgba(255,255,255,0.3);border-radius:6px;padding:7px 14px;font-size:13px;cursor:pointer;">닫기</button>
@@ -5127,23 +5325,142 @@ function pptNameRuns(p) {
   ];
 }
 
-function exportToPPT() {
-  const allSelected = projects.filter(p => p.selected !== false);
-  if (!allSelected.length) { alert('PPT에 포함할 프로젝트가 없습니다.\n체크박스를 하나 이상 선택해주세요.'); return; }
+/* ── Dashboard 전용 PPT 슬라이드: 표는 addTable, 그래프는 addChart(네이티브 차트)로 만들어
+   PowerPoint에서 더블클릭 → 데이터 편집이 가능한 "살아있는" 데이터로 내보낸다. ── */
+function pptSlideHeader(pres, slide, title) {
+  slide.addShape(pres.ShapeType.rect, { x:0, y:0, w:13.33, h:0.07, fill:{color:'3B82F6'}, line:{color:'3B82F6', pt:0} });
+  slide.addText(title, { x:0.4, y:0.1, w:12.5, h:0.9, fontSize:32, bold:true, color:'1F2937', fontFace:'Arial', valign:'bottom' });
+}
 
-  const pres = new PptxGenJS();
-  pres.layout = 'LAYOUT_WIDE';
-  const pageTitles = (() => { try { return JSON.parse(localStorage.getItem('tw_pm_page_titles'))||{}; } catch { return {}; } })();
-  let slideNum = 0;
+function addResourceDashboardPptSlide(pres) {
+  const slide = pres.addSlide();
+  pptSlideHeader(pres, slide, 'Resource Dashboard');
 
-  for (let pageNum = 1; pageNum <= STATUS_PAGE_COUNT; pageNum++) {
-    const exportList = allSelected.filter(p => (p.pageId||1) === pageNum);
-    if (!exportList.length) continue;
-    slideNum++;
-    buildPptSlideOnPres(pres, exportList, pageTitles[pageNum] || `[Technical Publication] Status`, slideNum);
+  const resMap = {};
+  projects.forEach(p => {
+    (p.resource || '').split(/[,、\s]+/).map(s => s.trim()).filter(Boolean).forEach(name => {
+      if (!resMap[name]) resMap[name] = { total: 0, active: 0, done: 0, report: 0 };
+      const pct = overallPercent(p);
+      resMap[name].total++;
+      if (pct === 100) resMap[name].done++; else resMap[name].active++;
+      if ((p.boardTypes || []).length > 0) resMap[name].report++;
+    });
+  });
+  const entries = Object.entries(resMap).sort((a, b) => b[1].total - a[1].total);
+
+  if (!entries.length) {
+    slide.addText('리소스가 배정된 프로젝트가 없습니다.', { x:0.5, y:1.4, w:12, h:0.5, fontSize:14, color:'6B7280', fontFace:'Arial' });
+    return slide;
   }
 
-  pres.writeFile({ fileName:`ProjectStatus_${new Date().toISOString().slice(0,10)}.pptx` });
+  const HDR  = { fill:{color:'1F3864'}, color:'FFFFFF', bold:false, align:'center', valign:'middle', fontSize:13, fontFace:'Arial', border:{type:'solid',pt:0.5,color:'FFFFFF'} };
+  const CELL = { fill:{color:'FFFFFF'}, color:'1F2937', align:'center', valign:'middle', fontSize:12, fontFace:'Arial', border:{type:'solid',pt:0.5,color:'CBD5E1'} };
+  const header = [
+    { text:'리소스',   options:{...HDR, align:'left'} },
+    { text:'전체',     options:HDR },
+    { text:'진행 중',  options:HDR },
+    { text:'완료',     options:HDR },
+    { text:'보고 대상', options:HDR },
+  ];
+  const rows = entries.map(([name, d]) => [
+    { text:name,               options:{...CELL, align:'left'} },
+    { text:String(d.total),    options:CELL },
+    { text:String(d.active),   options:CELL },
+    { text:String(d.done),     options:CELL },
+    { text:String(d.report),   options:CELL },
+  ]);
+
+  slide.addTable([header, ...rows], {
+    x:0.5, y:1.3, w:8, colW:[3, 1.25, 1.25, 1.25, 1.25],
+    rowH:0.34, fontFace:'Arial', fontSize:12, valign:'middle',
+    border:{ type:'solid', pt:0.5, color:'CBD5E1' },
+  });
+  return slide;
+}
+
+function addDeliveryChartPptSlide(pres) {
+  const slide = pres.addSlide();
+  pptSlideHeader(pres, slide, 'Delivery Acceleration');
+
+  const months = ['2026-01','2026-02','2026-03','2026-04','2026-05','2026-06'];
+  const monthLabels = ['Jan','Feb','Mar','Apr','May','Jun'];
+  const series = DB_BU_GROUPS.map(([id, label, color]) => ({
+    name: label, color,
+    counts: months.map(m => projects.filter(p => (p.pageId || 1) === id && (p.releaseDate || '').slice(0, 7) === m).length),
+  }));
+  const totalCounts = months.map((_, i) => series.reduce((s, ser) => s + ser.counts[i], 0));
+
+  const chartData = [
+    ...series.map(s => ({ name: s.name, labels: monthLabels, values: s.counts })),
+    { name: 'Total', labels: monthLabels, values: totalCounts },
+  ];
+  const chartColors = [...series.map(s => s.color.replace('#', '')), DB_TOTAL_COLOR.replace('#', '')];
+
+  slide.addChart(pres.ChartType.bar, chartData, {
+    x:0.5, y:1.25, w:12.3, h:5.6,
+    barDir:'col', barGrouping:'clustered',
+    chartColors,
+    showLegend:true, legendPos:'b',
+    showTitle:true, title:'Number of Publications Completed in 2026',
+    catAxisTitle:'Month', showCatAxisTitle:true,
+    valAxisTitle:'Completed', showValAxisTitle:true,
+    showValue:true, dataLabelPosition:'inEnd', dataLabelColor:'FFFFFF', dataLabelFontSize:10, dataLabelFontFace:'Arial', dataLabelFontBold:true,
+    valGridLine: { color:'E2E8F0', size:0.5 },
+    catGridLine: { style:'none' },
+  });
+  return slide;
+}
+
+function addInActiveChartPptSlide(pres) {
+  const slide = pres.addSlide();
+  pptSlideHeader(pres, slide, 'In Active');
+
+  const counts = {};
+  DB_BU_GROUPS.forEach(([id]) => { counts[id] = 0; });
+  projects.forEach(p => {
+    const bt = p.boardTypes || [];
+    if (bt.includes('M') || bt.includes('Q') || bt.includes('Y')) return;
+    const pid = p.pageId || 1;
+    if (counts[pid] !== undefined) counts[pid]++;
+  });
+  const labels = DB_BU_GROUPS.map(([, label]) => label);
+  const values = DB_BU_GROUPS.map(([id]) => counts[id]);
+  const colors = DB_BU_GROUPS.map(([, , color]) => color.replace('#', ''));
+
+  slide.addChart(pres.ChartType.bar, [{ name: 'In Active', labels, values }], {
+    x:0.5, y:1.25, w:12.3, h:5.6,
+    barDir:'col',
+    chartColors: colors,
+    showLegend:false,
+    valAxisTitle:'Product 개수', showValAxisTitle:true,
+    showValue:true, dataLabelPosition:'inEnd', dataLabelColor:'FFFFFF', dataLabelFontSize:11, dataLabelFontFace:'Arial', dataLabelFontBold:true,
+    valGridLine: { color:'E2E8F0', size:0.5 },
+    catGridLine: { style:'none' },
+  });
+  return slide;
+}
+
+function buildPptDeckForExport(pres) {
+  const ctx = getPptExportGroups();
+  if (ctx.kind === 'dashboard') {
+    if (ctx.dbPage === 0) addResourceDashboardPptSlide(pres);
+    else if (ctx.dbPage === 1) addDeliveryChartPptSlide(pres);
+    else if (ctx.dbPage === 2) addInActiveChartPptSlide(pres);
+    else { alert('이 Dashboard 페이지는 아직 준비 중이라 내보낼 내용이 없습니다.'); return false; }
+    return true;
+  }
+  const groups = ctx.groups || [];
+  if (!groups.length) { alert('PPT에 포함할 데이터가 없습니다.\n체크박스를 하나 이상 선택했는지 확인해주세요.'); return false; }
+  groups.forEach((g, i) => buildPptSlideOnPres(pres, g.list, g.title, i + 1));
+  return true;
+}
+
+function exportToPPT() {
+  const pres = new PptxGenJS();
+  pres.layout = 'LAYOUT_WIDE';
+  if (!buildPptDeckForExport(pres)) return;
+  const page = getPptExportPage();
+  pres.writeFile({ fileName:`TW_${page}_${new Date().toISOString().slice(0,10)}.pptx` });
 }
 
 /* ── Deleted List ── */
@@ -5768,7 +6085,9 @@ function permanentDeleteFromList(id) {
   const p = deletedProjects.find(x => x.id === id);
   if (!p) return;
   if (!confirm(`"${p.name || '(이름없음)'}"을(를) 영구 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) return;
+  addPermDeletedId(id); // 영구삭제 ID 기록
   deletedProjects = deletedProjects.filter(x => x.id !== id);
+  projects = projects.filter(x => x.id !== id); // projects에도 혹시 있으면 제거
   try { localStorage.setItem(DELETED_KEY, JSON.stringify(deletedProjects)); } catch {}
   saveProjects('영구 삭제', p.name || '');
   renderDeletedList();
@@ -5777,6 +6096,7 @@ function permanentDeleteFromList(id) {
 function clearDeletedList(e) {
   e.stopPropagation();
   if (!confirm('삭제 목록을 전체 지우시겠습니까?')) return;
+  deletedProjects.forEach(p => addPermDeletedId(p.id)); // 전체 영구삭제 ID 기록
   deletedProjects = [];
   try { localStorage.removeItem(DELETED_KEY); } catch {}
   renderDeletedList(); renderBoardSections();
@@ -5932,20 +6252,8 @@ async function exportData() {
 async function importData(event) {
   // 버튼 직접 클릭 (event 없음)
   if (!event || !event.target || !event.target.files) {
-    if (window.showOpenFilePicker) {
-      try {
-        const [fileHandle] = await window.showOpenFilePicker({
-          types: [{ description: 'JSON 백업', accept: { 'application/json': ['.json'] } }],
-          multiple: false
-        });
-        const file = await fileHandle.getFile();
-        await _doImport(file);
-      } catch(e) {
-        if (e.name !== 'AbortError') alert('파일 열기 오류: ' + e.message);
-      }
-    } else {
-      document.getElementById('importFileInput').click();
-    }
+    // showOpenFilePicker 대신 항상 input[type=file] 사용 (폴더 접근 제한 우회)
+    document.getElementById('importFileInput').click();
     return;
   }
   // input[type=file] onchange 경로 (폴백)
@@ -7092,6 +7400,34 @@ function renderClNavDots() {
   if (label) label.textContent = CL_TITLES[currentClPage];
 }
 
+function gotoFocusPage(n) {
+  const total = STATUS_PAGE_COUNT + 1; // 0,1,2=IBU/RBU/OBU, 3=Total
+  currentFocusPage = ((n % total) + total) % total;
+  showFocusPage();
+}
+
+function renderFocusNavDots() {
+  const el = document.getElementById('focusNavDots');
+  if (!el) return;
+  const FOCUS_TITLES = ['IBU', 'RBU', 'OBU', 'Total'];
+  el.innerHTML = FOCUS_TITLES.map((title, i) =>
+    `<div class="page-nav-dot ${i === currentFocusPage ? 'active' : ''}" onclick="gotoFocusPage(${i})" title="${title}"></div>`
+  ).join('');
+}
+
+function gotoDbPage(n) {
+  currentDbPage = ((n % DB_PAGE_COUNT) + DB_PAGE_COUNT) % DB_PAGE_COUNT;
+  showDashboardPage();
+}
+
+function renderDbNavDots() {
+  const el = document.getElementById('dbNavDots');
+  if (!el) return;
+  el.innerHTML = Array.from({length: DB_PAGE_COUNT}, (_, i) =>
+    `<div class="page-nav-dot ${i === currentDbPage ? 'active' : ''}" onclick="gotoDbPage(${i})" title="페이지 ${i + 1}"></div>`
+  ).join('');
+}
+
 function renderPageNavDots() {
   const el = document.getElementById('pageNavDots');
   if (!el) return;
@@ -7102,9 +7438,29 @@ function renderPageNavDots() {
 }
 
 /* ── Nav Bar ── */
-function refreshCurrentPage() {
-  try { projects = JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch { projects = []; }
-  try { deletedProjects = JSON.parse(localStorage.getItem(DELETED_KEY)) || []; } catch { deletedProjects = []; }
+async function refreshCurrentPage() {
+  // 항상 Firebase 최신 데이터로 시작 (로컬 캐시 무시)
+  if (fbDb && useFirebase && !adminMode) {
+    try {
+      const snap = await fbDb.doc(FB_DATA_PATH).get();
+      if (snap.exists) {
+        const d = snap.data();
+        if (d.projects && d.projects.length > 0) {
+          projects = d.projects;
+          deletedProjects = d.deletedProjects || [];
+          try { localStorage.setItem(STORAGE_KEY, JSON.stringify(projects)); } catch {}
+          try { localStorage.setItem(DELETED_KEY, JSON.stringify(deletedProjects)); } catch {}
+        }
+      }
+    } catch(e) {
+      // Firebase 실패 시 로컬 폴백
+      try { projects = JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch { projects = []; }
+      try { deletedProjects = JSON.parse(localStorage.getItem(DELETED_KEY)) || []; } catch { deletedProjects = []; }
+    }
+  } else {
+    try { projects = JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch { projects = []; }
+    try { deletedProjects = JSON.parse(localStorage.getItem(DELETED_KEY)) || []; } catch { deletedProjects = []; }
+  }
   applyRawDataDefaults();
   migrateCustomerFromName();
 
@@ -7144,12 +7500,18 @@ function goHome() {
   }
 }
 
+let pptSourcePage = 'status';
 function navTo(page, pushHistory = true) {
+  if (page === 'pptformat') {
+    const cur = document.querySelector('.nav-item.active');
+    const curId = (cur?.id || '').replace('nav-', '');
+    if (curId && curId !== 'pptformat') pptSourcePage = curId;
+  }
   document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
   document.getElementById('nav-' + page)?.classList.add('active');
 
   // 모든 페이지 숨김
-  document.getElementById('mainContainer').style.display    = page === 'checklist' ? 'none' : '';
+  document.getElementById('mainContainer').style.display    = page === 'status' ? '' : 'none';
   document.getElementById('dashboard').style.display        = 'none';
   document.getElementById('detail').style.display           = 'none';
   document.getElementById('completedSection').style.display = 'none';
@@ -7567,6 +7929,21 @@ function updateOpStickyOffsets() {
 
 /* ── Completed Project List ── */
 function showDashboardPage() {
+  renderDbNavDots();
+  for (let i = 0; i < DB_PAGE_COUNT; i++) {
+    const el = document.getElementById('dbPage' + i);
+    if (el) el.style.display = i === currentDbPage ? '' : 'none';
+  }
+  const DB_PAGE_TITLES = ['Resource Dashboard', 'Delivery Acceleration', 'In Active', 'Dashboard 4'];
+  const dbLabel = document.getElementById('dbPageLabel');
+  const dbSubtitle = document.getElementById('dbPageSubtitle');
+  dbLabel.textContent = DB_PAGE_TITLES[currentDbPage] || `Dashboard ${currentDbPage + 1}`;
+  dbSubtitle.style.display = currentDbPage === 0 ? '' : 'none';
+
+  if (currentDbPage === 1) { renderDeliveryChart(); return; }
+  if (currentDbPage === 2) { renderInActiveChart(); return; }
+  if (currentDbPage !== 0) return; // 4페이지는 아직 준비 중 (데이터 렌더링 불필요)
+
   const all = projects;
   const active = all.filter(p => overallPercent(p) < 100);
   const done   = all.filter(p => overallPercent(p) === 100);
@@ -7680,6 +8057,134 @@ function showDashboardPage() {
         `<span class="db-proj-chip" onclick="navTo('status');setTimeout(()=>showDetail('${p.id}'),100)">${escapeHtml(p.name||'(이름없음)')}</span>`
       ).join('')}</div>`
     : '<p style="color:var(--green);font-size:13px;">✓ 모든 프로젝트에 리소스가 배정되었습니다.</p>';
+}
+
+// 컬러 차트: Color1 Navy #1E3A8A(IBU) / Color3 Blue #2563EB(RBU) / Color5 Aqua Blue Green #2DD4BF(OBU) / Total은 옅은 회색
+const DB_BU_GROUPS = [ [1, 'IBU', '#1E3A8A'], [2, 'RBU', '#2563EB'], [3, 'OBU', '#2DD4BF'] ];
+const DB_TOTAL_COLOR = '#B0BEC5';
+
+/* ── Dashboard 페이지 2: Delivery Acceleration (월별 Completed 추이) ──
+   "Completed" = releaseDate가 설정된 프로젝트(실제 배포/릴리즈 시점) 기준.
+   체크리스트 100% 완료 시점은 별도로 기록되지 않아 releaseDate를 완료 시점 대용으로 사용함. */
+function renderDeliveryChart() {
+  const months = ['2026-01','2026-02','2026-03','2026-04','2026-05','2026-06'];
+  const monthLabels = ['Jan','Feb','Mar','Apr','May','Jun'];
+
+  const series = DB_BU_GROUPS.map(([id, label, color]) => {
+    const counts = months.map(m =>
+      projects.filter(p => (p.pageId || 1) === id && (p.releaseDate || '').slice(0, 7) === m).length
+    );
+    return { id, label, color, counts, total: counts.reduce((a, b) => a + b, 0) };
+  });
+  const totalSeries = {
+    id: 'total', label: 'Total', color: DB_TOTAL_COLOR,
+    counts: months.map((_, i) => series.reduce((sum, s) => sum + s.counts[i], 0)),
+  };
+  totalSeries.total = totalSeries.counts.reduce((a, b) => a + b, 0);
+  const allSeries = [...series, totalSeries];
+
+  // ── 상단: 꺾은선 그래프 (월별 추이) ──
+  const maxVal = Math.max(1, ...allSeries.flatMap(s => s.counts));
+  const niceMax = Math.max(4, Math.ceil(maxVal / 4) * 4);
+  const W = 600, H = 220, padL = 30, padR = 16, padT = 16, padB = 26;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+  const stepX = plotW / (months.length - 1);
+  const yFor = v => padT + plotH - (v / niceMax) * plotH;
+  const xFor = i => padL + i * stepX;
+
+  const gridLines = Array.from({ length: 5 }, (_, i) => {
+    const v = Math.round(niceMax * i / 4);
+    const y = yFor(v);
+    return `<line x1="${padL}" y1="${y}" x2="${W - padR}" y2="${y}" stroke="var(--border)" stroke-width="1"/>
+      <text x="${padL - 6}" y="${y + 3}" font-size="9" fill="var(--text-muted)" text-anchor="end">${v}</text>`;
+  }).join('');
+
+  const xLabels = monthLabels.map((lbl, i) =>
+    `<text x="${xFor(i)}" y="${H - 8}" font-size="10" fill="var(--text-muted)" text-anchor="middle">${lbl}</text>`
+  ).join('');
+
+  const lines = allSeries.map(s => {
+    const points = s.counts.map((v, i) => `${xFor(i)},${yFor(v)}`).join(' ');
+    const dots = s.counts.map((v, i) =>
+      `<circle cx="${xFor(i)}" cy="${yFor(v)}" r="3.5" fill="${s.color}"><title>${s.label} ${monthLabels[i]}: ${v}건</title></circle>`
+    ).join('');
+    const dash = s.id === 'total' ? ' stroke-dasharray="5,4"' : '';
+    return `<polyline points="${points}" fill="none" stroke="${s.color}" stroke-width="2.5"${dash}/>${dots}`;
+  }).join('');
+
+  const legend = allSeries.map(s =>
+    `<span style="display:inline-flex;align-items:center;gap:6px;margin-right:16px;font-size:12px;color:var(--text-secondary);">
+      <span style="width:10px;height:10px;border-radius:2px;background:${s.color};display:inline-block;"></span>${s.label} (총 ${s.total}건)
+    </span>`
+  ).join('');
+
+  // ── 하단: 월별 그룹 세로 막대 그래프 (1~6월 × IBU/RBU/OBU/Total 4개씩) ──
+  const bW = 620, bH = 220, bPadL = 32, bPadR = 16, bPadT = 16, bPadB = 42;
+  const bPlotW = bW - bPadL - bPadR, bPlotH = bH - bPadT - bPadB;
+  const groupW = bPlotW / months.length;
+  const groupPad = groupW * 0.12;
+  const barGap = 2;
+  const barW = (groupW - groupPad * 2 - barGap * (allSeries.length - 1)) / allSeries.length;
+  const bYFor = v => bPadT + bPlotH - (v / niceMax) * bPlotH;
+
+  const barGridLines = Array.from({ length: 5 }, (_, i) => {
+    const v = Math.round(niceMax * i / 4);
+    const y = bYFor(v);
+    return `<line x1="${bPadL}" y1="${y}" x2="${bW - bPadR}" y2="${y}" stroke="var(--border)" stroke-width="1"/>
+      <text x="${bPadL - 6}" y="${y + 3}" font-size="9" fill="var(--text-muted)" text-anchor="end">${v}</text>`;
+  }).join('');
+
+  const barBaseY = bPadT + bPlotH;
+  const initialY = barBaseY + 10; // 막대 높이(0 포함)와 무관하게 항상 같은 자리에 고정
+  const bars = months.map((m, i) => {
+    const groupX = bPadL + i * groupW + groupPad;
+    const groupBars = allSeries.map((s, j) => {
+      const v = s.counts[i];
+      const x = groupX + j * (barW + barGap);
+      const y = bYFor(v);
+      const h = barBaseY - y;
+      const cx = (x + barW / 2).toFixed(1);
+      const valueLabel = v > 0
+        ? `<text x="${cx}" y="${(y - 3).toFixed(1)}" font-size="8.5" fill="${s.color}" text-anchor="middle">${v}</text>`
+        : '';
+      const initialLabel = `<text x="${cx}" y="${initialY}" font-size="8.5" font-weight="700" fill="#000000" text-anchor="middle">${s.label[0]}</text>`;
+      return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${barW.toFixed(1)}" height="${h.toFixed(1)}" fill="${s.color}" rx="1.5"><title>${s.label} ${monthLabels[i]}: ${v}건</title></rect>${valueLabel}${initialLabel}`;
+    }).join('');
+    const labelX = bPadL + i * groupW + groupW / 2;
+    return groupBars + `<text x="${labelX}" y="${bH - 8}" font-size="10" fill="var(--text-muted)" text-anchor="middle">${monthLabels[i]}</text>`;
+  }).join('');
+
+  document.getElementById('db-delivery-chart').innerHTML =
+    `<div style="margin-bottom:12px;">${legend}</div>
+     <svg viewBox="0 0 ${W} ${H}" style="width:100%;max-width:680px;height:auto;">${gridLines}${xLabels}${lines}</svg>
+     <div style="margin-top:22px;padding-top:18px;border-top:1px solid var(--border);">
+       <div class="db-card-title" style="margin-bottom:10px;">Number of Publications Completed in 2026</div>
+       <svg viewBox="0 0 ${bW} ${bH}" style="width:100%;max-width:700px;height:auto;">${barGridLines}${bars}</svg>
+     </div>`;
+}
+
+/* ── Dashboard 페이지 3: In Active (IBU/RBU/OBU별 In Active Product 개수) ──
+   In Active 표(renderDashboard)와 동일한 기준: M/Q/Y 보고 대상으로 이동하지 않은 프로젝트 */
+function renderInActiveChart() {
+  const counts = {};
+  DB_BU_GROUPS.forEach(([id]) => { counts[id] = 0; });
+  projects.forEach(p => {
+    const bt = p.boardTypes || [];
+    if (bt.includes('M') || bt.includes('Q') || bt.includes('Y')) return;
+    const pid = p.pageId || 1;
+    if (counts[pid] !== undefined) counts[pid]++;
+  });
+  const maxVal = Math.max(1, ...Object.values(counts));
+
+  document.getElementById('db-inactive-chart').innerHTML = DB_BU_GROUPS.map(([id, label, color]) => {
+    const val = counts[id];
+    const pct = Math.round(val / maxVal * 100);
+    return `<div class="db-bar-row">
+      <div class="db-bar-name">${label}</div>
+      <div class="db-bar-track"><div class="db-bar-fill" style="width:${pct}%;background:${color};"></div></div>
+      <div class="db-bar-count" style="color:${color};font-weight:600;">${val}</div>
+    </div>`;
+  }).join('');
 }
 
 let currentCpPage = 1;
@@ -7820,7 +8325,7 @@ function filterFocusResource(name) {
     if (el.dataset.name === '__all__') el.classList.toggle('active', allActive);
     else el.classList.toggle('active', _focusResourceFilter.has(el.dataset.name));
   });
-  const focus = projects.filter(p => (p.coreStages||[]).length > 0);
+  const focus = projects.filter(p => isFocusProject(p) && (currentFocusPage === 3 || (p.pageId || 1) === currentFocusPage + 1));
   document.querySelectorAll('#focusTbody tr[data-pid]').forEach(tr => {
     const p = focus.find(p => p.id === tr.dataset.pid);
     if (!p) return;
@@ -7833,26 +8338,25 @@ function showFocusPage() {
   document.getElementById('page-focus').style.display = '';
   _focusResourceFilter = new Set();
 
-  const focus = projects.filter(p => (p.coreStages||[]).length > 0);
+  renderFocusNavDots();
+
+  const focus = projects.filter(p => isFocusProject(p) && (currentFocusPage === 3 || (p.pageId || 1) === currentFocusPage + 1));
   document.getElementById('focusCount').textContent = `${focus.length}개`;
 
-  // 리소스 목록 수집 & 필터 칩 렌더링
+  // 리소스 목록 수집 & 필터 칩 렌더링 (Active Projects와 동일한 고정 이니셜 규칙: STATUS_FIXED_INITIALS 우선 표시, 없는 이니셜은 흐리게)
   const resSet = new Set();
   focus.forEach(p => {
     (p.resource || '').split(/[,、\s]+/).map(s => s.trim()).filter(Boolean).forEach(r => resSet.add(r));
   });
   const filterEl = document.getElementById('focusResourceFilter');
-  if (resSet.size > 0) {
-    const chips = [`<button class="focus-res-chip active" data-name="__all__" onclick="filterFocusResource('__all__')">All</button>`];
-    [...resSet].sort().forEach(r =>
-      chips.push(`<button class="focus-res-chip" data-name="${escapeHtml(r)}" onclick="filterFocusResource('${escapeHtml(r)}')">${escapeHtml(r)}</button>`)
-    );
-    filterEl.innerHTML = chips.join('');
-    filterEl.style.display = '';
-  } else {
-    filterEl.innerHTML = '';
-    filterEl.style.display = 'none';
-  }
+  const extra = [...resSet].filter(r => !STATUS_FIXED_INITIALS.includes(r)).sort();
+  const ordered = [...STATUS_FIXED_INITIALS, ...extra];
+  const chips = [`<button class="focus-res-chip active" data-name="__all__" onclick="filterFocusResource('__all__')">All</button>`];
+  ordered.forEach(r =>
+    chips.push(`<button class="focus-res-chip" data-name="${escapeHtml(r)}" onclick="filterFocusResource('${escapeHtml(r)}')" style="${resSet.has(r)?'':'opacity:0.45;'}">${escapeHtml(r)}</button>`)
+  );
+  filterEl.innerHTML = chips.join('');
+  filterEl.style.display = '';
 
   const table = document.getElementById('focusTable');
   const tbody = document.getElementById('focusTbody');
@@ -7867,7 +8371,7 @@ function showFocusPage() {
   if (window._syncDeletedCols) window._syncDeletedCols();
 
   if (!focus.length) {
-    tbody.innerHTML = `<tr class="empty-row"><td colspan="16">* 로 마킹된 프로젝트가 없습니다.</td></tr>`;
+    tbody.innerHTML = `<tr class="empty-row"><td colspan="16">하늘색(WIP)으로 표시된 프로젝트가 없습니다.</td></tr>`;
     const addTr = document.createElement('tr');
     addTr.className = 'add-row-tr';
     addTr.innerHTML = `<td colspan="16"><button class="btn-add-row" onclick="addFocusInlineRow()" title="새 행 추가">＋</button></td>`;
@@ -8304,8 +8808,8 @@ function migrateToTestStorage() {
 async function init() {
   showSyncStatus('불러오는 중...', 'var(--amber)');
 
-  // 최초 마이그레이션: 기존 데이터 → 테스트 스토리지
-  const justMigrated = migrateToTestStorage();
+  // 최초 마이그레이션: 기존 데이터 → 테스트 스토리지 (반환값은 더 이상 Firebase 초기화에 쓰지 않음 — 아래 참고)
+  migrateToTestStorage();
 
   // 테스트 모드(관리자 모드)일 때는 Firebase를 사용하지 않음
   if (adminMode) {
@@ -8343,18 +8847,32 @@ async function init() {
       return;
     }
 
-    if (justMigrated) {
-      // 리얼 데이터 초기화: Firebase를 빈 상태로 덮어씀
-      projects = []; deletedProjects = [];
-      await saveToFirebase();
-      showSyncStatus('✓ 리얼 데이터 초기화 완료', 'var(--green)');
-    } else if (fbData && fbData.projects.length > 0) {
-      // Firebase = 항상 진실 (last write wins) — 로컬 충돌 무시
-      projects = fbData.projects;
-      deletedProjects = fbData.deletedProjects || [];
-      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(projects)); } catch {}
-      try { localStorage.setItem(DELETED_KEY, JSON.stringify(deletedProjects)); } catch {}
-      showSyncStatus('✓ Firebase에서 불러옴', 'var(--green)');
+    if (fbData && fbData.projects.length > 0) {
+      // 🛡️ 강제 로컬 복원 플래그가 있으면 Firebase 덮어쓰기 건너뜀
+      if (localStorage.getItem('tw_pm_force_local') === '1') {
+        localStorage.removeItem('tw_pm_force_local');
+        let _stored = null;
+        try { _stored = JSON.parse(localStorage.getItem(STORAGE_KEY)); } catch {}
+        projects = (_stored && _stored.length > 0) ? _stored : fbData.projects;
+        deletedProjects = [];
+        try { _stored = JSON.parse(localStorage.getItem(DELETED_KEY)); deletedProjects = _stored || []; } catch {}
+        // 즉시 Firebase 덮어쓰기 — onSnapshot merge 방지
+        showSyncStatus('⚠ 백업 데이터로 Firebase 덮어쓰는 중...', '#f59e0b');
+        try {
+          await fbDb.doc(FB_DATA_PATH).set({ projects, deletedProjects, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+          _lastSaveTime = Date.now();
+          showSyncStatus('✓ 백업 데이터로 복원 완료', 'var(--green)');
+        } catch(e) {
+          showSyncStatus('⚠ 로컬 백업 복원됨 — Ctrl+S로 Firebase에 올려주세요', '#f59e0b');
+        }
+      } else {
+        // Firebase = 항상 진실 (last write wins) — 단, 영구삭제 항목은 제외
+        projects = filterPermDeleted(fbData.projects);
+        deletedProjects = filterPermDeleted(fbData.deletedProjects || []);
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify(projects)); } catch {}
+        try { localStorage.setItem(DELETED_KEY, JSON.stringify(deletedProjects)); } catch {}
+        showSyncStatus('✓ Firebase에서 불러옴', 'var(--green)');
+      }
     } else {
       // Firebase 비어있음 → 로컬로 표시만, Firebase에 올리지 않음
       let _stored = null;
@@ -8413,6 +8931,10 @@ init();
 </script>
 </body>
 </html>
+
+
+
+
 
 
 
