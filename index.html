@@ -2992,6 +2992,7 @@ function clickProgressBar(id, stageNum, fromHeader = false) {
     if (coreIdx >= 0) p.coreStages.splice(coreIdx, 1);
   }
 
+  p.updatedAt = new Date().toISOString();
   saveProjects('Progress 수정', `${p.name||'(이름없음)'} › Stage ${stageNum}`, id);
   refreshProjectRow(id);
 
@@ -4252,6 +4253,7 @@ function toggleProgressBarCore(e, pid, stageNum) {
   p.pbCore[stageNum] = next;
   p.coreStages = next > 0 ? [stageNum] : [];   // 칸반 헤더 별표 아이콘과 동기화
 
+  p.updatedAt = new Date().toISOString();
   saveProjects();
   renderDashboard();
   renderBoardSections();
@@ -4424,7 +4426,7 @@ function _newBlankProject() {
   return {
     id: 'p_' + Date.now(), name: '', publication: '', purpose: '',
     targetDate: '', checks, selected: true, resource: '', bu: '',
-    projectType: '', startDate: '', boardTypes: [], boardDates: {}, releaseDate: '', pageId: currentStatusPage, createdAt: new Date().toISOString()
+    projectType: '', startDate: '', boardTypes: [], boardDates: {}, releaseDate: '', pageId: currentStatusPage, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString()
   };
 }
 
@@ -4470,6 +4472,7 @@ function saveResourceField(id, value) {
   const p = projects.find(p => p.id === id);
   if (!p) return;
   p.resource = value.trim();
+  p.updatedAt = new Date().toISOString();
   saveProjects();
   refreshSideFilters();
 }
@@ -4477,6 +4480,7 @@ function saveBuField(id, value) {
   const p = projects.find(p => p.id === id);
   if (!p) return;
   p.bu = value.trim();
+  p.updatedAt = new Date().toISOString();
   saveProjects();
   refreshSideFilters();
 }
@@ -4484,6 +4488,7 @@ function saveProjectTypeField(id, value) {
   const p = projects.find(p => p.id === id);
   if (!p) return;
   p.projectType = value.trim();
+  p.updatedAt = new Date().toISOString();
   saveProjects();
   refreshSideFilters();
 }
@@ -4491,6 +4496,7 @@ function savePublicationTypeField(id, value) {
   const p = projects.find(p => p.id === id);
   if (!p) return;
   p.publicationType = value.trim();
+  p.updatedAt = new Date().toISOString();
   saveProjects();
   refreshSideFilters();
 }
@@ -4498,6 +4504,7 @@ function saveStartDateField(id, value) {
   const p = projects.find(p => p.id === id);
   if (!p) return;
   p.startDate = value;
+  p.updatedAt = new Date().toISOString();
   saveProjects();
   // refresh lead time cell without full re-render
   const tr = document.querySelector(`#projectTbody tr[data-pid="${id}"]`);
@@ -4971,6 +4978,7 @@ function cycleCheck(key) {
   if (!p) return;
   p.checks[key] = nextCheckState(p.checks[key]);
   syncPbStatesFromChecks(p);
+  p.updatedAt = new Date().toISOString();
   saveProjects();
   document.getElementById('checklist').innerHTML = buildKanban(p, 'toggleCheck');
   updateKanbanCounts('checklist', p, getProjectStages(p));
@@ -4984,6 +4992,7 @@ function cycleSideCheck(key) {
   if (!p) return;
   p.checks[key] = nextCheckState(p.checks[key]);
   syncPbStatesFromChecks(p);
+  p.updatedAt = new Date().toISOString();
   saveProjects();
   document.getElementById('sidePanelChecklist').innerHTML = buildKanban(p, 'toggleSideCheck');
   const {done:_spD,total:_spT}=overallCounts(p);setCheckCountPill('sidePanelPercent',_spD,_spT);
@@ -5483,31 +5492,40 @@ function addDeliveryChartPptSlide(pres) {
   return slide;
 }
 
+// 화면의 In Active 대시보드(BU별 진행 단계 막대그래프 3개)를 보이는 그대로 재현
 function addInActiveChartPptSlide(pres) {
   const slide = pres.addSlide();
   pptSlideHeader(pres, slide, 'In Active');
 
-  const counts = {};
-  DB_BU_GROUPS.forEach(([id]) => { counts[id] = 0; });
-  projects.forEach(p => {
-    const bt = p.boardTypes || [];
-    if (bt.includes('M') || bt.includes('Q') || bt.includes('Y')) return;
-    const pid = p.pageId || 1;
-    if (counts[pid] !== undefined) counts[pid]++;
-  });
-  const labels = DB_BU_GROUPS.map(([, label]) => label);
-  const values = DB_BU_GROUPS.map(([id]) => counts[id]);
-  const colors = DB_BU_GROUPS.map(([, , color]) => color.replace('#', ''));
+  const { stageCounts, BU_GRADIENTS, globalMax } = computeInactiveStageData();
+  const categories = ['Prep', '1', '2', '3', '4', '5'];
+  const CHART_W = 3.9, GAP = 0.25;
+  // 화면(renderInActiveChart)의 SVG 비율(총높이206 / 총너비260 ≈ 0.79)과 맞춰 막대가 과도하게 길어지지 않도록 함
+  const CHART_H = CHART_W * (206 / 260);
+  const startX = (13.33 - (CHART_W * 3 + GAP * 2)) / 2;
 
-  slide.addChart(pres.ChartType.bar, [{ name: 'In Active', labels, values }], {
-    x:0.5, y:1.25, w:12.3, h:5.6,
-    barDir:'col',
-    chartColors: colors,
-    showLegend:false,
-    valAxisTitle:'Product 개수', showValAxisTitle:true,
-    showValue:true, dataLabelPosition:'inEnd', dataLabelColor:'FFFFFF', dataLabelFontSize:11, dataLabelFontFace:'Arial', dataLabelFontBold:true,
-    valGridLine: { color:'E2E8F0', size:0.5 },
-    catGridLine: { style:'none' },
+  DB_BU_GROUPS.forEach(([id, label], i) => {
+    const sc = stageCounts[id];
+    const values = [0, 1, 2, 3, 4, 5].map(s => sc[s] || 0);
+    const total = values.reduce((a, b) => a + b, 0);
+    const colors = (BU_GRADIENTS[id] || BU_GRADIENTS[1]).map(c => c.replace('#', ''));
+    const x = startX + i * (CHART_W + GAP);
+
+    slide.addText(`${label} Total ${total}`, {
+      x, y:1.15, w:CHART_W, h:0.4, fontSize:14, bold:true, align:'center', color:'1F2937', fontFace:'Arial',
+    });
+
+    slide.addChart(pres.ChartType.bar, [{ name: label, labels: categories, values }], {
+      x, y:1.6, w:CHART_W, h:CHART_H,
+      barDir:'col',
+      chartColors: colors,
+      showLegend:false,
+      catAxisTitle:'Progress Stage', showCatAxisTitle:true, catAxisTitleFontSize:10,
+      valAxisMaxVal: globalMax, valAxisHidden:true,
+      showValue:true, dataLabelPosition:'outEnd', dataLabelColor:'475569', dataLabelFontSize:10, dataLabelFontFace:'Arial', dataLabelFontBold:true,
+      valGridLine: { style:'none' },
+      catGridLine: { style:'none' },
+    });
   });
   return slide;
 }
@@ -5561,6 +5579,7 @@ function moveToBoardSection(pid, type) {
   // order 순서로 정렬
   p.boardTypes.sort((a, b) => order.indexOf(a) - order.indexOf(b));
 
+  p.updatedAt = new Date().toISOString();
   saveProjects();
   renderDashboard();
   renderBoardSections();
@@ -5589,6 +5608,7 @@ function moveRowSection(pid, dir) {
     p.boardTypes = p.boardTypes.filter(t => t !== removeType);
   }
 
+  p.updatedAt = new Date().toISOString();
   saveProjects();
   renderDashboard();
   renderBoardSections();
@@ -5605,6 +5625,7 @@ function toggleBoardDate(pid, type, btn) {
     p.boardDates[type] = '';
     p.boardTypes = (p.boardTypes || []).filter(t => t !== type);
     if (inp) { inp.style.display = 'none'; inp.value = ''; }
+    p.updatedAt = new Date().toISOString();
     saveProjects();
     renderDashboard();
     renderBoardSections();
@@ -5618,6 +5639,7 @@ function removeBoardType(pid, type) {
   if (!p) return;
   p.boardTypes = (p.boardTypes || []).filter(t => t !== type);
   if (p.boardDates) p.boardDates[type] = '';
+  p.updatedAt = new Date().toISOString();
   saveProjects();
   renderDashboard();
   renderBoardSections();
@@ -5634,6 +5656,7 @@ function saveBoardDateField(pid, type, value) {
     p.boardTypes = (p.boardTypes || []).filter(t => t !== type);
   }
   // 날짜 입력만으로는 boardTypes에 추가하지 않음 — ↓ 버튼으로만 이동
+  p.updatedAt = new Date().toISOString();
   saveProjects();
   renderDashboard();
   renderBoardSections();
@@ -5678,6 +5701,7 @@ function saveReleaseDateField(id, value) {
   } else if (!p.releaseDate) {
     p.boardTypes = p.boardTypes.filter(t => t !== 'R');
   }
+  p.updatedAt = new Date().toISOString();
   saveProjects();
   // 셀 배경색 즉시 업데이트
   const td = document.querySelector(`tr[data-pid="${id}"] td[data-release]`);
@@ -5688,6 +5712,7 @@ function returnToInActive(pid) {
   const p = projects.find(p => p.id === pid);
   if (!p) return;
   p.boardTypes = [];
+  p.updatedAt = new Date().toISOString();
   saveProjects();
   renderDashboard();
   renderBoardSections();
@@ -8145,6 +8170,41 @@ function showDashboardPage() {
 const DB_BU_GROUPS = [ [1, 'IBU', '#1E3A8A'], [2, 'RBU', '#2563EB'], [3, 'OBU', '#2DD4BF'] ];
 const DB_TOTAL_COLOR = '#B0BEC5';
 
+// In Active 대시보드(화면 표시 + PPT 내보내기)가 공유하는 단계별 카운트/그라데이션 계산
+function computeInactiveStageData() {
+  const GRAY_STEPS = ['#e2e8f0', '#d0dae4', '#bfc9d4', '#b8c2cc']; // stage 0(Prep)~3: 연→중간 회색
+  function makeGradient(hex) {
+    const gray = [0xb0, 0xbe, 0xc5]; // stage 3 끝 회색에서 시작
+    const tc   = [parseInt(hex.slice(1,3),16), parseInt(hex.slice(3,5),16), parseInt(hex.slice(5,7),16)];
+    // stage 4,5: gray→BU색으로 t=1,2/2 비율
+    const colorSteps = [1,2].map(t => {
+      const r = Math.round(gray[0] + (tc[0]-gray[0])*t/2);
+      const g = Math.round(gray[1] + (tc[1]-gray[1])*t/2);
+      const b = Math.round(gray[2] + (tc[2]-gray[2])*t/2);
+      return '#' + [r,g,b].map(v=>v.toString(16).padStart(2,'0')).join('');
+    });
+    return [...GRAY_STEPS, ...colorSteps]; // 인덱스 0~5
+  }
+  const BU_GRADIENTS = {};
+  DB_BU_GROUPS.forEach(([id,,color]) => { BU_GRADIENTS[id] = makeGradient(color); });
+
+  const stageCounts = {};
+  DB_BU_GROUPS.forEach(([id]) => { stageCounts[id] = {0:0,1:0,2:0,3:0,4:0,5:0}; });
+  projects.forEach(p => {
+    const bt = p.boardTypes || [];
+    if (bt.includes('M') || bt.includes('Q') || bt.includes('Y')) return;
+    const pid = p.pageId || 1;
+    if (!stageCounts[pid]) return;
+    // 마지막으로 색칠된 단계(= 현재 단계)에만 카운트
+    const cur = getProjectCurrentStage(p);
+    stageCounts[pid][cur] = (stageCounts[pid][cur] || 0) + 1;
+  });
+
+  // 모든 BU 전체 단계 카운트 중 최댓값 → 공유 Y축 스케일
+  const globalMax = Math.max(1, ...DB_BU_GROUPS.flatMap(([id]) => Object.values(stageCounts[id])));
+  return { stageCounts, BU_GRADIENTS, globalMax };
+}
+
 /* ── Dashboard 페이지 2: Delivery Acceleration (월별 Completed 추이) ──
    "Completed" = releaseDate가 설정된 프로젝트(실제 배포/릴리즈 시점) 기준.
    체크리스트 100% 완료 시점은 별도로 기록되지 않아 releaseDate를 완료 시점 대용으로 사용함. */
@@ -8257,40 +8317,7 @@ function getProjectCurrentStage(p) {
 }
 
 function renderInActiveChart() {
-  // 0~3단계: 공통 연한 회색, 4~5단계: BU 주색으로 전환
-  const GRAY_STEPS = ['#e2e8f0', '#d0dae4', '#bfc9d4', '#b8c2cc']; // stage 0(Prep)~3: 연→중간 회색
-  function makeGradient(hex) {
-    const gray = [0xb0, 0xbe, 0xc5]; // stage 3 끝 회색에서 시작
-    const tc   = [parseInt(hex.slice(1,3),16), parseInt(hex.slice(3,5),16), parseInt(hex.slice(5,7),16)];
-    // stage 4,5: gray→BU색으로 t=1,2/2 비율
-    const colorSteps = [1,2].map(t => {
-      const r = Math.round(gray[0] + (tc[0]-gray[0])*t/2);
-      const g = Math.round(gray[1] + (tc[1]-gray[1])*t/2);
-      const b = Math.round(gray[2] + (tc[2]-gray[2])*t/2);
-      return '#' + [r,g,b].map(v=>v.toString(16).padStart(2,'0')).join('');
-    });
-    return [...GRAY_STEPS, ...colorSteps]; // 인덱스 0~5
-  }
-  const BU_GRADIENTS = {};
-  DB_BU_GROUPS.forEach(([id,,color]) => { BU_GRADIENTS[id] = makeGradient(color); });
-  const STAGE_X_LABELS = ['Preparation','1','2','3','4','5'];
-
-  // stageCounts[buId][stage] = count
-  const stageCounts = {};
-  DB_BU_GROUPS.forEach(([id]) => { stageCounts[id] = {0:0,1:0,2:0,3:0,4:0,5:0}; });
-
-  projects.forEach(p => {
-    const bt = p.boardTypes || [];
-    if (bt.includes('M') || bt.includes('Q') || bt.includes('Y')) return;
-    const pid = p.pageId || 1;
-    if (!stageCounts[pid]) return;
-    // 마지막으로 색칠된 단계(= 현재 단계)에만 카운트
-    const cur = getProjectCurrentStage(p);
-    stageCounts[pid][cur] = (stageCounts[pid][cur] || 0) + 1;
-  });
-
-  // 모든 BU 전체 단계 카운트 중 최댓값 → 공유 Y축 스케일
-  const globalMax = Math.max(1, ...DB_BU_GROUPS.flatMap(([id]) => Object.values(stageCounts[id])));
+  const { stageCounts, BU_GRADIENTS, globalMax } = computeInactiveStageData();
   const CHART_H = 150;
   const TOP_PAD = 20; // 숫자 표시 여백
   const BAR_W = 30;
