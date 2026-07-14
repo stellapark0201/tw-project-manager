@@ -1429,7 +1429,16 @@
   <!-- Dashboard 페이지 2: Delivery Acceleration -->
   <div id="dbPage1" style="display:none;">
     <div class="db-card">
-      <div class="db-card-title">월별 Completed 추이 (2026년 1월 ~ 6월) — IBU / RBU / OBU</div>
+      <div class="db-card-title">월별 Completed 추이 — IBU / RBU / OBU</div>
+      <div id="deliveryDateFilterBar" style="display:flex;align-items:center;gap:8px;margin:0 0 14px;flex-wrap:wrap;">
+        <span style="font-size:12px;color:var(--text-muted);font-weight:500;">Release Date 범위</span>
+        <input type="month" id="deliveryDateFrom" style="padding:4px 8px;border:1px solid var(--border);border-radius:6px;font-size:13px;color:var(--text);background:var(--bg-card);cursor:pointer;" />
+        <span style="color:var(--text-muted);font-size:13px;">~</span>
+        <input type="month" id="deliveryDateTo" style="padding:4px 8px;border:1px solid var(--border);border-radius:6px;font-size:13px;color:var(--text);background:var(--bg-card);cursor:pointer;" />
+        <button onclick="applyDeliveryDateFilter()" style="padding:4px 14px;background:var(--accent);color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;">적용</button>
+        <button onclick="setDeliveryDateFilterAll()" id="deliveryDateAllBtn" style="padding:4px 14px;border:1px solid var(--border);border-radius:6px;font-size:13px;cursor:pointer;background:none;color:var(--text-muted);">전체</button>
+        <span id="deliveryDateFilterLabel" style="font-size:12px;color:var(--accent);font-weight:500;"></span>
+      </div>
       <div id="db-delivery-chart"></div>
     </div>
   </div>
@@ -8208,6 +8217,66 @@ function showDashboardPage() {
 const DB_BU_GROUPS = [ [1, 'IBU', '#1E3A8A'], [2, 'RBU', '#2563EB'], [3, 'OBU', '#2DD4BF'] ];
 const DB_TOTAL_COLOR = '#B0BEC5';
 
+/* ── Delivery Acceleration: Release Date 범위 필터 (localStorage에 유지) ── */
+const DELIVERY_FILTER_KEY = 'tw_pm_delivery_filter';
+const DELIVERY_FILTER_DEFAULT = { from: '2026-01', to: '2026-06', all: false };
+function loadDeliveryFilter() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(DELIVERY_FILTER_KEY));
+    if (saved && typeof saved === 'object' && (saved.all || (saved.from && saved.to))) return saved;
+  } catch {}
+  return { ...DELIVERY_FILTER_DEFAULT };
+}
+let _deliveryDateFilter = loadDeliveryFilter();
+function saveDeliveryFilterState() {
+  try { localStorage.setItem(DELIVERY_FILTER_KEY, JSON.stringify(_deliveryDateFilter)); } catch {}
+}
+function applyDeliveryDateFilter() {
+  const from = document.getElementById('deliveryDateFrom').value;
+  const to = document.getElementById('deliveryDateTo').value;
+  if (!from || !to) { alert('시작/종료 월을 모두 선택해주세요.'); return; }
+  _deliveryDateFilter = { from, to, all: false };
+  saveDeliveryFilterState();
+  renderDeliveryChart();
+}
+function setDeliveryDateFilterAll() {
+  _deliveryDateFilter = { from: '', to: '', all: true };
+  saveDeliveryFilterState();
+  renderDeliveryChart();
+}
+function syncDeliveryFilterInputs() {
+  const f = document.getElementById('deliveryDateFrom');
+  const t = document.getElementById('deliveryDateTo');
+  const lbl = document.getElementById('deliveryDateFilterLabel');
+  const allBtn = document.getElementById('deliveryDateAllBtn');
+  if (!f || !t) return;
+  f.value = _deliveryDateFilter.from || '';
+  t.value = _deliveryDateFilter.to || '';
+  if (lbl) lbl.textContent = _deliveryDateFilter.all ? '전체 기간 표시 중' : '';
+  if (allBtn) {
+    allBtn.style.background = _deliveryDateFilter.all ? 'var(--accent)' : 'none';
+    allBtn.style.color = _deliveryDateFilter.all ? '#fff' : 'var(--text-muted)';
+    allBtn.style.borderColor = _deliveryDateFilter.all ? 'var(--accent)' : 'var(--border)';
+  }
+}
+function enumerateMonths(fromYM, toYM) {
+  if (!fromYM || !toYM) return [];
+  let [y, m] = fromYM.split('-').map(Number);
+  const [ty, tm] = toYM.split('-').map(Number);
+  const months = [];
+  let guard = 0;
+  while ((y < ty || (y === ty && m <= tm)) && guard++ < 600) {
+    months.push(`${y}-${String(m).padStart(2, '0')}`);
+    m++; if (m > 12) { m = 1; y++; }
+  }
+  return months;
+}
+const DELIVERY_MONTH_SHORT = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function deliveryMonthLabel(ym, showYear) {
+  const [y, m] = ym.split('-').map(Number);
+  return DELIVERY_MONTH_SHORT[m - 1] + (showYear ? ` '${String(y).slice(2)}` : '');
+}
+
 // In Active 대시보드(화면 표시 + PPT 내보내기)가 공유하는 단계별 카운트/그라데이션 계산
 function computeInactiveStageData() {
   const GRAY_STEPS = ['#e2e8f0', '#d0dae4', '#bfc9d4', '#b8c2cc']; // stage 0(Prep)~3: 연→중간 회색
@@ -8249,8 +8318,22 @@ function computeInactiveStageData() {
    "Completed" = releaseDate가 설정된 프로젝트(실제 배포/릴리즈 시점) 기준.
    체크리스트 100% 완료 시점은 별도로 기록되지 않아 releaseDate를 완료 시점 대용으로 사용함. */
 function renderDeliveryChart() {
-  const months = ['2026-01','2026-02','2026-03','2026-04','2026-05','2026-06'];
-  const monthLabels = ['Jan','Feb','Mar','Apr','May','Jun'];
+  syncDeliveryFilterInputs();
+
+  let months;
+  if (_deliveryDateFilter.all) {
+    const dates = projects.map(p => (p.releaseDate || '').slice(0, 7)).filter(Boolean).sort();
+    months = dates.length ? enumerateMonths(dates[0], dates[dates.length - 1]) : [];
+  } else {
+    months = enumerateMonths(_deliveryDateFilter.from || DELIVERY_FILTER_DEFAULT.from, _deliveryDateFilter.to || DELIVERY_FILTER_DEFAULT.to);
+  }
+  if (!months.length) {
+    document.getElementById('db-delivery-chart').innerHTML =
+      '<p style="color:var(--text-muted);font-size:13px;padding:20px 0;">표시할 Release Date 데이터가 없습니다.</p>';
+    return;
+  }
+  const showYear = new Set(months.map(m => m.slice(0, 4))).size > 1;
+  const monthLabels = months.map(m => deliveryMonthLabel(m, showYear));
 
   const series = DB_BU_GROUPS.map(([id, label, color]) => {
     const counts = months.map(m =>
@@ -8268,9 +8351,9 @@ function renderDeliveryChart() {
   // ── 상단: 꺾은선 그래프 (월별 추이) ──
   const maxVal = Math.max(1, ...allSeries.flatMap(s => s.counts));
   const niceMax = Math.max(4, Math.ceil(maxVal / 4) * 4);
-  const W = 600, H = 220, padL = 30, padR = 16, padT = 16, padB = 26;
+  const W = Math.max(600, 80 + months.length * 60), H = 220, padL = 30, padR = 16, padT = 16, padB = 26;
   const plotW = W - padL - padR, plotH = H - padT - padB;
-  const stepX = plotW / (months.length - 1);
+  const stepX = months.length > 1 ? plotW / (months.length - 1) : 0;
   const yFor = v => padT + plotH - (v / niceMax) * plotH;
   const xFor = i => padL + i * stepX;
 
@@ -8301,7 +8384,7 @@ function renderDeliveryChart() {
   ).join('');
 
   // ── 하단: 월별 그룹 세로 막대 그래프 (1~6월 × IBU/RBU/OBU/Total 4개씩) ──
-  const bW = 620, bH = 220, bPadL = 32, bPadR = 16, bPadT = 16, bPadB = 42;
+  const bW = Math.max(620, 90 + months.length * 100), bH = 220, bPadL = 32, bPadR = 16, bPadT = 16, bPadB = 42;
   const bPlotW = bW - bPadL - bPadR, bPlotH = bH - bPadT - bPadB;
   const groupW = bPlotW / months.length;
   const groupPad = groupW * 0.12;
@@ -8337,9 +8420,9 @@ function renderDeliveryChart() {
   }).join('');
 
   // ── 하단 요약: BU별 총 건수 + 총 Publication Count 합계 ──
-  // Completed(M/Q/Y 보고 대상) 기준과 동일하게 boardTypes로 판단 (releaseDate/월 제한 없음)
+  // 위쪽 그래프와 동일하게 Release Date가 선택된 범위(months)에 속하는 프로젝트 기준으로 통일
   const buTotals = DB_BU_GROUPS.map(([id, label]) => {
-    const list = projects.filter(p => (p.pageId || 1) === id && ['M', 'Q', 'Y'].some(t => (p.boardTypes || []).includes(t)));
+    const list = projects.filter(p => (p.pageId || 1) === id && months.includes((p.releaseDate || '').slice(0, 7)));
     const pubTotal = list.reduce((sum, p) => sum + (Number(p.publicationCount) || 0), 0);
     return { label, caseTotal: list.length, pubTotal };
   });
@@ -8351,7 +8434,7 @@ function renderDeliveryChart() {
     `<div style="margin-bottom:12px;">${legend}</div>
      <svg viewBox="0 0 ${W} ${H}" style="width:100%;max-width:680px;height:auto;">${gridLines}${xLabels}${lines}</svg>
      <div style="margin-top:22px;padding-top:18px;border-top:1px solid var(--border);">
-       <div class="db-card-title" style="margin-bottom:10px;">Number of Publications Completed in 2026</div>
+       <div class="db-card-title" style="margin-bottom:10px;">Number of Publications Completed (${monthLabels[0]} ~ ${monthLabels[monthLabels.length - 1]})</div>
        <svg viewBox="0 0 ${bW} ${bH}" style="width:100%;max-width:700px;height:auto;">${barGridLines}${bars}</svg>
      </div>
      <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border);display:flex;gap:24px;flex-wrap:wrap;">${buTotalsHTML}</div>`;
