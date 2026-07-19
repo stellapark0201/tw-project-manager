@@ -15,6 +15,7 @@
 <script src="https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap');
   @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css');
@@ -502,8 +503,8 @@
     font-size: 12px; font-weight: 600; color: var(--text-secondary);
     margin: 0 0 12px; letter-spacing: 0.3px; text-transform: uppercase;
   }
-  .cp-dash-chart-inner { display: flex; align-items: center; gap: 18px; }
-  .cp-dash-legend { display: flex; flex-direction: column; gap: 6px; }
+  .cp-dash-chart-inner { display: flex; flex-direction: column; align-items: center; gap: 14px; }
+  .cp-dash-legend { display: flex; flex-direction: column; gap: 6px; align-self: stretch; }
   .cp-dash-legend-row {
     display: flex; align-items: center; gap: 7px;
     font-size: 12px; color: var(--text-secondary); white-space: nowrap;
@@ -1085,6 +1086,7 @@
   <div class="nav-item" id="nav-checklist" onclick="navTo('checklist')">Progress</div>
   <div class="nav-item" id="nav-completed" onclick="navTo('completed')">Completed Projects</div>
   <div class="nav-item" id="nav-dashboard" onclick="navTo('dashboard')">Dashboard</div>
+  <div class="nav-item" id="nav-record" onclick="navTo('record')">Record</div>
   <div class="nav-item" id="nav-pptformat" onclick="navTo('pptformat')" style="margin-left:auto;">PPT Preview</div>
   <div class="nav-item" id="nav-ghoffice" onclick="navTo('ghoffice')">GitHub Office Online</div>
 </nav>
@@ -1114,6 +1116,7 @@
       <p style="font-size:18px;font-weight:600;color:var(--text-secondary);margin:0;letter-spacing:-0.2px;">In Active</p>
       <button onclick="openHistoryPanel()" title="수정 이력" style="background:none;border:none;cursor:pointer;color:var(--text-muted);padding:4px;border-radius:6px;display:flex;align-items:center;transition:all 0.13s;" onmouseover="this.style.background='var(--surface-2)';this.style.color='var(--text-secondary)'" onmouseout="this.style.background='none';this.style.color='var(--text-muted)'"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><polyline points="12 7 12 12 15 15"/></svg></button>
       <button onclick="openRequestPanel()" title="Request" style="background:none;border:none;cursor:pointer;color:var(--text-muted);padding:4px;border-radius:6px;display:flex;align-items:center;transition:all 0.13s;" onmouseover="this.style.background='var(--surface-2)';this.style.color='var(--text-secondary)'" onmouseout="this.style.background='none';this.style.color='var(--text-muted)'"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="2,4 12,13 22,4"/></svg></button>
+      <button onclick="captureToRecord('status', this)" title="캡처 — 현재 화면을 Record 페이지에 저장" style="background:none;border:none;cursor:pointer;color:var(--text-muted);padding:4px;border-radius:6px;display:flex;align-items:center;transition:all 0.13s;" onmouseover="this.style.background='var(--surface-2)';this.style.color='var(--text-secondary)'" onmouseout="this.style.background='none';this.style.color='var(--text-muted)'"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></button>
       <div id="historyUserBadges" style="display:flex;gap:5px;align-items:center;"></div>
     </div>
     <div id="statusResourceFilter" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;"></div>
@@ -1231,6 +1234,7 @@
     <div class="completed-section-header" onclick="toggleCompletedSection()">
       <button class="toggle-chevron-btn" id="completedToggleBtn" title="접기/펼치기"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg></button>
       <p class="completed-section-title">Completed</p>
+      <button onclick="event.stopPropagation(); captureToRecord('statusCompleted', this)" title="캡처 — Completed 표를 Record 페이지에 저장" style="background:none;border:none;cursor:pointer;color:var(--text-muted);padding:4px;border-radius:6px;display:flex;align-items:center;transition:all 0.13s;" onmouseover="this.style.background='var(--surface-2)';this.style.color='var(--text-secondary)'" onmouseout="this.style.background='none';this.style.color='var(--text-muted)'"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></button>
     </div>
     <div id="completedBody">
       <div id="boardSection_M" class="deleted-section" style="display:none; margin-top:0;">
@@ -1375,6 +1379,7 @@
   <div style="display:flex;align-items:center;gap:16px;margin:0 0 20px;position:relative;">
     <h2 id="dbPageLabel" style="font-size:21px;font-weight:500;color:var(--text-primary);margin:0;letter-spacing:-0.3px;">Resource Dashboard</h2>
     <span id="dbPageSubtitle" style="font-size:13px;color:var(--text-muted);">인력 현황 및 충원 분석</span>
+    <button onclick="captureToRecord('dashboard', this)" title="캡처 — 현재 화면을 Record 페이지에 저장" style="background:none;border:none;cursor:pointer;color:var(--text-muted);padding:4px;border-radius:6px;display:flex;align-items:center;transition:all 0.13s;" onmouseover="this.style.background='var(--surface-2)';this.style.color='var(--text-secondary)'" onmouseout="this.style.background='none';this.style.color='var(--text-muted)'"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></button>
     <div class="page-nav" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);">
       <button onclick="goHome()" title="홈 — Status 페이지" style="background:none;border:none;cursor:pointer;padding:2px 4px;display:inline-flex;align-items:center;color:rgba(255,255,255,0.75);margin-right:4px;">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
@@ -1385,15 +1390,15 @@
     </div>
   </div>
 
-  <!-- 날짜 범위 필터 -->
-  <div id="dbDateFilterBar" style="display:flex;align-items:center;gap:10px;margin-bottom:18px;flex-wrap:wrap;">
-    <span style="font-size:13px;color:var(--text-muted);font-weight:500;">Target Date 범위</span>
-    <input type="date" id="dbDateFrom" style="padding:4px 8px;border:1px solid var(--border);border-radius:6px;font-size:13px;color:var(--text);background:var(--bg-card);cursor:pointer;" oninput="syncDbDateInputs()" />
+  <!-- 날짜 범위 필터 — Dashboard 모든 페이지 공통 (Release Date 기준) -->
+  <div id="dbDateRangeBar" style="display:flex;align-items:center;gap:8px;margin-bottom:18px;flex-wrap:wrap;">
+    <span style="font-size:13px;color:var(--text-muted);font-weight:500;">Release Date 범위</span>
+    <input type="month" id="dbDateRangeFrom" style="padding:4px 8px;border:1px solid var(--border);border-radius:6px;font-size:13px;color:var(--text);background:var(--bg-card);cursor:pointer;" />
     <span style="color:var(--text-muted);font-size:13px;">~</span>
-    <input type="date" id="dbDateTo" style="padding:4px 8px;border:1px solid var(--border);border-radius:6px;font-size:13px;color:var(--text);background:var(--bg-card);cursor:pointer;" oninput="syncDbDateInputs()" />
-    <button onclick="applyDbDateFilter()" style="padding:4px 14px;background:var(--accent);color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;">Apply</button>
-    <button onclick="clearDbDateFilter()" id="dbDateClearBtn" style="display:none;padding:4px 10px;background:none;border:1px solid var(--border);border-radius:6px;font-size:12px;color:var(--text-muted);cursor:pointer;">✕ 초기화</button>
-    <span id="dbDateFilterLabel" style="font-size:12px;color:var(--accent);font-weight:500;display:none;"></span>
+    <input type="month" id="dbDateRangeTo" style="padding:4px 8px;border:1px solid var(--border);border-radius:6px;font-size:13px;color:var(--text);background:var(--bg-card);cursor:pointer;" />
+    <button onclick="applyDbDateRangeFilter()" style="padding:4px 14px;background:var(--accent);color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;">적용</button>
+    <button onclick="setDbDateRangeAll()" id="dbDateRangeAllBtn" style="padding:4px 14px;border:1px solid var(--border);border-radius:6px;font-size:13px;cursor:pointer;background:none;color:var(--text-muted);">전체 기간</button>
+    <span id="dbDateRangeLabel" style="font-size:12px;color:var(--accent);font-weight:500;"></span>
   </div>
 
   <!-- Dashboard 페이지 1: Resource Dashboard -->
@@ -1430,15 +1435,6 @@
   <div id="dbPage1" style="display:none;">
     <div class="db-card">
       <div class="db-card-title">월별 Completed 추이 — IBU / RBU / OBU</div>
-      <div id="deliveryDateFilterBar" style="display:flex;align-items:center;gap:8px;margin:0 0 14px;flex-wrap:wrap;">
-        <span style="font-size:12px;color:var(--text-muted);font-weight:500;">Release Date 범위</span>
-        <input type="month" id="deliveryDateFrom" style="padding:4px 8px;border:1px solid var(--border);border-radius:6px;font-size:13px;color:var(--text);background:var(--bg-card);cursor:pointer;" />
-        <span style="color:var(--text-muted);font-size:13px;">~</span>
-        <input type="month" id="deliveryDateTo" style="padding:4px 8px;border:1px solid var(--border);border-radius:6px;font-size:13px;color:var(--text);background:var(--bg-card);cursor:pointer;" />
-        <button onclick="applyDeliveryDateFilter()" style="padding:4px 14px;background:var(--accent);color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;">적용</button>
-        <button onclick="setDeliveryDateFilterAll()" id="deliveryDateAllBtn" style="padding:4px 14px;border:1px solid var(--border);border-radius:6px;font-size:13px;cursor:pointer;background:none;color:var(--text-muted);">전체</button>
-        <span id="deliveryDateFilterLabel" style="font-size:12px;color:var(--accent);font-weight:500;"></span>
-      </div>
       <div id="db-delivery-chart"></div>
     </div>
   </div>
@@ -1446,13 +1442,42 @@
   <!-- Dashboard 페이지 3: In Active -->
   <div id="dbPage2" style="display:none;">
     <div class="db-card">
-      <div class="db-card-title">In Active Product 개수 — IBU / RBU / OBU</div>
+      <div class="db-card-title" id="inActiveTitle">In Active Product 개수 — IBU / RBU / OBU</div>
       <div id="db-inactive-chart"></div>
     </div>
   </div>
 
   <!-- Dashboard 페이지 4: 준비 중 (빈 페이지) -->
   <div id="dbPage3" style="display:none;"><p style="color:var(--text-muted);font-size:15px;padding:60px 0;text-align:center;">준비 중입니다.</p></div>
+
+  <!-- Dashboard 페이지 5: Completed Dashboard (Completed Projects에서 이동) -->
+  <div id="dbPage4" style="display:none;">
+    <div class="db-card">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap;">
+        <div class="db-card-title" id="cdbTitle" style="margin-bottom:0;">Completed Dashboard — Report Target Analysis</div>
+        <div class="page-nav-dots" id="cdbNavDots"></div>
+      </div>
+      <div id="db-completed-dashboard"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Record Page -->
+<div id="page-record" style="display:none;" class="container">
+  <div style="display:flex;align-items:center;gap:16px;margin:0 0 20px;position:relative;">
+    <h2 style="font-size:21px;font-weight:500;color:var(--text-primary);margin:0;letter-spacing:-0.3px;">Record</h2>
+    <span id="recordCount" style="font-size:14px;color:var(--text-muted);"></span>
+    <div class="page-nav" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);">
+      <button onclick="goHome()" title="홈 — Status 페이지" style="background:none;border:none;cursor:pointer;padding:2px 4px;display:inline-flex;align-items:center;color:rgba(255,255,255,0.75);margin-right:4px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      </button>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;margin:0 0 20px;">
+    <label for="recordDateInput" style="font-size:13px;color:var(--text-muted);font-weight:500;">기록 기준일</label>
+    <input type="date" id="recordDateInput" onchange="setRecordDate(this.value)" style="padding:5px 10px;border:1px solid var(--border);border-radius:6px;font-size:13px;color:var(--text);background:var(--bg-card);cursor:pointer;" />
+  </div>
+  <div id="recordList" style="display:flex;flex-direction:column;gap:28px;"></div>
 </div>
 
 <!-- Completed Project List Page -->
@@ -1470,7 +1495,6 @@
     </div>
   </div>
   <div id="completedTablePane"></div>
-  <div id="completedDashPane" style="display:none;"></div>
 </div>
 
 <!-- Request Float Panel -->
@@ -2255,6 +2279,210 @@ function updateConnectionStatus(mode) {
   else { el.textContent = '🔴 오프라인'; }
 }
 
+/* ── Record (화면 캡처 기록) ── */
+const RECORD_DATE_KEY  = 'tw_pm_record_date';
+const RECORD_LOCAL_KEY = 'tw_pm_records_local';
+let records = [];
+let recordsUnsub = null;
+let recordDate = localStorage.getItem(RECORD_DATE_KEY) || new Date().toISOString().slice(0,10);
+
+function setRecordDate(v) {
+  recordDate = v || new Date().toISOString().slice(0,10);
+  try { localStorage.setItem(RECORD_DATE_KEY, recordDate); } catch {}
+}
+
+function recordsCollection() {
+  return fbDb.doc(FB_DATA_PATH).collection('records');
+}
+
+function listenRecords() {
+  if (!fbDb || !useFirebase) return;
+  if (recordsUnsub) recordsUnsub();
+  recordsUnsub = recordsCollection().orderBy('capturedAt', 'asc').onSnapshot(snap => {
+    records = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderRecordList();
+  }, err => { console.warn('Record listener error:', err.code, err.message); });
+}
+
+function saveRecordsLocal() {
+  try { localStorage.setItem(RECORD_LOCAL_KEY, JSON.stringify(records)); } catch {}
+}
+
+function loadRecordsLocal() {
+  try { records = JSON.parse(localStorage.getItem(RECORD_LOCAL_KEY)) || []; } catch { records = []; }
+}
+
+const CAPTURE_TARGET_ELS = { status: 'dashboard', statusCompleted: 'completedSection', dashboard: 'page-dashboard' };
+
+async function captureToRecord(sourcePage, btn) {
+  const targetEl = document.getElementById(CAPTURE_TARGET_ELS[sourcePage]);
+  if (!targetEl || typeof html2canvas === 'undefined') { alert('캡처 기능을 불러올 수 없습니다. 네트워크 연결을 확인하세요.'); return; }
+  if (targetEl.offsetParent === null) { alert('캡처할 내용이 없습니다 (Completed 표가 비어 있음).'); return; }
+  const originalTitle = btn?.title;
+  if (btn) { btn.style.opacity = '0.4'; btn.style.pointerEvents = 'none'; btn.title = '캡처 중...'; }
+  try {
+    const canvas = await html2canvas(targetEl, {
+      backgroundColor: getComputedStyle(document.body).backgroundColor || '#ffffff',
+      scale: 1.5, useCORS: true
+    });
+    let outCanvas = canvas;
+    if (canvas.width > 1600) {
+      const ratio = 1600 / canvas.width;
+      const tmp = document.createElement('canvas');
+      tmp.width = 1600; tmp.height = Math.round(canvas.height * ratio);
+      tmp.getContext('2d').drawImage(canvas, 0, 0, tmp.width, tmp.height);
+      outCanvas = tmp;
+    }
+    const image = outCanvas.toDataURL('image/jpeg', 0.72);
+    const sourceLabel = sourcePage === 'status'
+      ? (document.getElementById('pageTitleDisplay')?.textContent.trim() || 'Active Projects')
+      : sourcePage === 'statusCompleted'
+      ? 'Completed'
+      : (document.getElementById('dbPageLabel')?.textContent.trim() || 'Dashboard');
+    await saveRecord({ sourcePage, sourceLabel, image, imgW: outCanvas.width, imgH: outCanvas.height });
+  } catch(e) {
+    console.warn('캡처 실패:', e);
+    alert('캡처에 실패했습니다: ' + (e.message || e));
+  } finally {
+    if (btn) { btn.style.opacity = ''; btn.style.pointerEvents = ''; btn.title = originalTitle; }
+  }
+}
+
+async function saveRecord(data) {
+  const record = {
+    date: recordDate,
+    sourcePage: data.sourcePage,
+    sourceLabel: data.sourceLabel,
+    image: data.image,
+    imgW: data.imgW || 0,
+    imgH: data.imgH || 0,
+    capturedBy: MY_NAME || getInitials() || '익명',
+    capturedAt: Date.now()
+  };
+  if (!adminMode && fbDb && useFirebase) {
+    try { await recordsCollection().add(record); return; }
+    catch(e) { console.warn('Record 저장 실패(Firebase):', e); }
+  }
+  // 로컬 폴백 (관리자 모드이거나 Firebase 저장 실패 시)
+  record.id = 'local_' + Date.now();
+  records.push(record);
+  saveRecordsLocal();
+  renderRecordList();
+}
+
+async function deleteRecordById(id) {
+  if (!adminMode && fbDb && useFirebase && !String(id).startsWith('local_')) {
+    try { await recordsCollection().doc(id).delete(); }
+    catch(e) { console.warn('Record 삭제 실패:', e); }
+  } else {
+    records = records.filter(r => r.id !== id);
+    saveRecordsLocal();
+  }
+}
+
+async function deleteRecord(id) {
+  if (!confirm('이 기록 이미지를 삭제할까요?')) return;
+  await deleteRecordById(id);
+  renderRecordList();
+}
+
+async function deleteRecordGroup(date) {
+  const ids = records.filter(r => (r.date || '날짜 미지정') === date).map(r => r.id);
+  if (!ids.length) return;
+  if (!confirm(`${date} 기록 ${ids.length}건을 모두 삭제할까요?`)) return;
+  await Promise.all(ids.map(deleteRecordById));
+  renderRecordList();
+}
+
+function recordSourceLabel(r) {
+  return r.sourcePage === 'status' ? 'Active Projects'
+    : r.sourcePage === 'statusCompleted' ? 'Active Projects · Completed'
+    : 'Dashboard';
+}
+
+let _recordGroupOpen = {}; // date -> false면 접힘 (기본값 펼침)
+let _recordGroupChecked = {}; // date -> false면 PPTX 내보내기에서 제외 (기본값 포함)
+
+function toggleRecordGroupChecked(date, checked, cb) {
+  _recordGroupChecked[date] = checked;
+  const section = cb?.closest('.deleted-section');
+  if (section) section.style.opacity = checked ? '1' : '0.55';
+}
+
+function recordsForPpt() {
+  return records.filter(r => _recordGroupChecked[r.date || '날짜 미지정'] !== false);
+}
+
+function toggleRecordGroup(date) {
+  const wasOpen = _recordGroupOpen[date] !== false;
+  _recordGroupOpen[date] = !wasOpen;
+  const body = document.getElementById('recordGroupBody_' + date);
+  const btn = document.getElementById('recordGroupToggle_' + date);
+  if (body) body.style.display = wasOpen ? 'none' : '';
+  if (btn) btn.classList.toggle('is-collapsed', wasOpen);
+}
+
+function renderRecordCard(r) {
+  const label = recordSourceLabel(r);
+  const ts = r.capturedAt ? new Date(r.capturedAt).toLocaleString('ko-KR') : '';
+  return `<div class="db-card" data-record-id="${escapeHtml(String(r.id))}">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+        <span class="db-proj-chip">${escapeHtml(label)}${r.sourceLabel && r.sourceLabel !== label && !label.includes(r.sourceLabel) ? ' · ' + escapeHtml(r.sourceLabel) : ''}</span>
+        <span style="font-size:12px;color:var(--text-muted);">${escapeHtml(r.capturedBy || '')}${ts ? ' · ' + ts : ''}</span>
+      </div>
+      <button onclick="deleteRecord('${escapeHtml(String(r.id))}')" title="삭제" style="background:none;border:none;cursor:pointer;color:var(--text-muted);padding:4px;border-radius:6px;display:flex;align-items:center;" onmouseover="this.style.color='var(--red)'" onmouseout="this.style.color='var(--text-muted)'">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+      </button>
+    </div>
+    <img src="${r.image}" alt="capture" style="width:100%;border-radius:8px;border:1px solid var(--border);display:block;" />
+  </div>`;
+}
+
+function renderRecordList() {
+  const el = document.getElementById('recordList');
+  const countEl = document.getElementById('recordCount');
+  if (!el) return;
+  if (countEl) countEl.textContent = records.length ? `총 ${records.length}건` : '';
+  if (!records.length) {
+    el.innerHTML = '<p class="page-empty">아직 저장된 캡처가 없습니다. Active Projects 또는 Dashboard 페이지의 캡처 아이콘을 눌러보세요.</p>';
+    return;
+  }
+  // 기록 기준일별 그룹화 (최신 날짜가 위로)
+  const groups = {};
+  records.forEach(r => { const d = r.date || '날짜 미지정'; (groups[d] = groups[d] || []).push(r); });
+  const dates = Object.keys(groups).sort((a, b) => b.localeCompare(a));
+
+  el.innerHTML = dates.map(date => {
+    const list = groups[date];
+    const isOpen = _recordGroupOpen[date] !== false;
+    const isChecked = _recordGroupChecked[date] !== false;
+    const cardsHTML = list.map(renderRecordCard).join('');
+    return `<div class="deleted-section" style="margin-top:0;opacity:${isChecked ? '1' : '0.55'};">
+      <div class="deleted-section-head" onclick="toggleRecordGroup('${date}')">
+        <button class="toggle-chevron-btn${isOpen ? '' : ' is-collapsed'}" id="recordGroupToggle_${date}" title="접기/펼치기"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg></button>
+        <input type="checkbox" ${isChecked ? 'checked' : ''} title="PPTX에 포함" onclick="event.stopPropagation()" onchange="toggleRecordGroupChecked('${date}', this.checked, this)" style="width:15px;height:15px;accent-color:var(--accent);cursor:pointer;margin:0;" />
+        <h3>${escapeHtml(date)} <span style="font-weight:400;color:var(--text-muted);">(${list.length})</span></h3>
+        <button class="deleted-clear-btn" onclick="event.stopPropagation(); deleteRecordGroup('${date}')">전체 삭제</button>
+      </div>
+      <div id="recordGroupBody_${date}" style="display:${isOpen ? '' : 'none'};">
+        <div style="display:flex;flex-direction:column-reverse;gap:18px;">${cardsHTML}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function showRecordPage() {
+  const input = document.getElementById('recordDateInput');
+  if (input) input.value = recordDate;
+  renderRecordList();
+}
+
+function initRecords() {
+  if (!adminMode && fbDb && useFirebase) listenRecords();
+  else { loadRecordsLocal(); renderRecordList(); }
+}
+
 /* ── Presence (접속자 표시) ── */
 /* ── 셀 편집 중 표시 ── */
 const FB_EDITING_PATH = 'tw-pm/editing';
@@ -2615,67 +2843,68 @@ try { opDeletedProjects = JSON.parse(localStorage.getItem(OP_DELETED_KEY))  || [
 let _opResourceFilter = new Set();
 
 const STATUS_PAGE_COUNT = 3;
-let currentStatusPage = 1;
-let currentClPage = 0; // 0=Total, 1=IBU, 2=RBU, 3=OBU
+let currentStatusPage = 1; // 1=IBU, 2=RBU, 3=OBU, 4=Total
+let currentClPage = 0; // 0=IBU, 1=RBU, 2=OBU, 3=Total
+
+// Active Projects 페이지가 Total(전체) 뷰인지 여부 — Total일 땐 pageId(BU) 구분 없이 전부 표시
+function matchesStatusPage(p) {
+  return currentStatusPage === STATUS_PAGE_COUNT + 1 || (p.pageId || 1) === currentStatusPage;
+}
 let currentFocusPage = 3; // 0=IBU, 1=RBU, 2=OBU, 3=Total
-const DB_PAGE_COUNT = 4;
-let currentDbPage = 0; // 0=Resource Dashboard, 1~3=준비 중
-let _dbDateFilter = { from: '', to: '' };
-
-function parseTargetDate(str) {
-  if (!str) return null;
-  if (/^\d{4}-\d{2}-\d{2}$/.test(str)) return str;
-  const MON = {jan:'01',feb:'02',mar:'03',apr:'04',may:'05',jun:'06',
-               jul:'07',aug:'08',sep:'09',oct:'10',nov:'11',dec:'12'};
-  const m = str.toLowerCase().match(/([a-z]+)[.\s]*(\d{4})/);
-  if (m && MON[m[1].slice(0,3)]) return `${m[2]}-${MON[m[1].slice(0,3)]}-01`;
-  const y = str.match(/(\d{4})/);
-  if (y) return `${y[1]}-06-01`;
-  return null;
+const DB_PAGE_COUNT = 5;
+// 화면에 표시되는 순서(0~4) → 실제 컨텐츠 div id. Resource Dashboard 다음, Completed Dashboard를 맨 마지막에 배치.
+const DB_PAGE_ORDER = ['dbPage1', 'dbPage2', 'dbPage3', 'dbPage0', 'dbPage4'];
+let currentDbPage = 0; // 0=Delivery Acceleration, 1=In Active, 2=준비 중, 3=Resource Dashboard, 4=Completed Dashboard
+/* ── Dashboard 전체 페이지 공통 날짜 필터 (Release Date 기준) ── */
+const DB_DATE_RANGE_KEY = 'tw_pm_db_date_range';
+const DB_DATE_RANGE_DEFAULT = { from: '', to: '', all: true }; // 기본값: 전체 기간
+function loadDbDateRangeFilter() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(DB_DATE_RANGE_KEY));
+    if (saved && typeof saved === 'object' && (saved.all || (saved.from && saved.to))) return saved;
+  } catch {}
+  return { ...DB_DATE_RANGE_DEFAULT };
 }
-
-function getDbFilteredProjects() {
-  const { from, to } = _dbDateFilter;
-  if (!from && !to) return projects;
-  return projects.filter(p => {
-    const d = parseTargetDate(p.targetDate);
-    if (!d) return false; // 날짜 없는 건은 범위 필터 시 제외
-    if (from && d < from) return false;
-    if (to   && d > to  ) return false;
-    return true;
-  });
+let _dbDateRangeFilter = loadDbDateRangeFilter();
+function saveDbDateRangeState() {
+  try { localStorage.setItem(DB_DATE_RANGE_KEY, JSON.stringify(_dbDateRangeFilter)); } catch {}
 }
-
-function syncDbDateInputs() {
-  // from > to 방지
-  const f = document.getElementById('dbDateFrom');
-  const t = document.getElementById('dbDateTo');
-  if (f.value && t.value && f.value > t.value) t.value = f.value;
+function applyDbDateRangeFilter() {
+  const from = document.getElementById('dbDateRangeFrom').value;
+  const to = document.getElementById('dbDateRangeTo').value;
+  if (!from || !to) { alert('시작/종료 월을 모두 선택해주세요.'); return; }
+  _dbDateRangeFilter = { from, to, all: false };
+  saveDbDateRangeState();
+  showDashboardPage();
 }
-
-function applyDbDateFilter() {
-  _dbDateFilter.from = document.getElementById('dbDateFrom').value;
-  _dbDateFilter.to   = document.getElementById('dbDateTo').value;
-  const lbl = document.getElementById('dbDateFilterLabel');
-  const clr = document.getElementById('dbDateClearBtn');
-  if (_dbDateFilter.from || _dbDateFilter.to) {
-    lbl.textContent = `(${_dbDateFilter.from || '…'} ~ ${_dbDateFilter.to || '…'}) 필터 적용 중`;
-    lbl.style.display = '';
-    clr.style.display = '';
-  } else {
-    lbl.style.display = 'none';
-    clr.style.display = 'none';
+function setDbDateRangeAll() {
+  _dbDateRangeFilter = { from: '', to: '', all: true };
+  saveDbDateRangeState();
+  showDashboardPage();
+}
+function syncDbDateRangeInputs() {
+  const f = document.getElementById('dbDateRangeFrom');
+  const t = document.getElementById('dbDateRangeTo');
+  const lbl = document.getElementById('dbDateRangeLabel');
+  const allBtn = document.getElementById('dbDateRangeAllBtn');
+  if (!f || !t) return;
+  f.value = _dbDateRangeFilter.from || '';
+  t.value = _dbDateRangeFilter.to || '';
+  if (lbl) lbl.textContent = _dbDateRangeFilter.all ? '전체 기간 표시 중' : '';
+  if (allBtn) {
+    allBtn.style.background = _dbDateRangeFilter.all ? 'var(--accent)' : 'none';
+    allBtn.style.color = _dbDateRangeFilter.all ? '#fff' : 'var(--text-muted)';
+    allBtn.style.borderColor = _dbDateRangeFilter.all ? 'var(--accent)' : 'var(--border)';
   }
-  showDashboardPage();
 }
-
-function clearDbDateFilter() {
-  _dbDateFilter = { from: '', to: '' };
-  document.getElementById('dbDateFrom').value = '';
-  document.getElementById('dbDateTo').value = '';
-  document.getElementById('dbDateFilterLabel').style.display = 'none';
-  document.getElementById('dbDateClearBtn').style.display = 'none';
-  showDashboardPage();
+// Release Date가 선택된 공통 기간에 속하는지 — 전체 기간이면 항상 true, 아니면 Release Date가 있고 범위 안이어야 함
+function matchesDbDateRange(p) {
+  if (_dbDateRangeFilter.all) return true;
+  const m = (p.releaseDate || '').slice(0, 7);
+  if (!m) return false;
+  if (_dbDateRangeFilter.from && m < _dbDateRangeFilter.from) return false;
+  if (_dbDateRangeFilter.to && m > _dbDateRangeFilter.to) return false;
+  return true;
 }
 
 let currentProjectId = null;
@@ -3454,7 +3683,7 @@ function renderDashboard() {
 
   const mainProjects = projects.filter(p =>
     !['M','Q','Y'].some(t => (p.boardTypes||[]).includes(t)) &&
-    (p.pageId || 1) === currentStatusPage
+    matchesStatusPage(p)
   );
   const chkAll = document.getElementById('chkAll');
   const allSel  = mainProjects.every(p => p.selected !== false);
@@ -3464,7 +3693,7 @@ function renderDashboard() {
 
   tbody.innerHTML = projects.filter(p =>
     !['M','Q','Y'].some(t => (p.boardTypes||[]).includes(t)) &&
-    (p.pageId || 1) === currentStatusPage
+    matchesStatusPage(p)
   ).map(p => {
     const sel = p.selected !== false;
     const pub = escapeHtml(p.publication || '');
@@ -3595,7 +3824,7 @@ function renderDashboard() {
   // 리소스 필터 칩 렌더링 & 현재 필터 재적용
   const mainList = projects.filter(p =>
     !['M','Q','Y'].some(t => (p.boardTypes||[]).includes(t)) &&
-    (p.pageId || 1) === currentStatusPage
+    matchesStatusPage(p)
   );
   renderStatusResourceFilter(mainList);
   if (_statusResourceFilter.size > 0) filterStatusResource('__keep__');
@@ -4453,7 +4682,10 @@ function _newBlankProject() {
   return {
     id: 'p_' + Date.now(), name: '', publication: '', publicationCount: '', purpose: '',
     targetDate: '', checks, selected: true, resource: '', bu: '',
-    projectType: '', startDate: '', boardTypes: [], boardDates: {}, releaseDate: '', pageId: currentStatusPage, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString()
+    projectType: '', startDate: '', boardTypes: [], boardDates: {}, releaseDate: '',
+    // Total(전체) 뷰에서 추가하면 실제 BU가 없으므로 기본 IBU(1)에 배정
+    pageId: currentStatusPage <= STATUS_PAGE_COUNT ? currentStatusPage : 1,
+    createdAt: new Date().toISOString(), updatedAt: new Date().toISOString()
   };
 }
 
@@ -5305,7 +5537,7 @@ function getPptExportPage() {
   return id === 'pptformat' ? pptSourcePage : id;
 }
 
-const PPT_BU_NAMES = { 1: 'IBU', 2: 'RBU', 3: 'OBU' };
+const PPT_BU_NAMES = { 1: 'IBU', 2: 'RBU', 3: 'OBU', 4: 'Total' };
 
 // pageVar: 0,1,2 = IBU/RBU/OBU 중 하나만, 3 = Total(전체 3개)
 function pptBuGroups(pageVar, filterFn, titlePrefix) {
@@ -5338,12 +5570,15 @@ function getPptExportGroups() {
   if (page === 'completed') {
     const list = projects.filter(p => {
       const bt = p.boardTypes || [];
-      return (bt.includes('M') || bt.includes('Q') || bt.includes('Y')) && (p.pageId || 1) === currentStatusPage;
+      return (bt.includes('M') || bt.includes('Q') || bt.includes('Y')) && matchesCpPage(p);
     });
-    return { kind: 'projects', groups: list.length ? [{ title: `보고 대상 — ${PPT_BU_NAMES[currentStatusPage] || ''}`, list }] : [] };
+    return { kind: 'projects', groups: list.length ? [{ title: `보고 대상 — ${CP_BU_TITLES[currentCpPage] || ''}`, list }] : [] };
   }
   if (page === 'dashboard') {
     return { kind: 'dashboard', dbPage: currentDbPage };
+  }
+  if (page === 'record') {
+    return { kind: 'record' };
   }
   // 기본값(status 등): Active Projects 전체(IBU/RBU/OBU) — 기존 동작 유지
   const pageTitles = (() => { try { return JSON.parse(localStorage.getItem('tw_pm_page_titles')) || {}; } catch { return {}; } })();
@@ -5364,19 +5599,41 @@ function buildPptPreviewDashboardHTML(dbPage) {
       ${inner}
     </div>
   </div>`;
-  if (dbPage === 0) {
+  const pageId = DB_PAGE_ORDER[dbPage];
+  if (pageId === 'dbPage0') {
     const inner = document.getElementById('dbPage0')?.innerHTML;
     return inner ? wrap('Resource Dashboard', inner) : null;
   }
-  if (dbPage === 1) {
+  if (pageId === 'dbPage1') {
     const inner = document.getElementById('db-delivery-chart')?.innerHTML;
     return inner ? wrap('Delivery Acceleration', inner) : null;
   }
-  if (dbPage === 2) {
+  if (pageId === 'dbPage2') {
     const inner = document.getElementById('db-inactive-chart')?.innerHTML;
     return inner ? wrap('In Active', inner) : null;
   }
+  if (pageId === 'dbPage4') {
+    const inner = document.getElementById('db-completed-dashboard')?.innerHTML;
+    return inner ? wrap('Completed Dashboard', inner) : null;
+  }
   return null;
+}
+
+function buildPptPreviewRecordHTML() {
+  const list = recordsForPpt();
+  if (!list.length) return null;
+  return list.map(r => {
+    const ts = r.capturedAt ? new Date(r.capturedAt).toLocaleString('ko-KR') : '';
+    const title = `${r.date || ''} — ${recordSourceLabel(r)}`;
+    return `<div style="background:#fff;border-radius:6px;overflow:hidden;box-shadow:0 2px 12px rgba(0,0,0,0.15);margin-bottom:20px;font-family:Arial,sans-serif;">
+      <div style="height:5px;background:#3B82F6;"></div>
+      <div style="padding:14px 18px 18px;">
+        <div style="font-size:20px;font-weight:700;color:#1F2937;margin-bottom:4px;">${escapeHtml(title)}</div>
+        <div style="font-size:12px;color:#6B7280;margin-bottom:10px;">${escapeHtml(r.capturedBy || '')}${ts ? ' · ' + ts : ''}</div>
+        <img src="${r.image}" alt="capture" style="width:100%;border-radius:4px;border:1px solid #E5E7EB;display:block;" />
+      </div>
+    </div>`;
+  }).join('');
 }
 
 function showPPTPreview() {
@@ -5384,7 +5641,12 @@ function showPPTPreview() {
   let slidesHTML = '';
   let slideCount = 0;
 
-  if (ctx.kind === 'dashboard') {
+  if (ctx.kind === 'record') {
+    const html = buildPptPreviewRecordHTML();
+    if (!html) { alert('PPTX에 포함하도록 체크된 캡처가 없습니다. Record 페이지에서 날짜별 체크박스를 확인해주세요.'); return; }
+    slidesHTML = html;
+    slideCount = recordsForPpt().length;
+  } else if (ctx.kind === 'dashboard') {
     const html = buildPptPreviewDashboardHTML(ctx.dbPage);
     if (!html) { alert('이 Dashboard 페이지는 아직 준비 중이라 미리 볼 내용이 없습니다.'); return; }
     slidesHTML = html;
@@ -5571,12 +5833,33 @@ function addInActiveChartPptSlide(pres) {
   return slide;
 }
 
+function addRecordPptSlides(pres) {
+  const list = recordsForPpt();
+  if (!list.length) { alert('PPTX에 포함하도록 체크된 캡처가 없습니다. Record 페이지에서 날짜별 체크박스를 확인해주세요.'); return false; }
+  const AREA_X = 0.4, AREA_Y = 1.05, AREA_W = 12.53, AREA_H = 6.05;
+  list.forEach(r => {
+    const slide = pres.addSlide();
+    pptSlideHeader(pres, slide, `${r.date || ''} — ${recordSourceLabel(r)}`);
+    const ratio = (r.imgW && r.imgH) ? r.imgW / r.imgH : 4 / 3;
+    let w = AREA_W, h = w / ratio;
+    if (h > AREA_H) { h = AREA_H; w = h * ratio; }
+    const x = AREA_X + (AREA_W - w) / 2;
+    const y = AREA_Y + (AREA_H - h) / 2;
+    slide.addImage({ data: r.image, x, y, w, h });
+  });
+  return true;
+}
+
 function buildPptDeckForExport(pres) {
   const ctx = getPptExportGroups();
+  if (ctx.kind === 'record') {
+    return addRecordPptSlides(pres);
+  }
   if (ctx.kind === 'dashboard') {
-    if (ctx.dbPage === 0) addResourceDashboardPptSlide(pres);
-    else if (ctx.dbPage === 1) addDeliveryChartPptSlide(pres);
-    else if (ctx.dbPage === 2) addInActiveChartPptSlide(pres);
+    const pageId = DB_PAGE_ORDER[ctx.dbPage];
+    if (pageId === 'dbPage0') addResourceDashboardPptSlide(pres);
+    else if (pageId === 'dbPage1') addDeliveryChartPptSlide(pres);
+    else if (pageId === 'dbPage2') addInActiveChartPptSlide(pres);
     else { alert('이 Dashboard 페이지는 아직 준비 중이라 내보낼 내용이 없습니다.'); return false; }
     return true;
   }
@@ -5779,8 +6062,17 @@ function toggleCompletedSection() {
 }
 
 const CHART_COLORS = ['#3b82f6','#f59e0b','#10b981','#ef4444','#8b5cf6','#06b6d4','#f97316','#ec4899','#84cc16','#a78bfa'];
+// IBU/RBU/OBU 고유 색상(파랑 계열)과 혼동되지 않도록 제외한 팔레트 — BU 전용이 아닌 차트(Publication Type, Purpose 등)에서 사용
+const CHART_COLORS_NO_BU = CHART_COLORS.filter(c => c !== '#3b82f6' && c !== '#06b6d4');
 
-function makePieChart(data, size = 120) {
+// 배경색 밝기에 따라 슬라이스 위 % 글자를 흰색/짙은색 중 잘 보이는 쪽으로 선택
+function _isLightColor(hex) {
+  const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16);
+  return (0.299 * r + 0.587 * g + 0.114 * b) > 165;
+}
+
+// legendData를 따로 넘기면 파이 조각은 data(원래 규칙: 값 큰 순) 순서로 그리고, 범례 텍스트만 legendData 순서로 표시
+function makePieChart(data, size = 180, legendData) {
   const total = data.reduce((s, d) => s + d.value, 0);
   if (!total) return '<span style="color:var(--text-muted);font-size:12px;">데이터 없음</span>';
   const cx = size / 2, cy = size / 2, r = size / 2 - 4;
@@ -5788,14 +6080,28 @@ function makePieChart(data, size = 120) {
   const slices = data.map(d => {
     const sweep = (d.value / total) * 2 * Math.PI;
     const x1 = cx + r * Math.cos(angle), y1 = cy + r * Math.sin(angle);
+    const midAngle = angle + sweep / 2;
     angle += sweep;
     const x2 = cx + r * Math.cos(angle), y2 = cy + r * Math.sin(angle);
     const large = sweep > Math.PI ? 1 : 0;
-    return `<path d="M${cx},${cy} L${x1.toFixed(2)},${y1.toFixed(2)} A${r},${r} 0 ${large},1 ${x2.toFixed(2)},${y2.toFixed(2)} Z" fill="${d.color}" stroke="var(--surface)" stroke-width="1.5"/>`;
+    const pct = Math.round((d.value / total) * 100);
+    let pctLabel = '';
+    if (pct >= 6) {
+      const labelR = r * 0.62;
+      const lx = (cx + labelR * Math.cos(midAngle)).toFixed(1);
+      const ly = (cy + labelR * Math.sin(midAngle)).toFixed(1);
+      const textColor = _isLightColor(d.color) ? '#1f2937' : '#ffffff';
+      pctLabel = `<text x="${lx}" y="${ly}" text-anchor="middle" dominant-baseline="middle" font-size="${Math.max(10, size * 0.06)}" font-weight="700" fill="${textColor}">${pct}%</text>`;
+    }
+    return `<path d="M${cx},${cy} L${x1.toFixed(2)},${y1.toFixed(2)} A${r},${r} 0 ${large},1 ${x2.toFixed(2)},${y2.toFixed(2)} Z" fill="${d.color}" stroke="var(--surface)" stroke-width="1.5"/>${pctLabel}`;
   }).join('');
-  const legend = data.map(d =>
-    `<div class="cp-dash-legend-row"><div class="cp-dash-legend-dot" style="background:${d.color}"></div><span>${escapeHtml(d.label)}</span><span style="margin-left:auto;padding-left:10px;font-weight:600;color:var(--text-primary);">${d.value}</span></div>`
-  ).join('');
+  const legend = (legendData || data).map(d => {
+    const pct = Math.round((d.value / total) * 100);
+    const valueHTML = d.pub != null
+      ? `<span style="display:inline-block;width:22px;text-align:right;"><b style="color:var(--accent);">${d.value}</b></span><span style="display:inline-block;width:28px;text-align:right;color:var(--text-muted);font-weight:400;">/${d.pub}</span>`
+      : `<span style="display:inline-block;width:22px;text-align:right;"><b style="color:var(--accent);">${d.value}</b></span>`;
+    return `<div class="cp-dash-legend-row"><div class="cp-dash-legend-dot" style="background:${d.color}"></div><span>${escapeHtml(d.label)}</span><span style="margin-left:auto;padding-left:10px;display:flex;align-items:center;"><span style="display:inline-block;width:32px;text-align:right;color:var(--text-muted);font-size:11px;">${pct}%</span>${valueHTML}</span></div>`;
+  }).join('');
   return `<div class="cp-dash-chart-inner">
     <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">${slices}</svg>
     <div class="cp-dash-legend">${legend}</div>
@@ -5816,8 +6122,11 @@ function makeBarChart(data, { width = 320, height = 140, color = '#3b82f6' } = {
     const col = d.color || color;
     const lx = x + (bw - gap) / 2;
     const label = d.label.length > 7 ? d.label.slice(0, 6) + '…' : d.label;
+    const valueLabel = d.pub != null
+      ? `<tspan font-weight="700">${d.value}</tspan><tspan fill="var(--text-muted)" font-weight="400">/${d.pub}</tspan>`
+      : `${d.value}`;
     return `<rect x="${x}" y="${y}" width="${bw - gap}" height="${bh}" fill="${col}" rx="2"/>
-      ${d.value ? `<text x="${lx}" y="${y - 3}" text-anchor="middle" fill="var(--text-secondary)" font-size="10">${d.value}</text>` : ''}
+      ${d.value ? `<text x="${lx}" y="${y - 3}" text-anchor="middle" fill="var(--text-secondary)" font-size="10">${valueLabel}</text>` : ''}
       <text x="${lx}" y="${height - padB + 14}" text-anchor="middle" fill="var(--text-muted)" font-size="9">${escapeHtml(label)}</text>`;
   }).join('');
   return `<svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" style="overflow:visible">
@@ -5835,107 +6144,200 @@ function _distMap(list, fn, label = '(기타)') {
   return Object.entries(map).sort((a, b) => b[1] - a[1]);
 }
 
+// _distMap에 Publication Count 합계(pub)까지 함께 붙여서, 파이 차트 범례에 Product/Publication 쌍으로 표시
+// colorFn(label, i)을 넘기면 색상을 직접 결정(예: BU 고유 색상), 없으면 BU 색상과 겹치지 않는 기본 팔레트 사용
+function _distMapWithPub(list, fn, label = '(기타)', colorFn) {
+  return _distMap(list, fn, label).map(([lbl, value], i) => {
+    const pub = list
+      .filter(p => ((fn(p) || '').trim() || label) === lbl)
+      .reduce((s, p) => s + (Number(p.publicationCount) || 0), 0);
+    const color = colorFn ? colorFn(lbl, i) : CHART_COLORS_NO_BU[i % CHART_COLORS_NO_BU.length];
+    return { label: lbl, value, pub, color };
+  });
+}
+
+// Purpose 라벨에 Delivery 또는 Certification이라는 단어가 들어가면 항상 빨간색으로 표시
+const RED_PURPOSE_KEYWORDS = ['delivery', 'certification'];
+function isRedPurposeLabel(label) {
+  const l = (label || '').toLowerCase();
+  return RED_PURPOSE_KEYWORDS.some(k => l.includes(k));
+}
+
+// 값(파이 조각) 순서는 그대로 두고, 지정된 라벨 순서대로 목록만 재배열(범례 전용)
+function reorderLegend(data, order) {
+  const rest = [...data];
+  const ordered = [];
+  order.forEach(label => {
+    const idx = rest.findIndex(d => d.label === label);
+    if (idx !== -1) ordered.push(rest.splice(idx, 1)[0]);
+  });
+  ordered.push(...rest); // 지정 순서에 없는 나머지는 원래 순서 그대로 뒤에 붙임
+  return ordered;
+}
+
+// Delivery/Certification(빨간색) 라벨을 맨 앞으로 묶고, 그다음 order 순서, 나머지는 뒤에 — 범례 전용
+function reorderPurposeLegend(data, order) {
+  const redGroup = data.filter(d => isRedPurposeLabel(d.label));
+  const rest = data.filter(d => !isRedPurposeLabel(d.label));
+  const ordered = [...redGroup];
+  order.forEach(label => {
+    const idx = rest.findIndex(d => d.label === label);
+    if (idx !== -1) ordered.push(rest.splice(idx, 1)[0]);
+  });
+  ordered.push(...rest);
+  return ordered;
+}
+
 function renderCompletedDashboard(list) {
   const total = list.length;
+  const pubTotal = list.reduce((sum, p) => sum + (Number(p.publicationCount) || 0), 0);
 
-  // BU
-  const buData = _distMap(list, p => p.bu, '(미지정)')
-    .map(([label, value], i) => ({ label, value, color: CHART_COLORS[i % CHART_COLORS.length] }));
+  // BU / Publication Type / Purpose 모두 Product/Publication Count 쌍으로 표시
+  // BU 분포는 In Active 차트와 동일한 IBU/RBU/OBU 고유 색상(짙은 색)을 그대로 사용
+  const BU_COLOR_MAP = Object.fromEntries(DB_BU_GROUPS.map(([, buLabel, color]) => [buLabel, color]));
+  const buData = _distMapWithPub(list, p => p.bu, '(미지정)', (lbl, i) => BU_COLOR_MAP[lbl] || CHART_COLORS_NO_BU[i % CHART_COLORS_NO_BU.length]);
+  // 파이 조각은 원래 규칙(값 큰 순)대로, 범례 텍스트만 IBU → RBU → OBU 순서로 별도 표시
+  const buLegendData = reorderLegend(buData, ['IBU', 'RBU', 'OBU']);
+  const PT_COLOR_MAP = { 'NEW': '#ef4444', 'Revision': '#f59e0b', 'Regular Release': '#d1d5db' };
+  const ptData = _distMapWithPub(list, p => p.publicationType, '(미지정)', (lbl, i) => PT_COLOR_MAP[lbl] || CHART_COLORS_NO_BU[i % CHART_COLORS_NO_BU.length]);
+  // 파이 조각은 원래 규칙(값 큰 순)대로, 범례 텍스트만 Delivery/Certification(빨간색)을 맨 앞으로 묶어 별도 표시
+  const PURPOSE_LEGEND_ORDER = ['S/W Release', 'Standardization', 'Master Data Building'];
+  const PURPOSE_FALLBACK_COLORS = CHART_COLORS_NO_BU.filter(c => c !== '#ef4444');
+  const purData = _distMapWithPub(list, p => p.purpose, '(미지정)', (lbl, i) =>
+    isRedPurposeLabel(lbl) ? '#ef4444' : PURPOSE_FALLBACK_COLORS[i % PURPOSE_FALLBACK_COLORS.length]
+  );
+  const purLegendData = reorderPurposeLegend(purData, PURPOSE_LEGEND_ORDER);
 
-  // Publication Type
-  const ptData = _distMap(list, p => p.publicationType, '(미지정)')
-    .map(([label, value], i) => ({ label, value, color: CHART_COLORS[i % CHART_COLORS.length] }));
-
-  // Purpose
-  const purData = _distMap(list, p => p.purpose, '(미지정)')
-    .map(([label, value], i) => ({ label, value, color: CHART_COLORS[i % CHART_COLORS.length] }));
-
-  // Publication (top 10 bar)
-  const pubData = _distMap(list, p => p.publication, '(미입력)')
+  // Publication (top 12 bar) — Product/Publication Count 쌍
+  const pubMap = {};
+  list.forEach(p => {
+    const key = (p.publication || '').trim() || '(미입력)';
+    if (!pubMap[key]) pubMap[key] = { value: 0, pub: 0 };
+    pubMap[key].value++;
+    pubMap[key].pub += Number(p.publicationCount) || 0;
+  });
+  const pubData = Object.entries(pubMap)
+    .sort((a, b) => b[1].value - a[1].value)
     .slice(0, 12)
-    .map(([label, value], i) => ({ label, value, color: CHART_COLORS[i % CHART_COLORS.length] }));
+    .map(([label, d], i) => ({ label, value: d.value, pub: d.pub, color: CHART_COLORS[i % CHART_COLORS.length] }));
 
-  // 월별 완료 건수 (releaseDate 기준)
+  // 월별 완료 건수 (releaseDate 기준) — Product/Publication Count 쌍
   const releaseMonths = {};
   list.forEach(p => {
     if (!p.releaseDate) return;
     const m = p.releaseDate.slice(0, 7);
-    releaseMonths[m] = (releaseMonths[m] || 0) + 1;
+    if (!releaseMonths[m]) releaseMonths[m] = { value: 0, pub: 0 };
+    releaseMonths[m].value++;
+    releaseMonths[m].pub += Number(p.publicationCount) || 0;
   });
-  const releaseData = Object.entries(releaseMonths).sort().map(([label, value]) => ({ label, value, color: '#10b981' }));
+  const releaseData = Object.entries(releaseMonths).sort().map(([label, d]) => ({ label, value: d.value, pub: d.pub, color: '#10b981' }));
 
-  // 월별 NEW 건수 (startDate 기준, 없으면 createdAt)
+  // 월별 NEW 건수 (Publication Type이 NEW인 것만, Release Date로 월 집계) — Product/Publication Count 쌍
   const newMonths = {};
   list.forEach(p => {
-    const d = p.startDate || (p.createdAt || '').slice(0, 10);
-    if (!d) return;
-    const m = d.slice(0, 7);
-    newMonths[m] = (newMonths[m] || 0) + 1;
+    if ((p.publicationType || '').trim() !== 'NEW') return;
+    if (!p.releaseDate) return;
+    const m = p.releaseDate.slice(0, 7);
+    if (!newMonths[m]) newMonths[m] = { value: 0, pub: 0 };
+    newMonths[m].value++;
+    newMonths[m].pub += Number(p.publicationCount) || 0;
   });
-  const newData = Object.entries(newMonths).sort().map(([label, value]) => ({ label, value, color: '#3b82f6' }));
+  const newData = Object.entries(newMonths).sort().map(([label, d]) => ({ label, value: d.value, pub: d.pub, color: '#3b82f6' }));
 
-  // Lead time (startDate → releaseDate or today)
-  const ltBuckets = { '< 4w': 0, '4–8w': 0, '8–16w': 0, '16–24w': 0, '> 24w': 0 };
+  // Lead time (startDate → releaseDate or today) — Product/Publication Count 쌍
+  const ltBuckets = { '< 4w': { value: 0, pub: 0 }, '4–8w': { value: 0, pub: 0 }, '8–16w': { value: 0, pub: 0 }, '16–24w': { value: 0, pub: 0 }, '> 24w': { value: 0, pub: 0 } };
   list.forEach(p => {
     if (!p.startDate) return;
     const end = p.releaseDate ? new Date(p.releaseDate + 'T00:00:00') : new Date();
     const weeks = Math.floor((end - new Date(p.startDate + 'T00:00:00')) / (7 * 24 * 60 * 60 * 1000));
     if (weeks < 0) return;
-    if (weeks < 4) ltBuckets['< 4w']++;
-    else if (weeks < 8) ltBuckets['4–8w']++;
-    else if (weeks < 16) ltBuckets['8–16w']++;
-    else if (weeks < 24) ltBuckets['16–24w']++;
-    else ltBuckets['> 24w']++;
+    const bucket = weeks < 4 ? '< 4w' : weeks < 8 ? '4–8w' : weeks < 16 ? '8–16w' : weeks < 24 ? '16–24w' : '> 24w';
+    ltBuckets[bucket].value++;
+    ltBuckets[bucket].pub += Number(p.publicationCount) || 0;
   });
-  const ltData = Object.entries(ltBuckets).map(([label, value]) => ({ label, value, color: '#8b5cf6' }));
-
-  // 요약 카드
-  const buCards = buData.slice(0, 5).map(d =>
-    `<div class="cp-dash-card"><div class="cp-dash-card-val" style="color:${d.color}">${d.value}</div><div class="cp-dash-card-label">${escapeHtml(d.label)}</div></div>`
-  ).join('');
+  const ltData = Object.entries(ltBuckets).map(([label, d]) => ({ label, value: d.value, pub: d.pub, color: '#8b5cf6' }));
 
   const noData = s => `<span style="color:var(--text-muted);font-size:12px;">${s}</span>`;
 
   return `<div class="cp-dash">
     <div class="cp-dash-cards">
-      <div class="cp-dash-card"><div class="cp-dash-card-val">${total}</div><div class="cp-dash-card-label">Total</div></div>
-      ${buCards}
+      <div class="cp-dash-card"><div class="cp-dash-card-val">${total}</div><div class="cp-dash-card-label">Product Total</div></div>
+      <div class="cp-dash-card"><div class="cp-dash-card-val" style="color:var(--text-muted);">${pubTotal}</div><div class="cp-dash-card-label">Publication Total</div></div>
     </div>
     <div class="cp-dash-charts">
       <div class="cp-dash-chart-wrap">
-        <p class="cp-dash-chart-title">BU 분포</p>
-        ${buData.length ? makePieChart(buData) : noData('BU 데이터 없음')}
+        <p class="cp-dash-chart-title">BU Distribution</p>
+        ${buData.length ? makePieChart(buData, 180, buLegendData) : noData('BU 데이터 없음')}
       </div>
       <div class="cp-dash-chart-wrap">
-        <p class="cp-dash-chart-title">Publication Type 분포</p>
+        <p class="cp-dash-chart-title">Publication Type Distribution</p>
         ${ptData.length ? makePieChart(ptData) : noData('데이터 없음')}
       </div>
       <div class="cp-dash-chart-wrap">
-        <p class="cp-dash-chart-title">Purpose 분포</p>
-        ${purData.length ? makePieChart(purData) : noData('데이터 없음')}
+        <p class="cp-dash-chart-title">Purpose Distribution</p>
+        ${purData.length ? makePieChart(purData, 180, purLegendData) : noData('데이터 없음')}
       </div>
     </div>
     <div class="cp-dash-charts" style="margin-top:16px;">
       <div class="cp-dash-chart-wrap">
-        <p class="cp-dash-chart-title">Publication 분포 (Top 12)</p>
+        <p class="cp-dash-chart-title">Publication Distribution (Top 12)</p>
         ${pubData.length ? makeBarChart(pubData, { width: 420, color: '#3b82f6' }) : noData('데이터 없음')}
       </div>
       <div class="cp-dash-chart-wrap">
-        <p class="cp-dash-chart-title">Lead Time 분포</p>
+        <p class="cp-dash-chart-title">Lead Time Distribution</p>
         ${makeBarChart(ltData, { width: 260, color: '#8b5cf6' })}
       </div>
     </div>
     <div class="cp-dash-charts" style="margin-top:16px;">
       <div class="cp-dash-chart-wrap">
-        <p class="cp-dash-chart-title">월별 완료 건수 (Release Date 기준)</p>
+        <p class="cp-dash-chart-title">Monthly Completed Count (by Release Date)</p>
         ${releaseData.length ? makeBarChart(releaseData, { width: 360, color: '#10b981' }) : noData('Release Date 없음')}
       </div>
       <div class="cp-dash-chart-wrap">
-        <p class="cp-dash-chart-title">월별 NEW 건수 (Start Date 기준)</p>
-        ${newData.length ? makeBarChart(newData, { width: 360, color: '#3b82f6' }) : noData('Start Date 없음')}
+        <p class="cp-dash-chart-title">Monthly NEW Count (Publication Type: NEW)</p>
+        ${newData.length ? makeBarChart(newData, { width: 360, color: '#3b82f6' }) : noData('NEW 데이터 없음')}
       </div>
     </div>
   </div>`;
+}
+
+// Dashboard 페이지 5: Completed Dashboard — Completed Projects의 "대시보드" 뷰를 그대로 재사용
+let currentCdbPage = STATUS_PAGE_COUNT; // 0=IBU, 1=RBU, 2=OBU, 3=Total (기본값 Total) — Dashboard의 Completed Dashboard 전용, 다른 페이지와 독립적
+
+function matchesCdbPage(p) {
+  return currentCdbPage === STATUS_PAGE_COUNT || (p.pageId || 1) === currentCdbPage + 1;
+}
+
+function gotoCdbPage(n) {
+  const total = STATUS_PAGE_COUNT + 1;
+  currentCdbPage = ((n % total) + total) % total;
+  renderCompletedDbPage();
+}
+
+function renderCdbDots() {
+  const el = document.getElementById('cdbNavDots');
+  if (el) {
+    el.innerHTML = CP_BU_TITLES.map((title, i) =>
+      `<div class="cl-nav-dot${i === currentCdbPage ? ' active' : ''}" onclick="gotoCdbPage(${i})" title="${title}">${STATUS_PAGE_LABELS[i]}</div>`
+    ).join('');
+  }
+  const titleEl = document.getElementById('cdbTitle');
+  if (titleEl) {
+    titleEl.textContent = currentCdbPage === STATUS_PAGE_COUNT
+      ? 'Completed Dashboard — All Report Targets'
+      : `Completed Dashboard — ${CP_BU_TITLES[currentCdbPage]} Analysis`;
+  }
+}
+
+function renderCompletedDbPage() {
+  const el = document.getElementById('db-completed-dashboard');
+  if (!el) return;
+  renderCdbDots();
+  const list = projects.filter(p => {
+    const bt = p.boardTypes || [];
+    return (bt.includes('M') || bt.includes('Q') || bt.includes('Y')) && matchesCdbPage(p) && matchesDbDateRange(p);
+  });
+  el.innerHTML = renderCompletedDashboard(list);
 }
 
 function makeBoardRowHTML(p) {
@@ -6011,7 +6413,7 @@ function renderBoardSection(type) {
   const list = projects.filter(p => {
     const bt = p.boardTypes || [];
     const topStage = tableOrder.slice().reverse().find(t => bt.includes(t));
-    return topStage === type && (p.pageId || 1) === currentStatusPage;
+    return topStage === type && matchesStatusPage(p) && matchesResourceFilter(p);
   });
   const section = document.getElementById('boardSection_' + type);
   if (!section) return;
@@ -6107,7 +6509,7 @@ function renderDeletedList() {
   if (!section) return;
 
   // 현재 페이지 프로젝트만 표시
-  const pageDeleted = deletedProjects.filter(p => (p.pageId || 1) === currentStatusPage);
+  const pageDeleted = deletedProjects.filter(matchesStatusPage);
 
   if (pageDeleted.length === 0) { section.style.display = 'none'; return; }
   section.style.display = '';
@@ -7381,7 +7783,7 @@ function savePageTitles(titles) {
   localStorage.setItem(PAGE_TITLES_KEY, JSON.stringify(titles));
 }
 function getPageTitle(pageId) {
-  return loadPageTitles()[pageId] || DEFAULT_TITLE;
+  return loadPageTitles()[pageId] || (pageId > STATUS_PAGE_COUNT ? 'Total' : DEFAULT_TITLE);
 }
 function renderPageTitle() {
   const title = getPageTitle(currentStatusPage);
@@ -7404,7 +7806,7 @@ function saveTitleEdit() {
   const display = document.getElementById('pageTitleDisplay');
   const input   = document.getElementById('pageTitleInput');
   if (!display || !input) return;
-  const newTitle = input.value.trim() || DEFAULT_TITLE;
+  const newTitle = input.value.trim() || (currentStatusPage > STATUS_PAGE_COUNT ? 'Total' : DEFAULT_TITLE);
   const titles = loadPageTitles();
   titles[currentStatusPage] = newTitle;
   savePageTitles(titles);
@@ -7533,7 +7935,8 @@ function applyRawPbStates() {
 
 /* ── Status Page Navigation ── */
 function gotoStatusPage(n) {
-  currentStatusPage = ((n - 1 + STATUS_PAGE_COUNT) % STATUS_PAGE_COUNT) + 1;
+  const total = STATUS_PAGE_COUNT + 1; // 1,2,3=IBU/RBU/OBU, 4=Total
+  currentStatusPage = ((n - 1 + total) % total) + 1;
   renderDashboard();
   renderBoardSections();
   renderDeletedList(); // 페이지 전환 시 삭제 목록도 해당 페이지 것으로 갱신
@@ -7551,7 +7954,7 @@ function renderClNavDots() {
   if (!el) return;
   const CL_TITLES = ['IBU Status', 'RBU Status', 'OBU Status', 'Total'];
   el.innerHTML = CL_TITLES.map((title, i) =>
-    `<div class="page-nav-dot ${i === currentClPage ? 'active' : ''}" onclick="gotoClPage(${i})" title="${title}"></div>`
+    `<div class="cl-nav-dot ${i === currentClPage ? 'active' : ''}" onclick="gotoClPage(${i})" title="${title}">${STATUS_PAGE_LABELS[i]}</div>`
   ).join('');
   if (label) label.textContent = CL_TITLES[currentClPage];
 }
@@ -7567,7 +7970,7 @@ function renderFocusNavDots() {
   if (!el) return;
   const FOCUS_TITLES = ['IBU', 'RBU', 'OBU', 'Total'];
   el.innerHTML = FOCUS_TITLES.map((title, i) =>
-    `<div class="page-nav-dot ${i === currentFocusPage ? 'active' : ''}" onclick="gotoFocusPage(${i})" title="${title}"></div>`
+    `<div class="cl-nav-dot ${i === currentFocusPage ? 'active' : ''}" onclick="gotoFocusPage(${i})" title="${title}">${STATUS_PAGE_LABELS[i]}</div>`
   ).join('');
 }
 
@@ -7584,12 +7987,15 @@ function renderDbNavDots() {
   ).join('');
 }
 
+const STATUS_PAGE_LABELS = ['I', 'R', 'O', 'T'];
+const STATUS_PAGE_FULL_NAMES = ['IBU', 'RBU', 'OBU', 'Total'];
+
 function renderPageNavDots() {
   const el = document.getElementById('pageNavDots');
   if (!el) return;
-  el.innerHTML = Array.from({length: STATUS_PAGE_COUNT}, (_, i) =>
-    `<div class="page-nav-dot ${i + 1 === currentStatusPage ? 'active' : ''}"
-      onclick="gotoStatusPage(${i + 1})" title="${i + 1}페이지"></div>`
+  el.innerHTML = Array.from({length: STATUS_PAGE_COUNT + 1}, (_, i) =>
+    `<div class="cl-nav-dot ${i + 1 === currentStatusPage ? 'active' : ''}"
+      onclick="gotoStatusPage(${i + 1})" title="${STATUS_PAGE_FULL_NAMES[i]}">${STATUS_PAGE_LABELS[i]}</div>`
   ).join('');
 }
 
@@ -7642,6 +8048,7 @@ async function refreshCurrentPage() {
   const page = (activeNav?.id || 'nav-status').replace('nav-', '');
   if (page === 'checklist')      showChecklistPage();
   else if (page === 'dashboard') showDashboardPage();
+  else if (page === 'record')    showRecordPage();
   else if (page === 'completed') showCompletedPage();
   else if (page === 'focus')     showFocusPage();
 }
@@ -7672,6 +8079,7 @@ function navTo(page, pushHistory = true) {
   document.getElementById('deletedSection').style.display   = 'none';
   document.getElementById('page-checklist').style.display   = 'none';
   document.getElementById('page-dashboard').style.display   = 'none';
+  document.getElementById('page-record').style.display      = 'none';
   document.getElementById('page-pptformat').style.display   = 'none';
   document.getElementById('page-ghoffice').style.display    = 'none';
   document.getElementById('page-completed').style.display   = 'none';
@@ -7687,6 +8095,9 @@ function navTo(page, pushHistory = true) {
   } else if (page === 'dashboard') {
     document.getElementById('page-dashboard').style.display = '';
     showDashboardPage();
+  } else if (page === 'record') {
+    document.getElementById('page-record').style.display = '';
+    showRecordPage();
   } else if (page === 'completed') {
     showCompletedPage();
   } else if (page === 'focus') {
@@ -7707,6 +8118,7 @@ function refreshActiveView() {
   const page = (an?.id || 'nav-status').replace('nav-', '');
   if (page === 'checklist')      showChecklistPage();
   else if (page === 'dashboard') showDashboardPage();
+  else if (page === 'record')    showRecordPage();
   else if (page === 'completed') showCompletedPage();
   else if (page === 'focus')     showFocusPage();
   // status는 renderDashboard로 이미 갱신됨. optask는 별도 데이터(opProjects).
@@ -8084,21 +8496,24 @@ function updateOpStickyOffsets() {
 /* ── Completed Project List ── */
 function showDashboardPage() {
   renderDbNavDots();
+  syncDbDateRangeInputs();
+  const curId = DB_PAGE_ORDER[currentDbPage];
   for (let i = 0; i < DB_PAGE_COUNT; i++) {
-    const el = document.getElementById('dbPage' + i);
+    const el = document.getElementById(DB_PAGE_ORDER[i]);
     if (el) el.style.display = i === currentDbPage ? '' : 'none';
   }
-  const DB_PAGE_TITLES = ['Resource Dashboard', 'Delivery Acceleration', 'In Active', 'Dashboard 4'];
+  const DB_PAGE_TITLES = ['Delivery Acceleration', 'In Active', 'Dashboard 4', 'Resource Dashboard', 'Completed Dashboard'];
   const dbLabel = document.getElementById('dbPageLabel');
   const dbSubtitle = document.getElementById('dbPageSubtitle');
   dbLabel.textContent = DB_PAGE_TITLES[currentDbPage] || `Dashboard ${currentDbPage + 1}`;
-  dbSubtitle.style.display = currentDbPage === 0 ? '' : 'none';
+  dbSubtitle.style.display = curId === 'dbPage0' ? '' : 'none';
 
-  if (currentDbPage === 1) { renderDeliveryChart(); return; }
-  if (currentDbPage === 2) { renderInActiveChart(); return; }
-  if (currentDbPage !== 0) return; // 4페이지는 아직 준비 중 (데이터 렌더링 불필요)
+  if (curId === 'dbPage1') { renderDeliveryChart(); return; }
+  if (curId === 'dbPage2') { renderInActiveChart(); return; }
+  if (curId === 'dbPage4') { renderCompletedDbPage(); return; }
+  if (curId !== 'dbPage0') return; // 3페이지(dbPage3)는 아직 준비 중 (데이터 렌더링 불필요)
 
-  const all = getDbFilteredProjects();
+  const all = projects.filter(matchesDbDateRange);
   const active = all.filter(p => overallPercent(p) < 100);
   const done   = all.filter(p => overallPercent(p) === 100);
   const inReport = all.filter(p => (p.boardTypes||[]).length > 0);
@@ -8217,48 +8632,6 @@ function showDashboardPage() {
 const DB_BU_GROUPS = [ [1, 'IBU', '#1E3A8A'], [2, 'RBU', '#2563EB'], [3, 'OBU', '#2DD4BF'] ];
 const DB_TOTAL_COLOR = '#B0BEC5';
 
-/* ── Delivery Acceleration: Release Date 범위 필터 (localStorage에 유지) ── */
-const DELIVERY_FILTER_KEY = 'tw_pm_delivery_filter';
-const DELIVERY_FILTER_DEFAULT = { from: '2026-01', to: '2026-06', all: false };
-function loadDeliveryFilter() {
-  try {
-    const saved = JSON.parse(localStorage.getItem(DELIVERY_FILTER_KEY));
-    if (saved && typeof saved === 'object' && (saved.all || (saved.from && saved.to))) return saved;
-  } catch {}
-  return { ...DELIVERY_FILTER_DEFAULT };
-}
-let _deliveryDateFilter = loadDeliveryFilter();
-function saveDeliveryFilterState() {
-  try { localStorage.setItem(DELIVERY_FILTER_KEY, JSON.stringify(_deliveryDateFilter)); } catch {}
-}
-function applyDeliveryDateFilter() {
-  const from = document.getElementById('deliveryDateFrom').value;
-  const to = document.getElementById('deliveryDateTo').value;
-  if (!from || !to) { alert('시작/종료 월을 모두 선택해주세요.'); return; }
-  _deliveryDateFilter = { from, to, all: false };
-  saveDeliveryFilterState();
-  renderDeliveryChart();
-}
-function setDeliveryDateFilterAll() {
-  _deliveryDateFilter = { from: '', to: '', all: true };
-  saveDeliveryFilterState();
-  renderDeliveryChart();
-}
-function syncDeliveryFilterInputs() {
-  const f = document.getElementById('deliveryDateFrom');
-  const t = document.getElementById('deliveryDateTo');
-  const lbl = document.getElementById('deliveryDateFilterLabel');
-  const allBtn = document.getElementById('deliveryDateAllBtn');
-  if (!f || !t) return;
-  f.value = _deliveryDateFilter.from || '';
-  t.value = _deliveryDateFilter.to || '';
-  if (lbl) lbl.textContent = _deliveryDateFilter.all ? '전체 기간 표시 중' : '';
-  if (allBtn) {
-    allBtn.style.background = _deliveryDateFilter.all ? 'var(--accent)' : 'none';
-    allBtn.style.color = _deliveryDateFilter.all ? '#fff' : 'var(--text-muted)';
-    allBtn.style.borderColor = _deliveryDateFilter.all ? 'var(--accent)' : 'var(--border)';
-  }
-}
 function enumerateMonths(fromYM, toYM) {
   if (!fromYM || !toYM) return [];
   let [y, m] = fromYM.split('-').map(Number);
@@ -8301,6 +8674,7 @@ function computeInactiveStageData() {
   projects.forEach(p => {
     const bt = p.boardTypes || [];
     if (bt.includes('M') || bt.includes('Q') || bt.includes('Y')) return;
+    if (!matchesDbDateRange(p)) return;
     const pid = p.pageId || 1;
     if (!stageCounts[pid]) return;
     // 마지막으로 색칠된 단계(= 현재 단계)에만 카운트
@@ -8318,14 +8692,18 @@ function computeInactiveStageData() {
    "Completed" = releaseDate가 설정된 프로젝트(실제 배포/릴리즈 시점) 기준.
    체크리스트 100% 완료 시점은 별도로 기록되지 않아 releaseDate를 완료 시점 대용으로 사용함. */
 function renderDeliveryChart() {
-  syncDeliveryFilterInputs();
+  // Active Projects의 Completed(월례회/이사회/연말 M/Q/Y 보고 대상) 기준과 동일 — 공통 날짜 필터와 무관하게 항상 전체 집계
+  const isReportCompleted = p => {
+    const bt = p.boardTypes || [];
+    return bt.includes('M') || bt.includes('Q') || bt.includes('Y');
+  };
 
   let months;
-  if (_deliveryDateFilter.all) {
+  if (_dbDateRangeFilter.all) {
     const dates = projects.map(p => (p.releaseDate || '').slice(0, 7)).filter(Boolean).sort();
     months = dates.length ? enumerateMonths(dates[0], dates[dates.length - 1]) : [];
   } else {
-    months = enumerateMonths(_deliveryDateFilter.from || DELIVERY_FILTER_DEFAULT.from, _deliveryDateFilter.to || DELIVERY_FILTER_DEFAULT.to);
+    months = enumerateMonths(_dbDateRangeFilter.from, _dbDateRangeFilter.to);
   }
   if (!months.length) {
     document.getElementById('db-delivery-chart').innerHTML =
@@ -8336,16 +8714,15 @@ function renderDeliveryChart() {
   const monthLabels = months.map(m => deliveryMonthLabel(m, showYear));
 
   const series = DB_BU_GROUPS.map(([id, label, color]) => {
-    const counts = months.map(m =>
-      projects.filter(p => (p.pageId || 1) === id && (p.releaseDate || '').slice(0, 7) === m).length
-    );
-    return { id, label, color, counts, total: counts.reduce((a, b) => a + b, 0) };
+    const buList = projects.filter(p => (p.pageId || 1) === id && isReportCompleted(p));
+    const counts = months.map(m => buList.filter(p => (p.releaseDate || '').slice(0, 7) === m).length);
+    return { id, label, color, counts, total: buList.length };
   });
   const totalSeries = {
     id: 'total', label: 'Total', color: DB_TOTAL_COLOR,
     counts: months.map((_, i) => series.reduce((sum, s) => sum + s.counts[i], 0)),
+    total: series.reduce((sum, s) => sum + s.total, 0),
   };
-  totalSeries.total = totalSeries.counts.reduce((a, b) => a + b, 0);
   const allSeries = [...series, totalSeries];
 
   // ── 상단: 꺾은선 그래프 (월별 추이) ──
@@ -8420,22 +8797,28 @@ function renderDeliveryChart() {
   }).join('');
 
   // ── 하단 요약: BU별 총 건수 + 총 Publication Count 합계 ──
-  // 위쪽 그래프와 동일하게 Release Date가 선택된 범위(months)에 속하는 프로젝트 기준으로 통일
+  // Completed Projects 페이지와 동일하게 월례회/이사회/연말(M/Q/Y) 보고 대상 여부 기준 — 날짜 범위와 무관하게 항상 전체 집계
   const buTotals = DB_BU_GROUPS.map(([id, label]) => {
-    const list = projects.filter(p => (p.pageId || 1) === id && months.includes((p.releaseDate || '').slice(0, 7)));
+    const list = projects.filter(p => (p.pageId || 1) === id && isReportCompleted(p));
     const pubTotal = list.reduce((sum, p) => sum + (Number(p.publicationCount) || 0), 0);
     return { label, caseTotal: list.length, pubTotal };
   });
   const buTotalsHTML = buTotals.map(t =>
     `<div style="font-size:13px;color:var(--text-secondary);"><b style="color:var(--text-primary);">${t.label}</b> 총 ${t.caseTotal}건, 총 ${t.pubTotal} Publications</div>`
   ).join('');
+  const grandCaseTotal = buTotals.reduce((sum, t) => sum + t.caseTotal, 0);
+  const grandPubTotal = buTotals.reduce((sum, t) => sum + t.pubTotal, 0);
 
   document.getElementById('db-delivery-chart').innerHTML =
-    `<div style="margin-bottom:12px;">${legend}</div>
-     <svg viewBox="0 0 ${W} ${H}" style="width:100%;max-width:680px;height:auto;">${gridLines}${xLabels}${lines}</svg>
+    `<div style="display:flex;gap:20px;flex-wrap:wrap;font-size:13px;color:var(--text-secondary);margin-bottom:14px;">
+       <div><b style="color:var(--text-primary);">Product Total</b> ${grandCaseTotal}</div>
+       <div><b style="color:var(--text-primary);">Publication Count Total</b> ${grandPubTotal}</div>
+     </div>
+     <div class="db-card-title" style="margin-bottom:10px;">Number of Publications Completed (${monthLabels[0]} ~ ${monthLabels[monthLabels.length - 1]})</div>
+     <svg viewBox="0 0 ${bW} ${bH}" style="width:100%;max-width:700px;height:auto;">${barGridLines}${bars}</svg>
      <div style="margin-top:22px;padding-top:18px;border-top:1px solid var(--border);">
-       <div class="db-card-title" style="margin-bottom:10px;">Number of Publications Completed (${monthLabels[0]} ~ ${monthLabels[monthLabels.length - 1]})</div>
-       <svg viewBox="0 0 ${bW} ${bH}" style="width:100%;max-width:700px;height:auto;">${barGridLines}${bars}</svg>
+       <div style="margin-bottom:12px;">${legend}</div>
+       <svg viewBox="0 0 ${W} ${H}" style="width:100%;max-width:680px;height:auto;">${gridLines}${xLabels}${lines}</svg>
      </div>
      <div style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border);display:flex;gap:24px;flex-wrap:wrap;">${buTotalsHTML}</div>`;
 }
@@ -8465,6 +8848,19 @@ function renderInActiveChart() {
   const yTicks = [];
   for (let v = 0; v <= globalMax; v += yTickStep) yTicks.push(v);
   if (yTicks[yTicks.length - 1] !== globalMax) yTicks.push(globalMax);
+
+  const buSummary = DB_BU_GROUPS.map(([id, label]) => ({
+    id, label,
+    total: Object.values(stageCounts[id]).reduce((a,b)=>a+b,0),
+    totalPub: Object.values(stagePubCounts[id]).reduce((a,b)=>a+b,0)
+  }));
+  const titleEl = document.getElementById('inActiveTitle');
+  if (titleEl) {
+    const parts = buSummary.map(s =>
+      `${s.label} <b style="color:var(--text-primary);">${s.total}</b>/<span style="color:#64748b;">${s.totalPub}</span>`
+    ).join(', ');
+    titleEl.innerHTML = `In Active Product 개수 — ${parts}`;
+  }
 
   function oneChart([id, label]) {
     const sc = stageCounts[id];
@@ -8522,19 +8918,26 @@ function renderInActiveChart() {
     `</div>`;
 }
 
-let currentCpPage = 1;
-const CP_PAGE_LABELS = ['보고 대상 전체', '대시보드'];
+let currentCpPage = STATUS_PAGE_COUNT; // 0=IBU, 1=RBU, 2=OBU, 3=Total (기본값 Total)
+const CP_BU_TITLES = ['IBU', 'RBU', 'OBU', 'Total'];
+
+// Completed Projects 페이지 전용 BU 선택 — Active Projects의 currentStatusPage와는 독립적
+function matchesCpPage(p) {
+  return currentCpPage === STATUS_PAGE_COUNT || (p.pageId || 1) === currentCpPage + 1;
+}
 
 function gotoCpPage(n) {
-  currentCpPage = ((n - 1 + 2) % 2) + 1;
+  const total = STATUS_PAGE_COUNT + 1;
+  currentCpPage = ((n % total) + total) % total;
   showCompletedPage();
 }
 
 function _renderCpDots() {
-  document.getElementById('cpNavDots').innerHTML = [1, 2].map(i =>
-    `<div class="page-nav-dot${i === currentCpPage ? ' active' : ''}" onclick="gotoCpPage(${i})" title="${CP_PAGE_LABELS[i-1]}" style="cursor:pointer"></div>`
+  document.getElementById('cpNavDots').innerHTML = CP_BU_TITLES.map((title, i) =>
+    `<div class="cl-nav-dot${i === currentCpPage ? ' active' : ''}" onclick="gotoCpPage(${i})" title="${title}">${STATUS_PAGE_LABELS[i]}</div>`
   ).join('');
-  document.getElementById('cpPageLabel').textContent = CP_PAGE_LABELS[currentCpPage - 1];
+  document.getElementById('cpPageLabel').textContent =
+    currentCpPage === STATUS_PAGE_COUNT ? '보고 대상 전체' : `보고 대상 — ${CP_BU_TITLES[currentCpPage]}`;
 }
 
 function showCompletedPage() {
@@ -8544,24 +8947,12 @@ function showCompletedPage() {
   // 홈 Completed의 월례회(M)/이사회(Q)/연말(Y) 보고 대상을 구분 없이 모두 포함
   const list = projects.filter(p => {
     const bt = p.boardTypes || [];
-    return (bt.includes('M') || bt.includes('Q') || bt.includes('Y')) && (p.pageId || 1) === currentStatusPage;
+    return (bt.includes('M') || bt.includes('Q') || bt.includes('Y')) && matchesCpPage(p);
   });
 
-  document.getElementById('completedYCount').textContent =
-    currentCpPage === 1 ? `${list.length}개` : '';
+  document.getElementById('completedYCount').textContent = `${list.length}개`;
 
   const tablePane = document.getElementById('completedTablePane');
-  const dashPane  = document.getElementById('completedDashPane');
-
-  if (currentCpPage === 2) {
-    tablePane.style.display = 'none';
-    dashPane.style.display = '';
-    dashPane.innerHTML = renderCompletedDashboard(list);
-    return;
-  }
-
-  // Page 1 — 표
-  dashPane.style.display = 'none';
   tablePane.style.display = '';
   tablePane.innerHTML = '';
 
@@ -8609,6 +9000,15 @@ function showCompletedPage() {
 /* ── PPT Preview (A): 자동 생성 + 다운로드 ── */
 let _focusResourceFilter = new Set();
 let _statusResourceFilter = new Set();
+const STATUS_BLANK_RESOURCE = '__blank__';
+
+// 필터 칩(All/이니셜/미배정)에 맞는지 판단 — In Active 표, Completed 표 공통 사용
+function matchesResourceFilter(p) {
+  if (_statusResourceFilter.size === 0) return true;
+  const res = (p.resource || '').split(/[,、\s]+/).map(s => s.trim()).filter(Boolean);
+  if (!res.length) return _statusResourceFilter.has(STATUS_BLANK_RESOURCE);
+  return res.some(r => _statusResourceFilter.has(r));
+}
 
 function filterStatusResource(name) {
   if (name === '__all__') {
@@ -8625,9 +9025,9 @@ function filterStatusResource(name) {
   document.querySelectorAll('#projectTbody tr[data-pid]').forEach(tr => {
     const p = projects.find(p => p.id === tr.dataset.pid);
     if (!p) return;
-    const res = (p.resource || '').split(/[,、\s]+/).map(s => s.trim()).filter(Boolean);
-    tr.style.display = (allActive || res.some(r => _statusResourceFilter.has(r))) ? '' : 'none';
+    tr.style.display = matchesResourceFilter(p) ? '' : 'none';
   });
+  renderBoardSections(); // Completed 표에도 동일한 필터 반영
 }
 
 const STATUS_FIXED_INITIALS = ['S', 'N', 'K', 'M', 'B'];
@@ -8637,6 +9037,7 @@ function renderStatusResourceFilter(list) {
   if (!filterEl) return;
   const resSet = new Set();
   list.forEach(p => (p.resource||'').split(/[,、\s]+/).map(s=>s.trim()).filter(Boolean).forEach(r=>resSet.add(r)));
+  const hasBlank = list.some(p => !(p.resource||'').trim());
   // 고정 5개 우선, 그 외 Resource 데이터는 뒤에 알파벳순
   const extra = [...resSet].filter(r => !STATUS_FIXED_INITIALS.includes(r)).sort();
   const ordered = [...STATUS_FIXED_INITIALS, ...extra];
@@ -8644,6 +9045,7 @@ function renderStatusResourceFilter(list) {
   ordered.forEach(r =>
     chips.push(`<button class="focus-res-chip${_statusResourceFilter.has(r)?' active':''}" data-name="${escapeHtml(r)}" onclick="filterStatusResource('${escapeHtml(r)}')" style="${resSet.has(r)?'':'opacity:0.45;'}">${escapeHtml(r)}</button>`)
   );
+  chips.push(`<button class="focus-res-chip${_statusResourceFilter.has(STATUS_BLANK_RESOURCE)?' active':''}" data-name="${STATUS_BLANK_RESOURCE}" onclick="filterStatusResource('${STATUS_BLANK_RESOURCE}')" title="Resource 미기입" style="${hasBlank?'':'opacity:0.45;'}">–</button>`);
   filterEl.innerHTML = chips.join('');
   filterEl.style.display = '';
 }
@@ -9158,6 +9560,7 @@ async function init() {
     window._loadColWidths && window._loadColWidths();
     window._attachColResizeHandlers && window._attachColResizeHandlers();
     syncTableScrolls();
+    initRecords();
     showSyncStatus('🧪 테스트 모드', '#f59e0b');
     return;
   }
@@ -9251,6 +9654,7 @@ async function init() {
     updateUserBadge(initials, localStorage.getItem('tw_pm_ucolor'));
   }
   loadLastModified();
+  initRecords();
 
   // 새로고침 후 이전 체크리스트 화면 복원
   const hash = location.hash.replace('#', '');
