@@ -408,17 +408,17 @@
   /* ── Sticky columns: Operational Task 표 (컬럼 폭이 mainTable과 달라 별도 변수 사용) ──
      실제 값은 showOpTaskPage() 렌더 시 updateOpStickyOffsets()가 계산해 넣는다. */
   :root { --op-stick-l1: 0px; --op-stick-l2: 80px; --op-stick-l3: 220px; }
-  #opMainTable thead tr:nth-child(2) th:nth-child(1), #opDeletedTable thead tr:nth-child(2) th:nth-child(1) { position:sticky; left:var(--op-stick-l1); z-index:4; background:var(--header-bg); }
-  #opMainTable thead tr:nth-child(2) th:nth-child(2), #opDeletedTable thead tr:nth-child(2) th:nth-child(2) { position:sticky; left:var(--op-stick-l2); z-index:4; background:var(--header-bg); }
-  #opMainTable thead tr:nth-child(2) th:nth-child(3), #opDeletedTable thead tr:nth-child(2) th:nth-child(3) { position:sticky; left:var(--op-stick-l3); z-index:4; background:var(--header-bg); }
-  #opMainTable tbody td:nth-child(1), #opDeletedTable tbody td:nth-child(1) {
+  #opMainTable thead tr:nth-child(2) th:nth-child(1), #opDeletedTable thead tr:nth-child(2) th:nth-child(1), #opBoardTable_Y thead tr:nth-child(2) th:nth-child(1), .op-board-table-M thead tr:nth-child(2) th:nth-child(1), .op-board-table-Q thead tr:nth-child(2) th:nth-child(1) { position:sticky; left:var(--op-stick-l1); z-index:4; background:var(--header-bg); }
+  #opMainTable thead tr:nth-child(2) th:nth-child(2), #opDeletedTable thead tr:nth-child(2) th:nth-child(2), #opBoardTable_Y thead tr:nth-child(2) th:nth-child(2), .op-board-table-M thead tr:nth-child(2) th:nth-child(2), .op-board-table-Q thead tr:nth-child(2) th:nth-child(2) { position:sticky; left:var(--op-stick-l2); z-index:4; background:var(--header-bg); }
+  #opMainTable thead tr:nth-child(2) th:nth-child(3), #opDeletedTable thead tr:nth-child(2) th:nth-child(3), #opBoardTable_Y thead tr:nth-child(2) th:nth-child(3), .op-board-table-M thead tr:nth-child(2) th:nth-child(3), .op-board-table-Q thead tr:nth-child(2) th:nth-child(3) { position:sticky; left:var(--op-stick-l3); z-index:4; background:var(--header-bg); }
+  #opMainTable tbody td:nth-child(1), #opDeletedTable tbody td:nth-child(1), #opBoardTable_Y tbody td:nth-child(1), .op-board-table-M tbody td:nth-child(1), .op-board-table-Q tbody td:nth-child(1) {
     position:sticky; left:var(--op-stick-l1); z-index:2; background: var(--surface);
   }
-  #opMainTable tbody td:nth-child(2), #opDeletedTable tbody td:nth-child(2) {
+  #opMainTable tbody td:nth-child(2), #opDeletedTable tbody td:nth-child(2), #opBoardTable_Y tbody td:nth-child(2), .op-board-table-M tbody td:nth-child(2), .op-board-table-Q tbody td:nth-child(2) {
     position:sticky; left:var(--op-stick-l2); z-index:2; background: var(--surface);
     overflow: visible;
   }
-  #opMainTable tbody td:nth-child(3), #opDeletedTable tbody td:nth-child(3) {
+  #opMainTable tbody td:nth-child(3), #opDeletedTable tbody td:nth-child(3), #opBoardTable_Y tbody td:nth-child(3), .op-board-table-M tbody td:nth-child(3), .op-board-table-Q tbody td:nth-child(3) {
     position:sticky; left:var(--op-stick-l3); z-index:2;
     background: var(--surface); box-shadow:2px 0 6px rgba(0,0,0,0.04);
   }
@@ -1380,6 +1380,7 @@
     <h2 id="dbPageLabel" style="font-size:21px;font-weight:500;color:var(--text-primary);margin:0;letter-spacing:-0.3px;">Resource Dashboard</h2>
     <span id="dbPageSubtitle" style="font-size:13px;color:var(--text-muted);">인력 현황 및 충원 분석</span>
     <button onclick="captureToRecord('dashboard', this)" title="캡처 — 현재 화면을 Record 페이지에 저장" style="background:none;border:none;cursor:pointer;color:var(--text-muted);padding:4px;border-radius:6px;display:flex;align-items:center;transition:all 0.13s;" onmouseover="this.style.background='var(--surface-2)';this.style.color='var(--text-secondary)'" onmouseout="this.style.background='none';this.style.color='var(--text-muted)'"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></button>
+    <button onclick="captureAllDashboardPages(this)" title="전체 캡처 — Dashboard 5개 페이지를 모두 캡처해서 Record 페이지에 저장" style="background:none;border:none;cursor:pointer;color:var(--text-muted);padding:4px 8px;border-radius:6px;display:flex;align-items:center;gap:4px;font-size:12px;font-weight:600;font-family:inherit;transition:all 0.13s;" onmouseover="this.style.background='var(--surface-2)';this.style.color='var(--text-secondary)'" onmouseout="this.style.background='none';this.style.color='var(--text-muted)'"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>전체 캡처</button>
     <div class="page-nav" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);">
       <button onclick="goHome()" title="홈 — Status 페이지" style="background:none;border:none;cursor:pointer;padding:2px 4px;display:inline-flex;align-items:center;color:rgba(255,255,255,0.75);margin-right:4px;">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
@@ -1520,10 +1521,55 @@
 
 <!-- Operational Task Page -->
 <div id="page-optask" style="display:none;" class="container">
-  <div style="display:flex;align-items:baseline;gap:16px;margin:0 0 20px;">
+  <div style="display:flex;align-items:center;gap:16px;margin:0 0 12px;position:relative;">
     <h2 style="font-size:21px;font-weight:500;color:var(--text-primary);margin:0;letter-spacing:-0.3px;">Operational Task</h2>
+    <div class="page-nav" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);">
+      <button onclick="goHome()" title="홈 — Status 페이지" style="background:none;border:none;cursor:pointer;padding:2px 4px;display:inline-flex;align-items:center;color:rgba(255,255,255,0.75);margin-right:4px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      </button>
+      <button class="page-nav-arrow" onclick="gotoOpStatusPage(currentOpStatusPage - 1)" title="이전 페이지">&#8592;</button>
+      <div class="page-nav-dots" id="opPageNavDots"></div>
+      <button class="page-nav-arrow" onclick="gotoOpStatusPage(currentOpStatusPage + 1)" title="다음 페이지">&#8594;</button>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;margin:0 0 12px 2px;">
+    <button onclick="openHistoryPanel()" title="수정 이력" style="background:none;border:none;cursor:pointer;color:var(--text-muted);padding:4px;border-radius:6px;display:flex;align-items:center;transition:all 0.13s;" onmouseover="this.style.background='var(--surface-2)';this.style.color='var(--text-secondary)'" onmouseout="this.style.background='none';this.style.color='var(--text-muted)'"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><polyline points="12 7 12 12 15 15"/></svg></button>
+    <button onclick="openRequestPanel()" title="Request" style="background:none;border:none;cursor:pointer;color:var(--text-muted);padding:4px;border-radius:6px;display:flex;align-items:center;transition:all 0.13s;" onmouseover="this.style.background='var(--surface-2)';this.style.color='var(--text-secondary)'" onmouseout="this.style.background='none';this.style.color='var(--text-muted)'"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="2,4 12,13 22,4"/></svg></button>
+    <button onclick="captureToRecord('optask', this)" title="캡처 — 현재 화면을 Record 페이지에 저장" style="background:none;border:none;cursor:pointer;color:var(--text-muted);padding:4px;border-radius:6px;display:flex;align-items:center;transition:all 0.13s;" onmouseover="this.style.background='var(--surface-2)';this.style.color='var(--text-secondary)'" onmouseout="this.style.background='none';this.style.color='var(--text-muted)'"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></button>
   </div>
   <div id="optaskBody"></div>
+
+  <!-- Operational Task Completed Section (월례회 / 이사회 / 연말 보고) -->
+  <div id="opCompletedSection" style="display:none;">
+    <div class="completed-section-header" onclick="toggleOpCompletedSection()">
+      <button class="toggle-chevron-btn" id="opCompletedToggleBtn" title="접기/펼치기"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg></button>
+      <p class="completed-section-title">Completed</p>
+      <button onclick="event.stopPropagation(); captureToRecord('optaskCompleted', this)" title="캡처 — Completed 표를 Record 페이지에 저장" style="background:none;border:none;cursor:pointer;color:var(--text-muted);padding:4px;border-radius:6px;display:flex;align-items:center;transition:all 0.13s;" onmouseover="this.style.background='var(--surface-2)';this.style.color='var(--text-secondary)'" onmouseout="this.style.background='none';this.style.color='var(--text-muted)'"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></button>
+    </div>
+    <div id="opCompletedBody">
+      <div id="opBoardSection_M" class="deleted-section" style="display:none; margin-top:0;">
+        <div class="deleted-section-head" onclick="toggleOpBoardSection('M')">
+          <button class="toggle-chevron-btn" id="opBoardToggleBtn_M" title="접기/펼치기"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg></button>
+          <h3 id="opBoardSectionTitle_M">월례회 보고 대상</h3>
+        </div>
+        <div id="opBoardListBody_M"><div class="table-wrap" style="overflow-x:auto;"><table class="project-table" id="opBoardTable_M"><tbody id="opBoardTbody_M"></tbody></table></div></div>
+      </div>
+      <div id="opBoardSection_Q" class="deleted-section" style="display:none; margin-top:20px;">
+        <div class="deleted-section-head" onclick="toggleOpBoardSection('Q')">
+          <button class="toggle-chevron-btn" id="opBoardToggleBtn_Q" title="접기/펼치기"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg></button>
+          <h3 id="opBoardSectionTitle_Q">이사회 보고 대상</h3>
+        </div>
+        <div id="opBoardListBody_Q"><div class="table-wrap" style="overflow-x:auto;"><table class="project-table" id="opBoardTable_Q"><tbody id="opBoardTbody_Q"></tbody></table></div></div>
+      </div>
+      <div id="opBoardSection_Y" class="deleted-section" style="display:none; margin-top:20px;">
+        <div class="deleted-section-head" onclick="toggleOpBoardSection('Y')">
+          <button class="toggle-chevron-btn" id="opBoardToggleBtn_Y" title="접기/펼치기"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg></button>
+          <h3 id="opBoardSectionTitle_Y">연말 보고 대상</h3>
+        </div>
+        <div id="opBoardListBody_Y"><div class="table-wrap" style="overflow-x:auto;"><table class="project-table" id="opBoardTable_Y"><tbody id="opBoardTbody_Y"></tbody></table></div></div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- Focus Projects Page -->
@@ -2312,7 +2358,7 @@ function loadRecordsLocal() {
   try { records = JSON.parse(localStorage.getItem(RECORD_LOCAL_KEY)) || []; } catch { records = []; }
 }
 
-const CAPTURE_TARGET_ELS = { status: 'dashboard', statusCompleted: 'completedSection', dashboard: 'page-dashboard' };
+const CAPTURE_TARGET_ELS = { status: 'dashboard', statusCompleted: 'completedSection', dashboard: 'page-dashboard', optask: 'page-optask', optaskCompleted: 'opCompletedSection' };
 
 async function captureToRecord(sourcePage, btn) {
   const targetEl = document.getElementById(CAPTURE_TARGET_ELS[sourcePage]);
@@ -2338,12 +2384,39 @@ async function captureToRecord(sourcePage, btn) {
       ? (document.getElementById('pageTitleDisplay')?.textContent.trim() || 'Active Projects')
       : sourcePage === 'statusCompleted'
       ? 'Completed'
+      : sourcePage === 'optask'
+      ? 'Operational Task'
+      : sourcePage === 'optaskCompleted'
+      ? 'Operational Task · Completed'
       : (document.getElementById('dbPageLabel')?.textContent.trim() || 'Dashboard');
     await saveRecord({ sourcePage, sourceLabel, image, imgW: outCanvas.width, imgH: outCanvas.height });
   } catch(e) {
     console.warn('캡처 실패:', e);
     alert('캡처에 실패했습니다: ' + (e.message || e));
   } finally {
+    if (btn) { btn.style.opacity = ''; btn.style.pointerEvents = ''; btn.title = originalTitle; }
+  }
+}
+
+// Dashboard의 5개 하위 페이지(Delivery Acceleration / In Active / 준비 중 / Resource / Completed)를
+// 순서대로 전환하며 모두 캡처해서 Record 페이지의 오늘 날짜(recordDate) 그룹에 한꺼번에 저장한다.
+async function captureAllDashboardPages(btn) {
+  const originalPage = currentDbPage;
+  const originalTitle = btn?.title;
+  if (btn) { btn.style.opacity = '0.4'; btn.style.pointerEvents = 'none'; }
+  try {
+    for (let i = 0; i < DB_PAGE_COUNT; i++) {
+      currentDbPage = i;
+      showDashboardPage();
+      if (btn) btn.title = `전체 캡처 중... (${i + 1}/${DB_PAGE_COUNT})`;
+      // 차트/레이아웃이 그려질 시간을 준 뒤 캡처
+      await new Promise(r => setTimeout(r, 200));
+      await captureToRecord('dashboard', null);
+    }
+    showSyncStatus(`✓ Dashboard ${DB_PAGE_COUNT}개 페이지를 Record(${recordDate})에 저장`, 'var(--green)');
+  } finally {
+    currentDbPage = originalPage;
+    showDashboardPage();
     if (btn) { btn.style.opacity = ''; btn.style.pointerEvents = ''; btn.title = originalTitle; }
   }
 }
@@ -2397,7 +2470,50 @@ async function deleteRecordGroup(date) {
 function recordSourceLabel(r) {
   return r.sourcePage === 'status' ? 'Active Projects'
     : r.sourcePage === 'statusCompleted' ? 'Active Projects · Completed'
+    : r.sourcePage === 'optask' ? 'Operational Task'
+    : r.sourcePage === 'optaskCompleted' ? 'Operational Task · Completed'
     : 'Dashboard';
+}
+
+const RECORD_MEMO_LOCAL_KEY = 'tw_pm_record_memos_local';
+let recordMemos = {}; // date -> memo text
+let recordMemosUnsub = null;
+
+function recordMemosCollection() {
+  return fbDb.doc(FB_DATA_PATH).collection('recordMemos');
+}
+
+function listenRecordMemos() {
+  if (!fbDb || !useFirebase) return;
+  if (recordMemosUnsub) recordMemosUnsub();
+  recordMemosUnsub = recordMemosCollection().onSnapshot(snap => {
+    const next = {};
+    snap.docs.forEach(d => { next[d.id] = (d.data() || {}).text || ''; });
+    recordMemos = next;
+    renderRecordList();
+  }, err => { console.warn('Record 메모 listener error:', err.code, err.message); });
+}
+
+function saveRecordMemosLocal() {
+  try { localStorage.setItem(RECORD_MEMO_LOCAL_KEY, JSON.stringify(recordMemos)); } catch {}
+}
+
+function loadRecordMemosLocal() {
+  try { recordMemos = JSON.parse(localStorage.getItem(RECORD_MEMO_LOCAL_KEY)) || {}; } catch { recordMemos = {}; }
+}
+
+async function saveRecordMemoField(date, text) {
+  recordMemos[date] = text;
+  if (!adminMode && fbDb && useFirebase) {
+    try {
+      await recordMemosCollection().doc(date).set(
+        { text, updatedAt: Date.now(), updatedBy: MY_NAME || getInitials() || '' },
+        { merge: true }
+      );
+      return;
+    } catch(e) { console.warn('Record 메모 저장 실패(Firebase):', e); }
+  }
+  saveRecordMemosLocal();
 }
 
 let _recordGroupOpen = {}; // date -> false면 접힘 (기본값 펼침)
@@ -2465,6 +2581,7 @@ function renderRecordList() {
         <h3>${escapeHtml(date)} <span style="font-weight:400;color:var(--text-muted);">(${list.length})</span></h3>
         <button class="deleted-clear-btn" onclick="event.stopPropagation(); deleteRecordGroup('${date}')">전체 삭제</button>
       </div>
+      <textarea class="record-memo-input" placeholder="이 날짜에 대한 메모를 남겨보세요…" onclick="event.stopPropagation()" onblur="saveRecordMemoField('${date}', this.value)" style="width:100%;box-sizing:border-box;margin:8px 0 14px;padding:8px 10px;border:1px solid var(--border);border-radius:6px;background:var(--surface-2);color:var(--text-primary);font-size:13px;font-family:inherit;resize:vertical;min-height:44px;">${escapeHtml(recordMemos[date] || '')}</textarea>
       <div id="recordGroupBody_${date}" style="display:${isOpen ? '' : 'none'};">
         <div style="display:flex;flex-direction:column-reverse;gap:18px;">${cardsHTML}</div>
       </div>
@@ -2479,8 +2596,8 @@ function showRecordPage() {
 }
 
 function initRecords() {
-  if (!adminMode && fbDb && useFirebase) listenRecords();
-  else { loadRecordsLocal(); renderRecordList(); }
+  if (!adminMode && fbDb && useFirebase) { listenRecords(); listenRecordMemos(); }
+  else { loadRecordsLocal(); loadRecordMemosLocal(); renderRecordList(); }
 }
 
 /* ── Presence (접속자 표시) ── */
@@ -2850,6 +2967,10 @@ let currentClPage = 0; // 0=IBU, 1=RBU, 2=OBU, 3=Total
 function matchesStatusPage(p) {
   return currentStatusPage === STATUS_PAGE_COUNT + 1 || (p.pageId || 1) === currentStatusPage;
 }
+let currentOpStatusPage = 1; // 1=IBU, 2=RBU, 3=OBU, 4=Total — Operational Task 표 전용, In Active와 독립적
+function matchesOpStatusPage(p) {
+  return currentOpStatusPage === STATUS_PAGE_COUNT + 1 || (p.pageId || 1) === currentOpStatusPage;
+}
 let currentFocusPage = 3; // 0=IBU, 1=RBU, 2=OBU, 3=Total
 const DB_PAGE_COUNT = 5;
 // 화면에 표시되는 순서(0~4) → 실제 컨텐츠 div id. Resource Dashboard 다음, Completed Dashboard를 맨 마지막에 배치.
@@ -2970,7 +3091,7 @@ try { deletedProjects = JSON.parse(localStorage.getItem(DELETED_KEY)) || []; } c
 let _pendingDeleteId = null;
 
 function confirmDelete(id) {
-  const p = projects.find(p => p.id === id);
+  const { p } = findAnyProject(id);
   if (!p) return;
   _pendingDeleteId = id;
   document.getElementById('delModalName').textContent = p.name || '(이름 없음)';
@@ -2983,7 +3104,19 @@ function closeDelModal() {
 function executeDelete() {
   const id = _pendingDeleteId;
   if (!id) return;
-  const p = projects.find(p => p.id === id);
+  const { p, isOp } = findAnyProject(id);
+  if (isOp) {
+    if (p) {
+      opDeletedProjects.unshift({ ...JSON.parse(JSON.stringify(p)), deletedAt: new Date().toISOString() });
+      try { localStorage.setItem(OP_DELETED_KEY, JSON.stringify(opDeletedProjects)); } catch {}
+    }
+    const delName = p?.name || '';
+    opProjects = opProjects.filter(x => x.id !== id);
+    saveOpProjects('삭제', delName, id);
+    closeDelModal();
+    showOpTaskPage();
+    return;
+  }
   if (p) {
     // 전체 프로젝트 데이터를 그대로 보존 (복구 시 완벽 복원)
     deletedProjects.unshift({
@@ -2992,7 +3125,7 @@ function executeDelete() {
     });
     try { localStorage.setItem(DELETED_KEY, JSON.stringify(deletedProjects)); } catch {}
   }
-  const delName = projects.find(p => p.id === id)?.name || '';
+  const delName = p?.name || '';
   projects = projects.filter(p => p.id !== id);
   saveProjects('프로젝트 삭제', delName);
   closeDelModal();
@@ -3187,7 +3320,7 @@ function resetAllStages(p) {
 }
 
 function clickProgressBar(id, stageNum, fromHeader = false) {
-  const p = projects.find(p => p.id === id);
+  const { p, isOp } = findAnyProject(id);
   if (!p) return;
 
   const allStages = getActiveStages();           // Progress Bar는 항상 표준 1-5
@@ -3246,7 +3379,8 @@ function clickProgressBar(id, stageNum, fromHeader = false) {
   }
 
   p.updatedAt = new Date().toISOString();
-  saveProjects('Progress 수정', `${p.name||'(이름없음)'} › Stage ${stageNum}`, id);
+  if (isOp) saveOpProjects('Progress 수정', `${p.name||'(이름없음)'} › Stage ${stageNum}`, id);
+  else saveProjects('Progress 수정', `${p.name||'(이름없음)'} › Stage ${stageNum}`, id);
   refreshProjectRow(id);
 
   if (sidePanelProjectId === id) {
@@ -3274,8 +3408,8 @@ function clickProgressBar(id, stageNum, fromHeader = false) {
 
 /* ── Lightweight row refresh (progress bar + status badge + pct) ── */
 function refreshProjectRow(id) {
-  const p = projects.find(p => p.id === id);
-  const tr = document.querySelector(`#projectTbody tr[data-pid="${id}"]`);
+  const { p, isOp } = findAnyProject(id);
+  const tr = document.querySelector(`${isOp ? '#opProjectTbody' : '#projectTbody'} tr[data-pid="${id}"]`);
   if (!p || !tr) return;
   const pbCell = tr.querySelector('[data-field="progress"] .progress-bar');
   if (pbCell) pbCell.innerHTML = renderProgressBar(p);
@@ -3878,9 +4012,11 @@ function addHistory(action, detail, projectId, snapshot) {
   if (!initials) return;
   const now = new Date();
   const ts  = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-  const p   = projectId && projects.find(x => x.id === projectId);
+  const found = projectId ? findAnyProject(projectId) : { p: null, isOp: false };
+  const p = found.p;
   const color = localStorage.getItem('tw_pm_ucolor') || MY_COLOR;
   const entry = { initials, color, ts, action, detail, projectId: projectId||null, pageId: p ? (p.pageId||1) : null,
+    source: found.isOp ? 'op' : 'main',
     snapshot: snapshot ? JSON.parse(JSON.stringify(snapshot)) : null };
 
   // 로컬 저장
@@ -3932,6 +4068,15 @@ function restoreFromHistory(logIdx) {
   const h = _currentHistoryLog[logIdx];
   if (!h || !h.snapshot) return;
   if (!confirm(`"${h.ts}" 이전 상태로 복원할까요?\n수정된 내용이 되돌아갑니다.`)) return;
+  if (h.source === 'op') {
+    const opIdx = opProjects.findIndex(p => p.id === h.projectId);
+    if (opIdx === -1) { alert('해당 프로젝트를 찾을 수 없습니다.'); return; }
+    opProjects[opIdx] = JSON.parse(JSON.stringify(h.snapshot));
+    saveOpProjects('복원', `${h.snapshot.name||''} 복원 (${h.ts})`, h.projectId);
+    showOpTaskPage();
+    if (typeof renderOpBoardSections === 'function') renderOpBoardSections();
+    return;
+  }
   const pIdx = projects.findIndex(p => p.id === h.projectId);
   if (pIdx === -1) { alert('해당 프로젝트를 찾을 수 없습니다.'); return; }
   projects[pIdx] = JSON.parse(JSON.stringify(h.snapshot));
@@ -3981,7 +4126,7 @@ function renderHistoryLog(log) {
         <div class="history-avatar" style="background:${avatarColor};">${escapeHtml(h.initials)}</div>
         <span class="history-ts">${escapeHtml(h.ts)}</span>
         <div style="display:flex;gap:5px;margin-left:auto;align-items:center;">
-          ${canJump ? `<button onclick="jumpToProject('${h.projectId}',${h.pageId||1},${detailArg})"
+          ${canJump ? `<button onclick="jumpToProject('${h.projectId}',${h.pageId||1},${detailArg},'${h.source||'main'}')"
             style="background:none;border:1px solid var(--border);border-radius:4px;font-size:11px;padding:2px 7px;cursor:pointer;color:var(--accent);font-family:inherit;">→ 이동</button>` : ''}
           ${canRestore ? `<button onclick="restoreFromHistory(${logIdx})"
             style="background:#fef3c7;border:1px solid #fbbf24;border-radius:4px;font-size:11px;padding:2px 7px;cursor:pointer;color:#92400e;font-family:inherit;">??복원</button>` : ''}
@@ -4297,10 +4442,15 @@ function clearAllHistory() {
   renderHistoryUserBadges([]);
 }
 
-function jumpToProject(projectId, pageId, detail) {
+function jumpToProject(projectId, pageId, detail, source) {
   closeHistoryPanel();
-  navTo('status');
-  if (currentStatusPage !== pageId) gotoStatusPage(pageId);
+  if (source === 'op') {
+    navTo('optask');
+    if (currentOpStatusPage !== pageId) gotoOpStatusPage(pageId);
+  } else {
+    navTo('status');
+    if (currentStatusPage !== pageId) gotoStatusPage(pageId);
+  }
 
   setTimeout(() => {
     const row = document.querySelector(`tr[data-pid="${projectId}"]`);
@@ -4499,7 +4649,7 @@ function toggleProgressBarCore(e, pid, stageNum) {
   e.preventDefault();
   e.stopPropagation();
 
-  const p = projects.find(p => p.id === pid);
+  const { p, isOp } = findAnyProject(pid);
   if (!p) return;
   if (!p.pbCore) p.pbCore = {};
 
@@ -4510,9 +4660,14 @@ function toggleProgressBarCore(e, pid, stageNum) {
   p.coreStages = next > 0 ? [stageNum] : [];   // 칸반 헤더 별표 아이콘과 동기화
 
   p.updatedAt = new Date().toISOString();
-  saveProjects();
-  renderDashboard();
-  renderBoardSections();
+  if (isOp) {
+    saveOpProjects();
+    refreshProjectRow(pid);
+  } else {
+    saveProjects();
+    renderDashboard();
+    renderBoardSections();
+  }
 }
 
 /* ── Drag-to-Check (체크박스 드래그 다중 선택) ── */
@@ -4728,45 +4883,45 @@ function addInlineRow() {
 
 /* ── Resource / BU / Progress Filters ── */
 function saveResourceField(id, value) {
-  const p = projects.find(p => p.id === id);
+  const { p, isOp } = findAnyProject(id);
   if (!p) return;
   p.resource = value.trim();
   p.updatedAt = new Date().toISOString();
-  saveProjects();
-  refreshSideFilters();
+  if (isOp) { saveOpProjects(); refreshOpSideFilters(); }
+  else { saveProjects(); refreshSideFilters(); }
 }
 function saveBuField(id, value) {
-  const p = projects.find(p => p.id === id);
+  const { p, isOp } = findAnyProject(id);
   if (!p) return;
   p.bu = value.trim();
   p.updatedAt = new Date().toISOString();
-  saveProjects();
-  refreshSideFilters();
+  if (isOp) { saveOpProjects(); refreshOpSideFilters(); }
+  else { saveProjects(); refreshSideFilters(); }
 }
 function saveProjectTypeField(id, value) {
-  const p = projects.find(p => p.id === id);
+  const { p, isOp } = findAnyProject(id);
   if (!p) return;
   p.projectType = value.trim();
   p.updatedAt = new Date().toISOString();
-  saveProjects();
-  refreshSideFilters();
+  if (isOp) { saveOpProjects(); refreshOpSideFilters(); }
+  else { saveProjects(); refreshSideFilters(); }
 }
 function savePublicationTypeField(id, value) {
-  const p = projects.find(p => p.id === id);
+  const { p, isOp } = findAnyProject(id);
   if (!p) return;
   p.publicationType = value.trim();
   p.updatedAt = new Date().toISOString();
-  saveProjects();
-  refreshSideFilters();
+  if (isOp) { saveOpProjects(); refreshOpSideFilters(); }
+  else { saveProjects(); refreshSideFilters(); }
 }
 function saveStartDateField(id, value) {
-  const p = projects.find(p => p.id === id);
+  const { p, isOp } = findAnyProject(id);
   if (!p) return;
   p.startDate = value;
   p.updatedAt = new Date().toISOString();
-  saveProjects();
+  if (isOp) saveOpProjects(); else saveProjects();
   // refresh lead time cell without full re-render
-  const tr = document.querySelector(`#projectTbody tr[data-pid="${id}"]`);
+  const tr = document.querySelector(`${isOp ? '#opProjectTbody' : '#projectTbody'} tr[data-pid="${id}"]`);
   if (tr) {
     const cells = tr.querySelectorAll('td');
     const ltCell = cells[cells.length - 1];
@@ -4886,6 +5041,21 @@ function refreshSideFilters() {
   applyAllFilters();
 }
 
+// Operational Task 표 전용 — 리소스 칩 + 다중 필터(OP_MF_FILTERS) 드롭다운 갱신
+function refreshOpSideFilters() {
+  if (typeof _renderOpResourceFilter === 'function') {
+    _renderOpResourceFilter();
+    if (_opResourceFilter.size > 0) filterOpResource('__keep__');
+  }
+  if (typeof OP_MF_FILTERS !== 'undefined') {
+    ['resource','bu','projectType','publicationType'].forEach(key => {
+      const dd = document.getElementById('mfd_op' + key.charAt(0).toUpperCase() + key.slice(1));
+      if (dd && dd.classList.contains('open')) opMfBuildDropdown(key);
+    });
+    if (typeof applyOpAllFilters === 'function') applyOpAllFilters();
+  }
+}
+
 function saveMQField(id, value) {
   const p = projects.find(p => p.id === id);
   if (!p) return;
@@ -4916,6 +5086,121 @@ function statusMatch(pct, val) {
   if (val === 'In Progress')  return pct > 0 && pct < 100;
   if (val === 'Completed')    return pct === 100;
   return true;
+}
+
+/* ── Operational Task 표 전용 다중 선택 필터 시스템 (In Active의 MF_FILTERS와 동일한 구조) ── */
+const OP_MF_FILTERS = {
+  resource:        { selected: new Set(), fixedOptions: null },
+  bu:              { selected: new Set(), fixedOptions: null },
+  status:          { selected: new Set(), fixedOptions: ['Not Started','In Progress','Completed'] },
+  projectType:     { selected: new Set(), fixedOptions: null },
+  pct:             { selected: new Set(), fixedOptions: ['0%','1-33%','34-66%','67-99%','100%'] },
+  publicationType: { selected: new Set(), fixedOptions: null },
+};
+function _opMfDomKey(key) { return 'op' + key.charAt(0).toUpperCase() + key.slice(1); }
+
+function opMfBuildDropdown(key) {
+  const f = OP_MF_FILTERS[key];
+  const domKey = _opMfDomKey(key);
+  const dd = document.getElementById('mfd_' + domKey);
+  const btn = document.querySelector(`#mfw_${domKey} .mf-btn`);
+  if (!dd) return;
+  const sel = f.selected;
+  const allUnchecked = sel.size === 0;
+  let opts = f.fixedOptions ? [...f.fixedOptions] : opMfGetDynamicOptions(key);
+
+  dd.innerHTML =
+    `<div class="mf-item" onclick="opMfToggleAll('${key}')">
+       <input type="checkbox" ${allUnchecked?'checked':''} readonly /> 전체
+     </div>
+     <div class="mf-separator"></div>` +
+    opts.map(v =>
+      `<div class="mf-item" onclick="opMfToggleOption('${key}','${escapeHtml(v)}',event)">
+         <input type="checkbox" ${sel.has(v)?'checked':''} readonly />${escapeHtml(v)}
+       </div>`
+    ).join('');
+
+  if (btn) {
+    let label;
+    if (allUnchecked) {
+      label = '??All';
+    } else {
+      const vals = [...sel].join(', ');
+      label = vals.length > 18 ? vals.slice(0, 16) + '…' : vals;
+    }
+    btn.textContent = label;
+    btn.classList.toggle('active', !allUnchecked);
+  }
+}
+
+function opMfGetDynamicOptions(key) {
+  const vals = new Set();
+  opProjects.forEach(p => {
+    let v = '';
+    if (key === 'resource') {
+      (p.resource||'').split(/[,\s]+/).map(w=>w.trim()).filter(Boolean).forEach(w=>vals.add(w));
+      return;
+    }
+    if (key === 'bu')              v = p.bu;
+    if (key === 'projectType')     v = p.projectType;
+    if (key === 'publicationType') v = p.publicationType;
+    if (v && v.trim()) vals.add(v.trim());
+  });
+  return [...vals].sort((a,b)=>a.localeCompare(b));
+}
+
+function toggleOpMF(key, e) {
+  e.stopPropagation();
+  document.querySelectorAll('.mf-dropdown.open').forEach(d => {
+    if (d.id !== 'mfd_' + _opMfDomKey(key)) d.classList.remove('open');
+  });
+  const dd = document.getElementById('mfd_' + _opMfDomKey(key));
+  if (!dd) return;
+  const opening = !dd.classList.contains('open');
+  if (opening) opMfBuildDropdown(key);
+  dd.classList.toggle('open', opening);
+}
+
+function opMfToggleAll(key) {
+  OP_MF_FILTERS[key].selected.clear();
+  opMfBuildDropdown(key);
+  applyOpAllFilters();
+}
+
+function opMfToggleOption(key, val, e) {
+  e.stopPropagation();
+  const sel = OP_MF_FILTERS[key].selected;
+  if (sel.has(val)) sel.delete(val);
+  else sel.add(val);
+  opMfBuildDropdown(key);
+  applyOpAllFilters();
+}
+
+function applyOpAllFilters() {
+  opProjects.forEach(p => {
+    const tr = document.querySelector(`#opProjectTbody tr[data-pid="${p.id}"]`);
+    if (!tr) return;
+    let ok = true;
+    const pct = overallPercent(Object.assign({}, p, { checks: p.checks || {} }));
+
+    const check = (key, matchFn) => {
+      const sel = OP_MF_FILTERS[key].selected;
+      if (!sel.size) return;
+      if (![...sel].some(v => matchFn(v))) ok = false;
+    };
+
+    check('resource', v => {
+      const rWords = (p.resource||'').split(/[,\s]+/).map(w=>w.trim()).filter(Boolean);
+      return rWords.includes(v);
+    });
+    check('bu',              v => (p.bu||'').trim() === v);
+    check('status',          v => statusMatch(pct, v));
+    check('projectType',     v => (p.projectType||'').trim() === v);
+    check('pct',             v => pctMatch(pct, v));
+    check('publicationType', v => (p.publicationType||'').trim() === v);
+
+    tr.style.display = ok ? '' : 'none';
+  });
 }
 
 function applyAllFilters() {
@@ -4961,11 +5246,11 @@ function syncHeaderCheckbox(table) {
 }
 
 function toggleSelected(id, val) {
-  const p = projects.find(p => p.id === id);
+  const { p, isOp } = findAnyProject(id);
   if (!p) return;
   p.selected = !!val;
   // 로컬에만 저장 (re-render 없음)
-  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(projects)); } catch {}
+  try { localStorage.setItem(isOp ? OP_PROJECTS_KEY : STORAGE_KEY, JSON.stringify(isOp ? opProjects : projects)); } catch {}
   // 클릭한 행이 속한 표의 헤더 체크박스 상태 갱신
   try {
     const tr = document.querySelector(`tr[data-pid="${id}"]`);
@@ -4977,14 +5262,16 @@ function toggleAllSelected(val, el) {
   // el = 클릭한 헤더 체크박스. 해당 표(tbody)의 행만 선택/해제 (표 단위).
   const table = el && el.closest && el.closest('table');
   if (table) {
+    const isOpTable = !!table.closest('#optaskBody');
+    const arr = isOpTable ? opProjects : projects;
     table.querySelectorAll('tbody tr[data-pid]').forEach(tr => {
-      const p = projects.find(q => q.id === tr.dataset.pid);
+      const p = arr.find(q => q.id === tr.dataset.pid);
       if (p) p.selected = !!val;
       const cb = tr.querySelector('input[type="checkbox"]');
       if (cb) cb.checked = !!val;
     });
     if (el) { el.checked = !!val; el.indeterminate = false; }
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(projects)); } catch {}
+    try { localStorage.setItem(isOpTable ? OP_PROJECTS_KEY : STORAGE_KEY, JSON.stringify(arr)); } catch {}
     return;
   }
   // 폴백 (el 없을 때): 전체
@@ -5035,10 +5322,10 @@ function updateCustomerParens(input) {
 
 function toggleNewBadge(event, id) {
   event.preventDefault();
-  const p = projects.find(p => p.id === id);
+  const { p, isOp } = findAnyProject(id);
   if (!p) return;
   p.isNew = !p.isNew;
-  saveProjects();
+  if (isOp) saveOpProjects(); else saveProjects();
   // 해당 셀만 즉시 업데이트
   const td = event.currentTarget;
   const cell = td.querySelector('.product-cell');
@@ -5054,29 +5341,40 @@ function toggleNewBadge(event, id) {
 }
 
 function saveField(id, field, value) {
-  const p = projects.find(p => p.id === id);
+  const { p, isOp } = findAnyProject(id);
   if (!p) return;
   const snapshot = JSON.parse(JSON.stringify(p));
   const newVal = (typeof value === 'string') ? value.trim() : value;
   if (p[field] === newVal) return; // 변경 없으면 스킵
   p[field] = newVal;
   p.updatedAt = new Date().toISOString();
-  saveProjects('edit', `${field} 수정`, id, snapshot);
+  if (isOp) saveOpProjects('edit', `${field} 수정`, id);
+  else saveProjects('edit', `${field} 수정`, id, snapshot);
 }
 
 function savePublicationCountField(id, value) {
-  const p = projects.find(p => p.id === id);
+  const { p, isOp } = findAnyProject(id);
   if (!p) return;
   const trimmed = String(value).trim();
   p.publicationCount = trimmed === '' ? '' : Number(trimmed);
   p.updatedAt = new Date().toISOString();
-  saveProjects();
+  if (isOp) saveOpProjects(); else saveProjects();
 }
 
 /* ── Side Panel ── */
+// 사이드패널/Progress Bar 관련 함수들은 In Active(projects)와 Operational Task(opProjects) 양쪽에서
+// 공유해서 쓴다 — id로 두 배열 모두 찾아보고, 어느 쪽인지에 맞춰 저장/재렌더 대상을 분기한다.
+function findAnyProject(id) {
+  let p = projects.find(x => x.id === id);
+  if (p) return { p, isOp: false };
+  p = opProjects.find(x => x.id === id);
+  if (p) return { p, isOp: true };
+  return { p: null, isOp: false };
+}
+
 function openSidePanel(id) {
   sidePanelProjectId = id;
-  const p = projects.find(p => p.id === id);
+  const { p } = findAnyProject(id);
   if (!p) return;
   document.getElementById('sidePanelTitle').textContent = p.name;
   const {done:_spD,total:_spT}=overallCounts(p);setCheckCountPill('sidePanelPercent',_spD,_spT);
@@ -5091,10 +5389,10 @@ function closeSidePanel() {
 }
 function toggleSideCheck(key, val) {
   if (!sidePanelProjectId) return;
-  const p = projects.find(p => p.id === sidePanelProjectId);
+  const { p, isOp } = findAnyProject(sidePanelProjectId);
   if (!p) return;
   p.checks[key] = val ? true : false;
-  saveProjects();
+  if (isOp) saveOpProjects(); else saveProjects();
   // 카드 클래스 갱신
   const el = document.querySelector(`#sidePanelChecklist .kanban-card[data-key="${key}"]`);
   if (el) {
@@ -5229,12 +5527,12 @@ function rightClickCheck(key, e) {
 function rightClickSideCheck(key, e) {
   e.preventDefault();
   if (!sidePanelProjectId) return;
-  const p = projects.find(p => p.id === sidePanelProjectId);
+  const { p, isOp } = findAnyProject(sidePanelProjectId);
   if (!p) return;
   p.checks[key] = 'ex';
   addExPending(p, key);
   syncPbStatesFromChecks(p);
-  saveProjects();
+  if (isOp) saveOpProjects(); else saveProjects();
   document.getElementById('sidePanelChecklist').innerHTML = buildKanban(p, 'toggleSideCheck');
   const {done:_spD,total:_spT}=overallCounts(p);setCheckCountPill('sidePanelPercent',_spD,_spT);
   updateKanbanCounts('sidePanelChecklist', p, getProjectStages(p));
@@ -5256,12 +5554,12 @@ function cycleCheck(key) {
 }
 function cycleSideCheck(key) {
   if (!sidePanelProjectId) return;
-  const p = projects.find(p => p.id === sidePanelProjectId);
+  const { p, isOp } = findAnyProject(sidePanelProjectId);
   if (!p) return;
   p.checks[key] = nextCheckState(p.checks[key]);
   syncPbStatesFromChecks(p);
   p.updatedAt = new Date().toISOString();
-  saveProjects();
+  if (isOp) saveOpProjects(); else saveProjects();
   document.getElementById('sidePanelChecklist').innerHTML = buildKanban(p, 'toggleSideCheck');
   const {done:_spD,total:_spT}=overallCounts(p);setCheckCountPill('sidePanelPercent',_spD,_spT);
   updateKanbanCounts('sidePanelChecklist', p, getProjectStages(p));
@@ -5888,8 +6186,19 @@ const BOARD_INFO = {
 };
 const _boardOpen = { M:true, Q:true, Y:true };
 
+// 렌더 콜백: In Active는 renderDashboard+renderBoardSections, Operational Task는 showOpTaskPage+renderOpBoardSections
+function _rerenderAfterBoardChange(isOp) {
+  if (isOp) {
+    showOpTaskPage();
+    if (typeof renderOpBoardSections === 'function') renderOpBoardSections();
+  } else {
+    renderDashboard();
+    renderBoardSections();
+  }
+}
+
 function moveToBoardSection(pid, type) {
-  const p = projects.find(p => p.id === pid);
+  const { p, isOp } = findAnyProject(pid);
   if (!p) return;
   if (!p.boardTypes) p.boardTypes = [];
 
@@ -5904,13 +6213,12 @@ function moveToBoardSection(pid, type) {
   p.boardTypes.sort((a, b) => order.indexOf(a) - order.indexOf(b));
 
   p.updatedAt = new Date().toISOString();
-  saveProjects();
-  renderDashboard();
-  renderBoardSections();
+  if (isOp) saveOpProjects(); else saveProjects();
+  _rerenderAfterBoardChange(isOp);
 }
 
 function moveRowSection(pid, dir) {
-  const p = projects.find(p => p.id === pid);
+  const { p, isOp } = findAnyProject(pid);
   if (!p) return;
   if (!p.boardTypes) p.boardTypes = [];
   const order = ['M', 'Q', 'Y'];
@@ -5933,13 +6241,12 @@ function moveRowSection(pid, dir) {
   }
 
   p.updatedAt = new Date().toISOString();
-  saveProjects();
-  renderDashboard();
-  renderBoardSections();
+  if (isOp) saveOpProjects(); else saveProjects();
+  _rerenderAfterBoardChange(isOp);
 }
 
 function toggleBoardDate(pid, type, btn) {
-  const p = projects.find(p => p.id === pid);
+  const { p, isOp } = findAnyProject(pid);
   if (!p) return;
   if (!p.boardDates) p.boardDates = {};
   const hasDate = !!((p.boardDates || {})[type]);
@@ -5950,27 +6257,25 @@ function toggleBoardDate(pid, type, btn) {
     p.boardTypes = (p.boardTypes || []).filter(t => t !== type);
     if (inp) { inp.style.display = 'none'; inp.value = ''; }
     p.updatedAt = new Date().toISOString();
-    saveProjects();
-    renderDashboard();
-    renderBoardSections();
+    if (isOp) saveOpProjects(); else saveProjects();
+    _rerenderAfterBoardChange(isOp);
   } else {
     if (inp) { inp.style.display = 'block'; setTimeout(() => inp.focus(), 50); }
   }
 }
 
 function removeBoardType(pid, type) {
-  const p = projects.find(p => p.id === pid);
+  const { p, isOp } = findAnyProject(pid);
   if (!p) return;
   p.boardTypes = (p.boardTypes || []).filter(t => t !== type);
   if (p.boardDates) p.boardDates[type] = '';
   p.updatedAt = new Date().toISOString();
-  saveProjects();
-  renderDashboard();
-  renderBoardSections();
+  if (isOp) saveOpProjects(); else saveProjects();
+  _rerenderAfterBoardChange(isOp);
 }
 
 function saveBoardDateField(pid, type, value) {
-  const p = projects.find(p => p.id === pid);
+  const { p, isOp } = findAnyProject(pid);
   if (!p) return;
   if (!p.boardDates) p.boardDates = {};
   value = value.trim();
@@ -5981,9 +6286,8 @@ function saveBoardDateField(pid, type, value) {
   }
   // 날짜 입력만으로는 boardTypes에 추가하지 않음 — ↓ 버튼으로만 이동
   p.updatedAt = new Date().toISOString();
-  saveProjects();
-  renderDashboard();
-  renderBoardSections();
+  if (isOp) saveOpProjects(); else saveProjects();
+  _rerenderAfterBoardChange(isOp);
 }
 
 function toggleReleaseDate(pid, btn) {
@@ -6015,7 +6319,7 @@ function autoFormatDate(input) {
 }
 
 function saveReleaseDateField(id, value) {
-  const p = projects.find(p => p.id === id);
+  const { p, isOp } = findAnyProject(id);
   if (!p) return;
   p.releaseDate = value.trim();
   // R 상태도 동기화: 날짜 있으면 boardTypes에 R 포함
@@ -6026,20 +6330,19 @@ function saveReleaseDateField(id, value) {
     p.boardTypes = p.boardTypes.filter(t => t !== 'R');
   }
   p.updatedAt = new Date().toISOString();
-  saveProjects();
+  if (isOp) saveOpProjects(); else saveProjects();
   // 셀 배경색 즉시 업데이트
   const td = document.querySelector(`tr[data-pid="${id}"] td[data-release]`);
   if (td) td.style.background = p.releaseDate ? '#dcfce7' : '';
 }
 
 function returnToInActive(pid) {
-  const p = projects.find(p => p.id === pid);
+  const { p, isOp } = findAnyProject(pid);
   if (!p) return;
   p.boardTypes = [];
   p.updatedAt = new Date().toISOString();
-  saveProjects();
-  renderDashboard();
-  renderBoardSections();
+  if (isOp) saveOpProjects(); else saveProjects();
+  _rerenderAfterBoardChange(isOp);
 }
 
 function toggleBoardSection(type) {
@@ -6108,9 +6411,9 @@ function makePieChart(data, size = 180, legendData) {
   </div>`;
 }
 
-function makeBarChart(data, { width = 320, height = 140, color = '#3b82f6' } = {}) {
+function makeBarChart(data, { width = 320, height = 152, color = '#3b82f6', labelMaxChars = 6 } = {}) {
   if (!data.length) return '<span style="color:var(--text-muted);font-size:12px;">데이터 없음</span>';
-  const padL = 8, padR = 8, padT = 8, padB = 36;
+  const padL = 8, padR = 8, padT = 20, padB = 36;
   const maxVal = Math.max(...data.map(d => d.value), 1);
   const bw = Math.floor((width - padL - padR) / data.length);
   const gap = Math.max(2, Math.floor(bw * 0.15));
@@ -6121,7 +6424,7 @@ function makeBarChart(data, { width = 320, height = 140, color = '#3b82f6' } = {
     const y = padT + chartH - bh;
     const col = d.color || color;
     const lx = x + (bw - gap) / 2;
-    const label = d.label.length > 7 ? d.label.slice(0, 6) + '…' : d.label;
+    const label = d.label.length > labelMaxChars ? d.label.slice(0, labelMaxChars - 1) + '…' : d.label;
     const valueLabel = d.pub != null
       ? `<tspan font-weight="700">${d.value}</tspan><tspan fill="var(--text-muted)" font-weight="400">/${d.pub}</tspan>`
       : `${d.value}`;
@@ -6242,7 +6545,7 @@ function renderCompletedDashboard(list) {
     newMonths[m].value++;
     newMonths[m].pub += Number(p.publicationCount) || 0;
   });
-  const newData = Object.entries(newMonths).sort().map(([label, d]) => ({ label, value: d.value, pub: d.pub, color: '#3b82f6' }));
+  const newData = Object.entries(newMonths).sort().map(([label, d]) => ({ label, value: d.value, pub: d.pub, color: '#ef4444' }));
 
   // Lead time (startDate → releaseDate or today) — Product/Publication Count 쌍
   const ltBuckets = { '< 4w': { value: 0, pub: 0 }, '4–8w': { value: 0, pub: 0 }, '8–16w': { value: 0, pub: 0 }, '16–24w': { value: 0, pub: 0 }, '> 24w': { value: 0, pub: 0 } };
@@ -6281,7 +6584,7 @@ function renderCompletedDashboard(list) {
     <div class="cp-dash-charts" style="margin-top:16px;">
       <div class="cp-dash-chart-wrap">
         <p class="cp-dash-chart-title">Publication Distribution (Top 12)</p>
-        ${pubData.length ? makeBarChart(pubData, { width: 420, color: '#3b82f6' }) : noData('데이터 없음')}
+        ${pubData.length ? makeBarChart(pubData, { width: 900, color: '#3b82f6', labelMaxChars: 16 }) : noData('데이터 없음')}
       </div>
       <div class="cp-dash-chart-wrap">
         <p class="cp-dash-chart-title">Lead Time Distribution</p>
@@ -6295,7 +6598,7 @@ function renderCompletedDashboard(list) {
       </div>
       <div class="cp-dash-chart-wrap">
         <p class="cp-dash-chart-title">Monthly NEW Count (Publication Type: NEW)</p>
-        ${newData.length ? makeBarChart(newData, { width: 360, color: '#3b82f6' }) : noData('NEW 데이터 없음')}
+        ${newData.length ? makeBarChart(newData, { width: 360, color: '#ef4444' }) : noData('NEW 데이터 없음')}
       </div>
     </div>
   </div>`;
@@ -6435,30 +6738,40 @@ function renderBoardSection(type) {
   // 현재 mainTable 너비 동기화
 
   const GROUP_TITLES = {
-    M: date => `Publications for the Monthly Report on ${date}`,
-    Q: date => `Publications for the Board Report on ${date}`,
-    Y: date => `Publications for the Annual Report on ${date}`,
+    M: (date, bu) => `${bu ? bu + ' ' : ''}Publications for the Monthly Report on ${date}`,
+    Q: (date, bu) => `${bu ? bu + ' ' : ''}Publications for the Board Report on ${date}`,
+    Y: (date, bu) => `${bu ? bu + ' ' : ''}Publications for the Annual Report on ${date}`,
   };
+  const BOARD_BU_NAMES = { 1: 'IBU', 2: 'RBU', 3: 'OBU' };
+  const BOARD_BU_ORDER = ['IBU', 'RBU', 'OBU'];
 
   if (type === 'M' || type === 'Q' || type === 'Y') {
     const groups = {};
+    const groupMeta = {};
     list.forEach(p => {
       const date = (p.boardDates || {})[type] || '';
-      if (!groups[date]) groups[date] = [];
-      groups[date].push(p);
+      const bu = date ? (BOARD_BU_NAMES[p.pageId || 1] || '') : '';
+      const key = date + '||' + bu;
+      if (!groups[key]) { groups[key] = []; groupMeta[key] = { date, bu }; }
+      groups[key].push(p);
     });
-    const sortedDates = Object.keys(groups).sort((a, b) => {
-      if (!a) return 1; if (!b) return -1; return b.localeCompare(a);
+    const sortedKeys = Object.keys(groups).sort((a, b) => {
+      const ma = groupMeta[a], mb = groupMeta[b];
+      if (!ma.date) return 1; if (!mb.date) return -1;
+      const dc = mb.date.localeCompare(ma.date);
+      if (dc !== 0) return dc;
+      return BOARD_BU_ORDER.indexOf(ma.bu) - BOARD_BU_ORDER.indexOf(mb.bu);
     });
     const container = document.getElementById(`boardListBody_${type}`);
     container.innerHTML = '';
     const mainTable = document.getElementById('mainTable');
     let lastTb = null;
-    sortedDates.forEach((date, idx) => {
+    sortedKeys.forEach((key, idx) => {
+      const { date, bu } = groupMeta[key];
       if (date) {
         const titleEl = document.createElement('p');
         titleEl.className = 'board-date-title';
-        titleEl.textContent = GROUP_TITLES[type](date);
+        titleEl.textContent = GROUP_TITLES[type](date, bu);
         container.appendChild(titleEl);
       }
       const wrap = document.createElement('div');
@@ -6474,7 +6787,7 @@ function renderBoardSection(type) {
       const tb = document.createElement('tbody');
       tb.className = `board-tbody-${type}`;
       tb.id = idx === 0 ? `boardTbody_${type}` : `boardTbody_${type}_${idx}`;
-      tb.innerHTML = groups[date].map(makeBoardRowHTML).join('');
+      tb.innerHTML = groups[key].map(makeBoardRowHTML).join('');
       // In active 표와 동일하게 각 표 안 마지막 행에 + 버튼 추가
       const addTr = document.createElement('tr');
       addTr.className = 'add-row-tr';
@@ -6501,6 +6814,144 @@ function renderBoardSection(type) {
 
   if (!_boardOpen[type]) {
     document.getElementById('boardListBody_' + type).style.display = 'none';
+  }
+}
+
+/* ── Operational Task 표 전용 Board Sections (M/Q/Y) — In Active와 동일한 구조/동작 ── */
+const _opBoardOpen = { M:true, Q:true, Y:true };
+let _opCompletedOpen = true;
+
+function toggleOpBoardSection(type) {
+  _opBoardOpen[type] = !_opBoardOpen[type];
+  document.getElementById('opBoardListBody_' + type).style.display = _opBoardOpen[type] ? '' : 'none';
+  document.getElementById('opBoardToggleBtn_' + type).classList.toggle('is-collapsed', !_opBoardOpen[type]);
+}
+
+function toggleOpCompletedSection() {
+  _opCompletedOpen = !_opCompletedOpen;
+  document.getElementById('opCompletedBody').style.display = _opCompletedOpen ? '' : 'none';
+  document.getElementById('opCompletedToggleBtn').classList.toggle('is-collapsed', !_opCompletedOpen);
+}
+
+function renderOpBoardSections() {
+  ['M','Q','Y'].forEach(type => renderOpBoardSection(type));
+  const section = document.getElementById('opCompletedSection');
+  if (section) section.style.display = '';
+}
+
+function initOpBoardRowDrag(type) {
+  const onDrop = (srcId, tgtId) => {
+    const si = opProjects.findIndex(p => p.id === srcId);
+    const ti = opProjects.findIndex(p => p.id === tgtId);
+    if (si === -1 || ti === -1) return;
+    const [m] = opProjects.splice(si, 1);
+    opProjects.splice(ti, 0, m);
+    saveOpProjects('순서 변경', `[${BOARD_INFO[type]?.title||type}] 순서 변경`, srcId);
+    renderOpBoardSection(type);
+  };
+  if (type === 'M' || type === 'Q') {
+    document.querySelectorAll(`.op-board-tbody-${type}`).forEach(tb => {
+      initRowDrag(tb.id, onDrop);
+    });
+  } else {
+    initRowDrag('opBoardTbody_' + type, onDrop);
+  }
+}
+
+function renderOpBoardSection(type) {
+  const tableOrder = ['M', 'Q', 'Y'];
+  const list = opProjects.filter(p => {
+    const bt = p.boardTypes || [];
+    const topStage = tableOrder.slice().reverse().find(t => bt.includes(t));
+    return topStage === type && matchesOpStatusPage(p) && matchesOpResourceFilter(p);
+  });
+  const section = document.getElementById('opBoardSection_' + type);
+  if (!section) return;
+
+  section.style.display = '';
+  document.getElementById('opBoardSectionTitle_' + type).textContent =
+    `${BOARD_INFO[type].title} (${list.length})`;
+
+  const tbody = document.getElementById('opBoardTbody_' + type);
+  const table = document.getElementById('opBoardTable_' + type);
+  if (table && !table.querySelector('colgroup')) {
+    const opMainTable = document.getElementById('opMainTable');
+    if (opMainTable) {
+      table.insertBefore(opMainTable.querySelector('colgroup').cloneNode(true), tbody);
+      table.insertBefore(opMainTable.querySelector('thead').cloneNode(true), tbody);
+    }
+  }
+
+  const GROUP_TITLES = {
+    M: (date, bu) => `${bu ? bu + ' ' : ''}Publications for the Monthly Report on ${date}`,
+    Q: (date, bu) => `${bu ? bu + ' ' : ''}Publications for the Board Report on ${date}`,
+    Y: (date, bu) => `${bu ? bu + ' ' : ''}Publications for the Annual Report on ${date}`,
+  };
+  const BOARD_BU_NAMES = { 1: 'IBU', 2: 'RBU', 3: 'OBU' };
+  const BOARD_BU_ORDER = ['IBU', 'RBU', 'OBU'];
+
+  const groups = {};
+  const groupMeta = {};
+  list.forEach(p => {
+    const date = (p.boardDates || {})[type] || '';
+    const bu = date ? (BOARD_BU_NAMES[p.pageId || 1] || '') : '';
+    const key = date + '||' + bu;
+    if (!groups[key]) { groups[key] = []; groupMeta[key] = { date, bu }; }
+    groups[key].push(p);
+  });
+  const sortedKeys = Object.keys(groups).sort((a, b) => {
+    const ma = groupMeta[a], mb = groupMeta[b];
+    if (!ma.date) return 1; if (!mb.date) return -1;
+    const dc = mb.date.localeCompare(ma.date);
+    if (dc !== 0) return dc;
+    return BOARD_BU_ORDER.indexOf(ma.bu) - BOARD_BU_ORDER.indexOf(mb.bu);
+  });
+  const container = document.getElementById(`opBoardListBody_${type}`);
+  container.innerHTML = '';
+  const opMainTable = document.getElementById('opMainTable');
+  let lastTb = null;
+  sortedKeys.forEach((key, idx) => {
+    const { date, bu } = groupMeta[key];
+    if (date) {
+      const titleEl = document.createElement('p');
+      titleEl.className = 'board-date-title';
+      titleEl.textContent = GROUP_TITLES[type](date, bu);
+      container.appendChild(titleEl);
+    }
+    const wrap = document.createElement('div');
+    wrap.className = 'table-wrap';
+    wrap.style.overflowX = 'auto';
+    const tbl = document.createElement('table');
+    tbl.className = `project-table op-board-table-${type}`;
+    if (idx === 0) tbl.id = `opBoardTable_${type}`;
+    if (opMainTable) {
+      tbl.appendChild(opMainTable.querySelector('colgroup').cloneNode(true));
+      tbl.appendChild(opMainTable.querySelector('thead').cloneNode(true));
+    }
+    const tb = document.createElement('tbody');
+    tb.className = `op-board-tbody-${type}`;
+    tb.id = idx === 0 ? `opBoardTbody_${type}` : `opBoardTbody_${type}_${idx}`;
+    tb.innerHTML = groups[key].map(_makeOpRow).join('');
+    const addTr = document.createElement('tr');
+    addTr.className = 'add-row-tr';
+    addTr.innerHTML = `<td colspan="15"><button class="btn-add-row" onclick="addOpBoardInlineRow()" title="새 행 추가">＋</button></td>`;
+    tb.appendChild(addTr);
+    tbl.appendChild(tb);
+    wrap.appendChild(tbl);
+    container.appendChild(wrap);
+    syncHeaderCheckbox(tbl);
+    lastTb = tb;
+  });
+  initOpBoardRowDrag(type);
+  if (!lastTb) {
+    const addWrap = document.createElement('div');
+    addWrap.style.marginTop = '8px';
+    addWrap.innerHTML = `<button class="btn-add-row" onclick="addOpBoardInlineRow()" title="새 행 추가">＋</button>`;
+    container.appendChild(addWrap);
+  }
+
+  if (!_opBoardOpen[type]) {
+    document.getElementById('opBoardListBody_' + type).style.display = 'none';
   }
 }
 
@@ -6719,7 +7170,9 @@ async function saveLocalBackup(allowPrompt) {
     version: 1,
     exportedAt: new Date().toISOString(),
     projects: projects,
-    deletedProjects: deletedProjects
+    deletedProjects: deletedProjects,
+    records: records,
+    recordMemos: recordMemos
   };
   const now = new Date();
   const pad = n => String(n).padStart(2, '0');
@@ -6759,7 +7212,9 @@ async function exportData() {
     version: 1,
     exportedAt: new Date().toISOString(),
     projects: projects,
-    deletedProjects: deletedProjects
+    deletedProjects: deletedProjects,
+    records: records,
+    recordMemos: recordMemos
   };
   const fileName = `tw_pm_backup_${new Date().toISOString().slice(0,10)}.json`;
   const content = JSON.stringify(payload, null, 2);
@@ -6824,13 +7279,23 @@ async function _doImport(file) {
       const payload = JSON.parse(e.target.result);
       if (!payload.projects || !Array.isArray(payload.projects))
         throw new Error('올바른 백업 파일이 아닙니다.');
-      if (!confirm(`백업 파일을 불러오면 현재 데이터가 교체됩니다.\n활성 프로젝트 ${payload.projects.length}개, 삭제 목록 ${(payload.deletedProjects||[]).length}개\n\n계속하시겠습니까?`)) return;
+      const hasRecords = Array.isArray(payload.records);
+      if (!confirm(`백업 파일을 불러오면 현재 데이터가 교체됩니다.\n활성 프로젝트 ${payload.projects.length}개, 삭제 목록 ${(payload.deletedProjects||[]).length}개${hasRecords ? `, Record 캡처 ${payload.records.length}건` : ''}\n\n계속하시겠습니까?`)) return;
       projects = payload.projects;
       deletedProjects = payload.deletedProjects || [];
       localStorage.setItem(STORAGE_KEY, JSON.stringify(projects));
       localStorage.setItem(DELETED_KEY, JSON.stringify(deletedProjects));
+      if (hasRecords) {
+        records = payload.records;
+        saveRecordsLocal();
+      }
+      if (payload.recordMemos && typeof payload.recordMemos === 'object') {
+        recordMemos = payload.recordMemos;
+        saveRecordMemosLocal();
+      }
       renderDashboard();
       renderDeletedList(); renderBoardSections();
+      renderRecordList();
       window._loadColWidths && window._loadColWidths();
       showSyncStatus('✓ 백업에서 복원 완료', 'var(--green)');
     } catch (err) {
@@ -7757,6 +8222,96 @@ document.addEventListener('keydown', e => {
   window._loadColWidths = loadCols;
 })();
 
+/* ── Operational Task 표 전용 컬럼 리사이즈 (In Active의 initColResize와 동일한 구조,
+   컬럼 구성이 달라 별도 저장 키/동기화 대상을 사용) ── */
+(function initOpColResize() {
+  const OP_COL_STORAGE = 'tw_pm_op_col_widths';
+  const MIN_W = 40;
+
+  function saveCols() {
+    const cols = document.querySelectorAll('#opMainTable colgroup col');
+    const widths = [...cols].map(c => parseInt(c.style.width) || 0);
+    try { localStorage.setItem(OP_COL_STORAGE, JSON.stringify(widths)); } catch {}
+  }
+
+  function syncAllTables() {
+    const mainCols = [...document.querySelectorAll('#opMainTable colgroup col')];
+    function syncTarget(sel) {
+      const cols = document.querySelectorAll(sel + ' colgroup col');
+      mainCols.forEach((c, i) => { if (cols[i]) cols[i].style.width = c.style.width; });
+    }
+    syncTarget('#opBoardTable_Y');
+    ['.op-board-table-M', '.op-board-table-Q'].forEach(cls => {
+      document.querySelectorAll(cls).forEach(tbl => {
+        mainCols.forEach((c, i) => {
+          const tc = tbl.querySelectorAll('colgroup col')[i];
+          if (tc) tc.style.width = c.style.width;
+        });
+      });
+    });
+    // #opDeletedTable은 id 없는 고정폭 colgroup을 쓰므로 동기화 대상에서 제외
+    if (typeof updateOpStickyOffsets === 'function') updateOpStickyOffsets();
+  }
+
+  function loadCols() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(OP_COL_STORAGE));
+      const cols = document.querySelectorAll('#opMainTable colgroup col');
+      if (!saved || !saved.length || saved.length !== cols.length) return;
+      saved.forEach((w, i) => {
+        if (i === 0 || !cols[i] || w < MIN_W) return;
+        cols[i].style.width = w + 'px';
+      });
+    } catch {}
+    const spacer = document.getElementById('opCol7');
+    if (spacer) spacer.style.width = '0';
+    syncAllTables();
+  }
+
+  document.addEventListener('mousedown', function(e) {
+    const handle = e.target.closest('.col-resizer');
+    if (!handle || !handle.dataset.col || !handle.dataset.col.startsWith('op')) return;
+    e.preventDefault();
+    const col = document.getElementById('op' + 'Col' + handle.dataset.col.slice(2));
+    if (!col) return;
+    const startX = e.clientX;
+    const startW = parseInt(col.style.width) || col.getBoundingClientRect().width;
+    handle.classList.add('resizing');
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+
+    function onMove(ev) {
+      const newW = Math.max(MIN_W, startW + ev.clientX - startX);
+      col.style.width = newW + 'px';
+      const mainCols = [...document.querySelectorAll('#opMainTable colgroup col')];
+      const actualIdx = mainCols.indexOf(col);
+      if (actualIdx === -1) return;
+      const c1 = document.querySelectorAll('#opBoardTable_Y colgroup col')[actualIdx];
+      if (c1) c1.style.width = newW + 'px';
+      ['.op-board-table-M', '.op-board-table-Q'].forEach(cls => {
+        document.querySelectorAll(cls).forEach(tbl => {
+          const c = tbl.querySelectorAll('colgroup col')[actualIdx];
+          if (c) c.style.width = newW + 'px';
+        });
+      });
+      if (typeof updateOpStickyOffsets === 'function') updateOpStickyOffsets();
+    }
+    function onUp() {
+      handle.classList.remove('resizing');
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+      saveCols();
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    }
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  });
+
+  window._loadOpColWidths = loadCols;
+  window._syncOpTables = syncAllTables;
+})();
+
 /* ── 가로 스크롤 동기화 ── */
 function syncTableScrolls() {
   const wraps = Array.from(document.querySelectorAll('.table-wrap'));
@@ -7940,6 +8495,22 @@ function gotoStatusPage(n) {
   renderDashboard();
   renderBoardSections();
   renderDeletedList(); // 페이지 전환 시 삭제 목록도 해당 페이지 것으로 갱신
+}
+
+function gotoOpStatusPage(n) {
+  const total = STATUS_PAGE_COUNT + 1; // 1,2,3=IBU/RBU/OBU, 4=Total
+  currentOpStatusPage = ((n - 1 + total) % total) + 1;
+  showOpTaskPage();
+  if (typeof renderOpBoardSections === 'function') renderOpBoardSections();
+}
+
+function renderOpPageNavDots() {
+  const el = document.getElementById('opPageNavDots');
+  if (!el) return;
+  el.innerHTML = Array.from({length: STATUS_PAGE_COUNT + 1}, (_, i) =>
+    `<div class="cl-nav-dot ${i + 1 === currentOpStatusPage ? 'active' : ''}"
+      onclick="gotoOpStatusPage(${i + 1})" title="${STATUS_PAGE_FULL_NAMES[i]}">${STATUS_PAGE_LABELS[i]}</div>`
+  ).join('');
 }
 
 function gotoClPage(n) {
@@ -8127,17 +8698,9 @@ function refreshActiveView() {
 /* ── Operational Task Page ── */
 function saveOpProjects(label, detail, id, snap) {
   localStorage.setItem(OP_PROJECTS_KEY, JSON.stringify(opProjects));
-  // simple history log
-  try {
-    const OP_HISTORY_KEY = 'tw_pm_op_history';
-    let log = [];
-    try { log = JSON.parse(localStorage.getItem(OP_HISTORY_KEY)) || []; } catch {}
-    const now = new Date();
-    const ts = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-    log.unshift({ ts, label: label||'', detail: detail||'', id: id||null });
-    if (log.length > 100) log.length = 100;
-    localStorage.setItem(OP_HISTORY_KEY, JSON.stringify(log));
-  } catch {}
+  // In Active와 동일한 수정 이력 패널(#historyPanel)을 공유해서 사용
+  if (label) addHistory(label, detail || '', id, snap);
+  showSyncStatus('💾 로컬 저장됨', 'var(--text-muted)');
 }
 
 function saveOpField(id, field, val) {
@@ -8150,15 +8713,20 @@ function saveOpField(id, field, val) {
   saveOpProjects('edit', field + ' 수정', id);
 }
 
-function addOpInlineRow() {
+function _newBlankOpProject() {
   const checks = {};
   ITEMS.forEach(it => checks[it.key] = false);
-  const newP = {
-    id: 'op_' + Date.now(), name: '', publication: '', purpose: '', customer: '',
+  return {
+    id: 'op_' + Date.now(), name: '', publication: '', publicationCount: '', purpose: '', customer: '',
     targetDate: '', checks, selected: true, resource: '', bu: '',
     projectType: '', publicationType: '', startDate: '', releaseDate: '',
-    boardTypes: [], boardDates: {}, createdAt: new Date().toISOString()
+    boardTypes: [], boardDates: {}, createdAt: new Date().toISOString(),
+    pageId: currentOpStatusPage <= STATUS_PAGE_COUNT ? currentOpStatusPage : 1
   };
+}
+
+function addOpInlineRow() {
+  const newP = _newBlankOpProject();
   opProjects.push(newP);
   saveOpProjects('추가', newP.name);
   showOpTaskPage();
@@ -8175,25 +8743,11 @@ function addOpInlineRow() {
   }, 50);
 }
 
-function confirmOpDelete(id) {
-  const p = opProjects.find(p => p.id === id);
-  if (!p) return;
-  if (!confirm(`"${p.name || '(이름 없음)'}" 을(를) 삭제하시겠습니까?`)) return;
-  const idx = opProjects.findIndex(p => p.id === id);
-  if (idx === -1) return;
-  const removed = opProjects.splice(idx, 1)[0];
-  removed.deletedAt = new Date().toISOString();
-  opDeletedProjects.unshift(removed);
-  saveOpProjects('삭제', removed.name, id);
-  localStorage.setItem(OP_DELETED_KEY, JSON.stringify(opDeletedProjects));
-  showOpTaskPage();
-}
-
-function toggleOpSelected(id, checked) {
-  const p = opProjects.find(p => p.id === id);
-  if (!p) return;
-  p.selected = checked;
+function addOpBoardInlineRow() {
+  opProjects.push(_newBlankOpProject());
   saveOpProjects();
+  renderOpBoardSections();
+  showOpTaskPage();
 }
 
 function restoreOpProject(id) {
@@ -8236,6 +8790,15 @@ function filterOpResource(name) {
     const res = (p.resource || '').split(/[,、\s]+/).map(s => s.trim()).filter(Boolean);
     tr.style.display = (allActive || res.some(r => _opResourceFilter.has(r))) ? '' : 'none';
   });
+  if (typeof renderOpBoardSections === 'function') renderOpBoardSections();
+}
+
+// 필터 칩(All/이니셜/미배정)에 맞는지 판단 — Operational Task 표/Completed 표 공통 사용
+function matchesOpResourceFilter(p) {
+  if (_opResourceFilter.size === 0) return true;
+  const res = (p.resource || '').split(/[,、\s]+/).map(s => s.trim()).filter(Boolean);
+  if (!res.length) return false;
+  return res.some(r => _opResourceFilter.has(r));
 }
 
 function _renderOpResourceFilter() {
@@ -8257,74 +8820,114 @@ function _makeOpRow(p) {
   const sel = p.selected !== false;
   const checks0 = () => { const c={}; 'abcdefghijklmn'.split('').forEach(k=>c[k]=false); return c; };
   const fakeP = Object.assign({}, p, { checks: p.checks || checks0() });
+  const pub = escapeHtml(p.publication || '');
+  const pur = escapeHtml(p.purpose || '');
   return `<tr data-pid="${p.id}">
     <td style="white-space:nowrap;">
       <div style="display:flex;align-items:center;justify-content:center;gap:4px;">
         <span class="drag-handle" title="드래그하여 순서 변경">⠿</span>
         <input type="checkbox" ${sel ? 'checked' : ''}
           style="width:15px;height:15px;accent-color:#3b82f6;cursor:pointer;margin:0;"
-          onclick="event.stopPropagation();toggleOpSelected('${p.id}',this.checked)" />
+          onclick="event.stopPropagation();toggleSelected('${p.id}',this.checked)" />
+        <button class="btn-side-open" onclick="openSidePanel('${p.id}')" title="체크리스트 보기"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
       </div>
     </td>
-    <td data-field="name">
+    <td data-field="name" oncontextmenu="toggleNewBadge(event,'${p.id}')">
       <div class="product-cell">
         <input class="cell-input cell-input-name" value="${escapeHtml(p.name||'')}"
           placeholder="Product Model"
-          onblur="saveOpField('${p.id}','name',this.value)"
+          onblur="saveField('${p.id}','name',this.value)"
           onkeydown="if(event.key==='Enter')this.blur()" />
+        ${p.isNew ? '<span class="badge-new">NEW</span>' : ''}
       </div>
     </td>
     <td><input class="cell-input" value="${escapeHtml(p.customer||'')}"
       placeholder="Customer"
-      onblur="saveOpField('${p.id}','customer',this.value)"
+      onblur="saveField('${p.id}','customer',this.value)"
       onkeydown="if(event.key==='Enter')this.blur()" /></td>
-    <td><input class="cell-input" value="${escapeHtml(p.publication||'')}"
-      onblur="saveOpField('${p.id}','publication',this.value)"
+    <td><input class="cell-input" value="${pub}"
+      onblur="saveField('${p.id}','publication',this.value)"
       onkeydown="if(event.key==='Enter')this.blur()" /></td>
-    <td><input class="cell-input" value="${escapeHtml(p.purpose||'')}"
-      onblur="saveOpField('${p.id}','purpose',this.value)"
+    <td><input type="number" class="cell-input" style="text-align:center;" value="${p.publicationCount ?? ''}"
+      onblur="savePublicationCountField('${p.id}',this.value)"
       onkeydown="if(event.key==='Enter')this.blur()" /></td>
-    <td><div class="progress-bar">${renderProgressBar(fakeP)}</div></td>
+    <td><input class="cell-input" value="${pur}"
+      onblur="saveField('${p.id}','purpose',this.value)"
+      onkeydown="if(event.key==='Enter')this.blur()" /></td>
+    <td data-field="progress"><div class="progress-bar">${renderProgressBar(fakeP)}</div></td>
     <td><div class="td-target-date">
       <input type="text" class="cell-input" value="${escapeHtml(p.targetDate||'')}"
         placeholder="June 2026, Released"
-        onblur="saveOpField('${p.id}','targetDate',this.value)"
+        onblur="saveField('${p.id}','targetDate',this.value)"
         onkeydown="if(event.key==='Enter')this.blur()" />
-      <button class="btn-icon btn-icon-delete" onclick="confirmOpDelete('${p.id}')" title="삭제">
+      <button class="btn-icon btn-icon-delete" onclick="confirmDelete('${p.id}')" title="삭제">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
       </button>
     </div></td>
     <td data-release style="white-space:nowrap;">
-      <input type="${p.releaseDate?'date':'text'}" class="cell-input cell-input-date" value="${escapeHtml(p.releaseDate||'')}"
-        placeholder="YYYY-MM-DD"
-        onfocus="this.type='date'"
-        onblur="if(!this.value)this.type='text';saveOpField('${p.id}','releaseDate',this.value)"
-        onchange="saveOpField('${p.id}','releaseDate',this.value)" />
+      <div style="display:flex;align-items:center;gap:5px;">
+        <button class="btn-board ${p.releaseDate?'active-R':''}"
+          onclick="toggleReleaseDate('${p.id}',this)"
+          title="Released 날짜 설정" style="flex-shrink:0;">R</button>
+        <input type="text" class="cell-input" value="${escapeHtml(p.releaseDate||'')}"
+          placeholder="YYYY-MM-DD"
+          oninput="autoFormatDate(this)"
+          onblur="saveReleaseDateField('${p.id}',this.value)"
+          onkeydown="if(event.key==='Enter')this.blur()"
+          style="display:${p.releaseDate?'block':'none'};min-width:95px;" />
+      </div>
     </td>
     <td></td>
-    <td style="border-right:3px solid var(--accent);"></td>
+    <td class="td-actions" style="border-right:3px solid var(--accent);"><div class="td-actions-inner">
+      <div class="td-actions-btns">
+        <div style="display:flex;align-items:center;gap:2px;">
+          <button class="btn-board ${(p.boardDates||{}).M?'active-M':''}" onclick="toggleBoardDate('${p.id}','M',this)" title="월례회 보고">M</button>
+          <input type="text" class="cell-input" value="${(p.boardDates||{}).M||''}" placeholder="YYYY-MM-DD" oninput="autoFormatDate(this)" onblur="saveBoardDateField('${p.id}','M',this.value)" onkeydown="if(event.key==='Enter')this.blur()" style="display:${(p.boardDates||{}).M?'block':'none'};width:64px;flex:0 0 auto;font-size:10.5px;padding:2px 3px;" />
+        </div>
+        <div style="display:flex;align-items:center;gap:2px;">
+          <button class="btn-board ${(p.boardDates||{}).Q?'active-Q':''}" onclick="toggleBoardDate('${p.id}','Q',this)" title="이사회 보고">Q</button>
+          <input type="text" class="cell-input" value="${(p.boardDates||{}).Q||''}" placeholder="YYYY-MM-DD" oninput="autoFormatDate(this)" onblur="saveBoardDateField('${p.id}','Q',this.value)" onkeydown="if(event.key==='Enter')this.blur()" style="display:${(p.boardDates||{}).Q?'block':'none'};width:64px;flex:0 0 auto;font-size:10.5px;padding:2px 3px;" />
+        </div>
+        <div style="display:flex;align-items:center;gap:2px;">
+          <button class="btn-board ${(p.boardDates||{}).Y?'active-Y':''}" onclick="toggleBoardDate('${p.id}','Y',this)" title="연말 보고">Y</button>
+          <input type="text" class="cell-input" value="${(p.boardDates||{}).Y||''}" placeholder="YYYY-MM-DD" oninput="autoFormatDate(this)" onblur="saveBoardDateField('${p.id}','Y',this.value)" onkeydown="if(event.key==='Enter')this.blur()" style="display:${(p.boardDates||{}).Y?'block':'none'};width:64px;flex:0 0 auto;font-size:10.5px;padding:2px 3px;" />
+        </div>
+        <div style="display:flex;gap:2px;">
+          <button class="btn-icon" onclick="moveRowSection('${p.id}',-1)" title="위 섹션으로" style="padding:2px 4px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg></button>
+          <button class="btn-icon" onclick="moveRowSection('${p.id}',1)" title="아래 섹션으로" style="padding:2px 4px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
+        </div>
+      </div>
+    </div></td>
     <td style="background:#f8fbff;"><input class="cell-input" value="${escapeHtml(p.resource||'')}"
       placeholder="Alice, Bob"
-      onblur="saveOpField('${p.id}','resource',this.value);_renderOpResourceFilter();if(_opResourceFilter.size>0)filterOpResource('__keep__');"
+      onblur="saveResourceField('${p.id}',this.value)"
       onkeydown="if(event.key==='Enter')this.blur()" /></td>
     <td style="background:#f8fbff;"><input class="cell-input" value="${escapeHtml(p.bu||'')}"
       placeholder="IBU"
-      onblur="saveOpField('${p.id}','bu',this.value)"
+      onblur="saveBuField('${p.id}',this.value)"
       onkeydown="if(event.key==='Enter')this.blur()" /></td>
-    <td style="background:#f8fbff;"><input class="cell-input" value="${escapeHtml(p.publicationType||'')}"
-      placeholder="IOM, Quick Guide"
-      onblur="saveOpField('${p.id}','publicationType',this.value)"
+    <td data-col="status" style="background:#f8fbff;text-align:center;">${renderStatusBadge(fakeP)}</td>
+    <td style="background:#f8fbff;"><input class="cell-input" value="${escapeHtml(p.projectType||'')}"
+      placeholder="New, Update"
+      onblur="saveProjectTypeField('${p.id}',this.value)"
       onkeydown="if(event.key==='Enter')this.blur()" /></td>
+    <td data-col="pct" style="background:#f8fbff;text-align:center;">
+      <span style="font-size:15px;font-weight:400;color:var(--accent);">${overallPercent(fakeP)}%</span>
+    </td>
     <td style="background:#f8fbff;">
       <input type="${p.startDate?'date':'text'}" class="cell-input cell-input-date" value="${escapeHtml(p.startDate||'')}"
         placeholder="YYYY-MM-DD"
         onfocus="this.type='date'"
-        onblur="if(!this.value)this.type='text';saveOpField('${p.id}','startDate',this.value)"
-        onchange="saveOpField('${p.id}','startDate',this.value)" />
+        onblur="if(!this.value)this.type='text'"
+        onchange="saveStartDateField('${p.id}',this.value)" />
     </td>
     <td style="background:#f8fbff;text-align:center;">
       <span style="font-size:15px;font-weight:400;color:var(--text-secondary);">${calcLeadTimeWeeks(p.startDate)}</span>
     </td>
+    <td style="background:#f8fbff;"><input class="cell-input" value="${escapeHtml(p.publicationType||'')}"
+      placeholder="IOM, Quick Guide"
+      onblur="savePublicationTypeField('${p.id}',this.value)"
+      onkeydown="if(event.key==='Enter')this.blur()" /></td>
   </tr>`;
 }
 
@@ -8343,6 +8946,7 @@ function _makeOpDeletedRow(p) {
     <td><div class="product-cell"><input class="cell-input cell-input-name" value="${escapeHtml(p.name||'')}" disabled placeholder="Product Model" style="color:#6b7280;" /></div></td>
     <td><input class="cell-input" value="${escapeHtml(p.customer||'')}" disabled placeholder="Customer" style="color:#9ca3af;" /></td>
     <td><input class="cell-input" value="${escapeHtml(p.publication||'')}" disabled style="color:#6b7280;" /></td>
+    <td><input type="number" class="cell-input" style="text-align:center;color:#6b7280;" value="${p.publicationCount ?? ''}" disabled /></td>
     <td><input class="cell-input" value="${escapeHtml(p.purpose||'')}" disabled style="color:#6b7280;" /></td>
     <td><div class="progress-bar">${renderProgressBarStatic(fakeP)}</div></td>
     <td><div class="td-target-date">
@@ -8359,9 +8963,12 @@ function _makeOpDeletedRow(p) {
     <td style="border-right:3px solid var(--accent);"></td>
     <td style="background:#f8fbff;"><input class="cell-input" value="${escapeHtml(p.resource||'')}" disabled style="color:#6b7280;" /></td>
     <td style="background:#f8fbff;"><input class="cell-input" value="${escapeHtml(p.bu||'')}" disabled style="color:#6b7280;" /></td>
-    <td style="background:#f8fbff;"><input class="cell-input" value="${escapeHtml(p.publicationType||'')}" disabled style="color:#6b7280;" /></td>
+    <td style="background:#f8fbff;text-align:center;">${renderStatusBadge(fakeP)}</td>
+    <td style="background:#f8fbff;"><input class="cell-input" value="${escapeHtml(p.projectType||'')}" disabled style="color:#6b7280;" /></td>
+    <td style="background:#f8fbff;text-align:center;"><span style="font-size:15px;font-weight:400;color:#6b7280;">${overallPercent(fakeP)}%</span></td>
     <td style="background:#f8fbff;"><input class="cell-input" value="${escapeHtml(p.startDate||'')}" disabled style="color:#9ca3af;" /></td>
     <td style="background:#f8fbff;text-align:center;"><span style="font-size:15px;font-weight:400;color:#6b7280;">${calcLeadTimeWeeks(p.startDate)}</span></td>
+    <td style="background:#f8fbff;"><input class="cell-input" value="${escapeHtml(p.publicationType||'')}" disabled style="color:#6b7280;" /></td>
   </tr>`;
 }
 
@@ -8370,53 +8977,155 @@ let _opDeletedOpen = false;
 function showOpTaskPage() {
   const body = document.getElementById('optaskBody');
   if (!body) return;
+  renderOpPageNavDots();
 
   const colgroup = `<colgroup>
-    <col style="width:80px">
-    <col style="min-width:140px">
-    <col style="min-width:100px">
-    <col style="min-width:120px">
-    <col style="min-width:100px">
-    <col style="min-width:160px">
-    <col style="min-width:160px">
-    <col style="min-width:110px">
-    <col style="width:10px">
-    <col style="min-width:60px">
-    <col style="min-width:80px">
-    <col style="min-width:60px">
-    <col style="min-width:100px">
-    <col style="min-width:110px">
-    <col style="min-width:60px">
+    <col id="opCol0" style="width:110px">
+    <col id="opCol1" style="width:160px">
+    <col id="opCol_cust" style="width:120px">
+    <col id="opCol2" style="width:180px">
+    <col id="opCol_pubcnt" style="width:100px">
+    <col id="opCol3" style="width:160px">
+    <col id="opCol4" style="width:150px">
+    <col id="opCol5" style="width:210px">
+    <col id="opCol6" style="width:130px">
+    <col id="opCol7" style="width:0">
+    <col id="opCol8" style="width:205px">
+    <col id="opCol9" style="width:120px">
+    <col id="opCol10" style="width:90px">
+    <col id="opCol11" style="width:80px">
+    <col id="opCol12" style="width:110px">
+    <col id="opCol13" style="width:90px">
+    <col id="opCol14" style="width:120px">
+    <col id="opCol15" style="width:110px">
+    <col id="opCol16" style="width:120px">
   </colgroup>`;
 
   const thead = `<thead>
     <tr>
-      <th colspan="9" style="background:var(--header-bg);padding:4px 14px;font-size:11px;border-bottom:none;"></th>
+      <th colspan="10" style="background:var(--header-bg);padding:4px 14px;font-size:11px;border-bottom:none;"></th>
       <th colspan="1" style="background:var(--header-bg);border-right:3px solid var(--accent);padding:4px 14px;font-size:11px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;border-bottom:none;">Report</th>
-      <th colspan="5" style="background:var(--analysis-bg);padding:4px 14px;font-size:11px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;text-align:center;border-bottom:none;">Analysis</th>
+      <th colspan="8" style="background:var(--analysis-bg);padding:4px 14px;font-size:11px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;text-align:center;border-bottom:none;">Analysis</th>
     </tr>
     <tr>
-      <th style="background:var(--header-bg);"></th>
+      <th style="text-align:center;background:var(--header-bg);">
+        <div style="display:flex;align-items:center;justify-content:center;gap:4px;">
+          <span class="drag-handle" style="visibility:hidden;pointer-events:none;"></span>
+          <input type="checkbox" id="opChkAll" title="이 표 전체 선택/해제"
+            style="width:15px;height:15px;accent-color:var(--accent);cursor:pointer;margin:0;"
+            onchange="toggleAllSelected(this.checked, this)" />
+          <span style="display:inline-block;width:24px;flex-shrink:0;visibility:hidden;"></span>
+        </div>
+      </th>
+      <th style="background:var(--header-bg);">Product Model<div class="col-resizer" data-col="op1"></div></th>
+      <th style="background:var(--header-bg);">Customer<div class="col-resizer" data-col="op_cust"></div></th>
+      <th style="background:var(--header-bg);">Publication<div class="col-resizer" data-col="op2"></div></th>
+      <th style="background:var(--header-bg);">Publication Count<div class="col-resizer" data-col="op_pubcnt"></div></th>
+      <th style="background:var(--header-bg);">Purpose<div class="col-resizer" data-col="op3"></div></th>
+      <th style="background:var(--header-bg);">Progress<div class="col-resizer" data-col="op4"></div></th>
+      <th style="background:var(--header-bg);">Target Date<div class="col-resizer" data-col="op5"></div></th>
+      <th style="background:var(--header-bg);">Release Date<div class="col-resizer" data-col="op6"></div></th>
+      <th style="background:var(--header-bg);padding:0;overflow:hidden;border:none;"></th>
+      <th style="background:var(--header-bg);border-right:3px solid var(--accent);">Report<div class="col-resizer" data-col="op8"></div></th>
+      <th style="background:var(--analysis-bg);">
+        <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-start;">
+          <span>Resource</span>
+          <div class="mf-wrap" id="mfw_opResource"><button class="mf-btn" onclick="toggleOpMF('resource',event)">??All</button><div class="mf-dropdown" id="mfd_opResource"></div></div>
+        </div>
+        <div class="col-resizer" data-col="op9"></div>
+      </th>
+      <th style="background:var(--analysis-bg);">
+        <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-start;">
+          <span>BU</span>
+          <div class="mf-wrap" id="mfw_opBu"><button class="mf-btn" onclick="toggleOpMF('bu',event)">??All</button><div class="mf-dropdown" id="mfd_opBu"></div></div>
+        </div>
+        <div class="col-resizer" data-col="op10"></div>
+      </th>
+      <th style="background:var(--analysis-bg);">
+        <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-start;">
+          <span>Status</span>
+          <div class="mf-wrap" id="mfw_opStatus"><button class="mf-btn" onclick="toggleOpMF('status',event)">??All</button><div class="mf-dropdown" id="mfd_opStatus"></div></div>
+        </div>
+        <div class="col-resizer" data-col="op11"></div>
+      </th>
+      <th style="background:var(--analysis-bg);">
+        <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-start;">
+          <span>Project Type</span>
+          <div class="mf-wrap" id="mfw_opProjectType"><button class="mf-btn" onclick="toggleOpMF('projectType',event)">??All</button><div class="mf-dropdown" id="mfd_opProjectType"></div></div>
+        </div>
+        <div class="col-resizer" data-col="op12"></div>
+      </th>
+      <th style="background:var(--analysis-bg);">
+        <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-start;">
+          <span>Progress (%)</span>
+          <div class="mf-wrap" id="mfw_opPct"><button class="mf-btn" onclick="toggleOpMF('pct',event)">??All</button><div class="mf-dropdown" id="mfd_opPct"></div></div>
+        </div>
+        <div class="col-resizer" data-col="op13"></div>
+      </th>
+      <th style="background:var(--analysis-bg);">
+        <span>Start Date</span>
+        <div class="col-resizer" data-col="op14"></div>
+      </th>
+      <th style="background:var(--analysis-bg);">
+        <span>Lead Time (Week)</span>
+        <div class="col-resizer" data-col="op15"></div>
+      </th>
+      <th style="background:var(--analysis-bg);">
+        <div style="display:flex;flex-direction:column;gap:4px;align-items:flex-start;">
+          <span>Publication Type</span>
+          <div class="mf-wrap" id="mfw_opPublicationType"><button class="mf-btn" onclick="toggleOpMF('publicationType',event)">??All</button><div class="mf-dropdown" id="mfd_opPublicationType"></div></div>
+        </div>
+        <div class="col-resizer" data-col="op16"></div>
+      </th>
+    </tr>
+  </thead>`;
+
+  // 삭제된 항목 표는 활성 표와 동일한 컬럼이지만, 리사이즈 핸들/체크박스 전체선택/다중필터 id가
+  // 겹치면 안 되므로 (In Active의 #deletedTable과 동일한 방식으로) id 없는 단순 헤더를 별도로 둔다.
+  const colgroupPlain = `<colgroup>
+    <col style="width:110px"><col style="width:160px"><col style="width:120px"><col style="width:180px">
+    <col style="width:100px">
+    <col style="width:160px"><col style="width:150px"><col style="width:210px">
+    <col style="width:130px"><col style="width:0"><col style="width:205px"><col style="width:120px">
+    <col style="width:90px"><col style="width:80px"><col style="width:110px">
+    <col style="width:90px"><col style="width:120px"><col style="width:110px"><col style="width:120px">
+  </colgroup>`;
+  const theadDeleted = `<thead>
+    <tr>
+      <th colspan="10" style="background:var(--header-bg);padding:4px 14px;font-size:11px;border-bottom:none;"></th>
+      <th colspan="1" style="background:var(--header-bg);border-right:3px solid var(--accent);padding:4px 14px;font-size:11px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;border-bottom:none;">Report</th>
+      <th colspan="8" style="background:var(--analysis-bg);padding:4px 14px;font-size:11px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;text-align:center;border-bottom:none;">Analysis</th>
+    </tr>
+    <tr>
+      <th style="text-align:center;background:var(--header-bg);"></th>
       <th style="background:var(--header-bg);">Product Model</th>
       <th style="background:var(--header-bg);">Customer</th>
       <th style="background:var(--header-bg);">Publication</th>
+      <th style="background:var(--header-bg);">Publication Count</th>
       <th style="background:var(--header-bg);">Purpose</th>
       <th style="background:var(--header-bg);">Progress</th>
       <th style="background:var(--header-bg);">Target Date</th>
       <th style="background:var(--header-bg);">Release Date</th>
       <th style="background:var(--header-bg);padding:0;overflow:hidden;border:none;"></th>
-      <th style="background:var(--header-bg);border-right:3px solid var(--accent);"></th>
+      <th style="background:var(--header-bg);border-right:3px solid var(--accent);">Report</th>
       <th style="background:var(--analysis-bg);">Resource</th>
       <th style="background:var(--analysis-bg);">BU</th>
-      <th style="background:var(--analysis-bg);">Pub. Type</th>
+      <th style="background:var(--analysis-bg);">Status</th>
+      <th style="background:var(--analysis-bg);">Project Type</th>
+      <th style="background:var(--analysis-bg);">Progress (%)</th>
       <th style="background:var(--analysis-bg);">Start Date</th>
-      <th style="background:var(--analysis-bg);">Lead Time</th>
+      <th style="background:var(--analysis-bg);">Lead Time (Week)</th>
+      <th style="background:var(--analysis-bg);">Publication Type</th>
     </tr>
   </thead>`;
 
   const opAddRowTr = `<tr class="add-row-tr"><td colspan="15"><button class="btn-add-row" onclick="addOpInlineRow()" title="새 행 추가">＋</button></td></tr>`;
-  const rowsHtml = (opProjects.length
-    ? opProjects.map(_makeOpRow).join('')
+  const opActiveList = opProjects.filter(p =>
+    !['M','Q','Y'].some(t => (p.boardTypes||[]).includes(t)) &&
+    matchesOpStatusPage(p)
+  );
+  const rowsHtml = (opActiveList.length
+    ? opActiveList.map(_makeOpRow).join('')
     : `<tr class="empty-row"><td colspan="15">등록된 항목이 없습니다. 아래 ＋ 버튼으로 추가하세요.</td></tr>`) + opAddRowTr;
 
   const deletedHtml = opDeletedProjects.length ? `
@@ -8430,7 +9139,7 @@ function showOpTaskPage() {
       <div id="opDeletedListBody" style="display:${_opDeletedOpen?'':'none'};">
         <div class="table-wrap">
           <table class="project-table" id="opDeletedTable">
-            ${colgroup}${thead}
+            ${colgroupPlain}${theadDeleted}
             <tbody id="opDeletedTbody">${opDeletedProjects.map(_makeOpDeletedRow).join('')}</tbody>
           </table>
         </div>
@@ -8450,6 +9159,14 @@ function showOpTaskPage() {
 
   _renderOpResourceFilter();
   if (_opResourceFilter.size > 0) filterOpResource('__keep__');
+
+  const opChkAll = document.getElementById('opChkAll');
+  if (opChkAll) {
+    const allSel = opActiveList.length ? opActiveList.every(p => p.selected !== false) : true;
+    const noneSel = opActiveList.every(p => p.selected === false);
+    opChkAll.checked = allSel;
+    opChkAll.indeterminate = !allSel && !noneSel;
+  }
 
   // drag-drop reorder for active rows
   initRowDrag('opProjectTbody', (srcId, tgtId) => {
@@ -8475,7 +9192,9 @@ function showOpTaskPage() {
     });
   }
 
+  window._loadOpColWidths && window._loadOpColWidths();
   updateOpStickyOffsets();
+  renderOpBoardSections();
 }
 
 // Operational Task 표는 리사이즈가 없는 min-width 컬럼이라, 실제 렌더된 헤더 셀 너비를
