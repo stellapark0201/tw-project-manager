@@ -503,8 +503,27 @@
     font-size: 12px; font-weight: 600; color: var(--text-secondary);
     margin: 0 0 12px; letter-spacing: 0.3px; text-transform: uppercase;
   }
+  /* Product View/Publication View — By BU 등 상단 열 제목보다 한 단계 옅은 하위 제목 */
+  .cp-dash-section-title {
+    font-size: 13px; font-weight: 500; color: var(--text-muted);
+    margin: 0 0 10px; letter-spacing: 0.2px;
+  }
+  /* By BU / By Publication Type / By Purpose — 파이 열 맨 위 대표 제목, 각 열 가운데 정렬 + 굵게 */
+  .cp-dash-col-title {
+    font-size: 13px; font-weight: 700; color: var(--text-primary);
+    margin: 0 0 12px; letter-spacing: 0.3px; text-transform: uppercase;
+    text-align: center;
+  }
+  .cp-dash-outer-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 20px 24px;
+  }
+  /* flex:1(폭 균등분할, 전체 카드 너비만큼 벌어짐) 대신 고정 폭 사용 — 열끼리 세로 정렬은 유지하면서,
+     필요 이상으로 벌어지는 좌우 여백은 줄임. 세로로 쌓이는 내용(제목/파이/범례)은 모두 가운데 정렬 */
+  .cp-dash-subchart { flex: 0 1 280px; min-width: 160px; display: flex; flex-direction: column; align-items: center; }
   .cp-dash-chart-inner { display: flex; flex-direction: column; align-items: center; gap: 14px; }
-  .cp-dash-legend { display: flex; flex-direction: column; gap: 6px; align-self: stretch; }
+  /* .cp-dash-subchart의 flex 아이템이라 내용 너비만큼만 차지하며 가운데 정렬됨 → 라벨/숫자는 붙어 보임 */
+  .cp-dash-legend { display: flex; flex-direction: column; gap: 6px; margin-top: 12px; }
   .cp-dash-legend-row {
     display: flex; align-items: center; gap: 7px;
     font-size: 12px; color: var(--text-secondary); white-space: nowrap;
@@ -1432,11 +1451,20 @@
     </div>
   </div>
 
-  <!-- Dashboard 페이지 2: Delivery Acceleration -->
+  <!-- Dashboard 페이지 2: Delivery Acceleration (하단에 Completed Dashboard를 이어서 표시) -->
   <div id="dbPage1" style="display:none;">
     <div class="db-card">
       <div class="db-card-title">월별 Completed 추이 — IBU / RBU / OBU</div>
       <div id="db-delivery-chart"></div>
+    </div>
+
+    <!-- Completed Dashboard (Completed Projects에서 이동, Delivery Acceleration 하단에 연결) -->
+    <div class="db-card" style="margin-top:24px;">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap;">
+        <div class="db-card-title" id="cdbTitle" style="margin-bottom:0;">Completed Dashboard — Report Target Analysis</div>
+        <div class="page-nav-dots" id="cdbNavDots"></div>
+      </div>
+      <div id="db-completed-dashboard"></div>
     </div>
   </div>
 
@@ -1450,17 +1478,6 @@
 
   <!-- Dashboard 페이지 4: 준비 중 (빈 페이지) -->
   <div id="dbPage3" style="display:none;"><p style="color:var(--text-muted);font-size:15px;padding:60px 0;text-align:center;">준비 중입니다.</p></div>
-
-  <!-- Dashboard 페이지 5: Completed Dashboard (Completed Projects에서 이동) -->
-  <div id="dbPage4" style="display:none;">
-    <div class="db-card">
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;flex-wrap:wrap;">
-        <div class="db-card-title" id="cdbTitle" style="margin-bottom:0;">Completed Dashboard — Report Target Analysis</div>
-        <div class="page-nav-dots" id="cdbNavDots"></div>
-      </div>
-      <div id="db-completed-dashboard"></div>
-    </div>
-  </div>
 </div>
 
 <!-- Record Page -->
@@ -2972,10 +2989,11 @@ function matchesOpStatusPage(p) {
   return currentOpStatusPage === STATUS_PAGE_COUNT + 1 || (p.pageId || 1) === currentOpStatusPage;
 }
 let currentFocusPage = 3; // 0=IBU, 1=RBU, 2=OBU, 3=Total
-const DB_PAGE_COUNT = 5;
-// 화면에 표시되는 순서(0~4) → 실제 컨텐츠 div id. Resource Dashboard 다음, Completed Dashboard를 맨 마지막에 배치.
-const DB_PAGE_ORDER = ['dbPage1', 'dbPage2', 'dbPage3', 'dbPage0', 'dbPage4'];
-let currentDbPage = 0; // 0=Delivery Acceleration, 1=In Active, 2=준비 중, 3=Resource Dashboard, 4=Completed Dashboard
+const DB_PAGE_COUNT = 4;
+// 화면에 표시되는 순서(0~3) → 실제 컨텐츠 div id. Completed Dashboard는 별도 페이지가 아니라 dbPage1(Delivery Acceleration) 하단에 붙어서 표시됨.
+// Dashboard 4(준비 중)와 Resource Dashboard를 맨 뒤로 배치.
+const DB_PAGE_ORDER = ['dbPage1', 'dbPage2', 'dbPage3', 'dbPage0'];
+let currentDbPage = 0; // 0=Delivery Acceleration(+Completed Dashboard), 1=In Active, 2=준비 중, 3=Resource Dashboard
 /* ── Dashboard 전체 페이지 공통 날짜 필터 (Release Date 기준) ── */
 const DB_DATE_RANGE_KEY = 'tw_pm_db_date_range';
 const DB_DATE_RANGE_DEFAULT = { from: '', to: '', all: true }; // 기본값: 전체 기간
@@ -5325,6 +5343,7 @@ function toggleNewBadge(event, id) {
   const { p, isOp } = findAnyProject(id);
   if (!p) return;
   p.isNew = !p.isNew;
+  p.updatedAt = new Date().toISOString();
   if (isOp) saveOpProjects(); else saveProjects();
   // 해당 셀만 즉시 업데이트
   const td = event.currentTarget;
@@ -5904,15 +5923,13 @@ function buildPptPreviewDashboardHTML(dbPage) {
   }
   if (pageId === 'dbPage1') {
     const inner = document.getElementById('db-delivery-chart')?.innerHTML;
-    return inner ? wrap('Delivery Acceleration', inner) : null;
+    const cdbInner = document.getElementById('db-completed-dashboard')?.innerHTML;
+    const parts = [inner, cdbInner].filter(Boolean);
+    return parts.length ? wrap('Delivery Acceleration', parts.join('<div style="height:24px;"></div>')) : null;
   }
   if (pageId === 'dbPage2') {
     const inner = document.getElementById('db-inactive-chart')?.innerHTML;
     return inner ? wrap('In Active', inner) : null;
-  }
-  if (pageId === 'dbPage4') {
-    const inner = document.getElementById('db-completed-dashboard')?.innerHTML;
-    return inner ? wrap('Completed Dashboard', inner) : null;
   }
   return null;
 }
@@ -6131,6 +6148,112 @@ function addInActiveChartPptSlide(pres) {
   return slide;
 }
 
+// Completed Dashboard(Delivery Acceleration 페이지 하단에 병합된 부분)를 네이티브 PPTX 차트로 내보냄 —
+// 스크린샷이 아니라 addChart/addText로 만든 실제 편집 가능한 파이/막대 차트.
+function addPieSlideRow(pres, title, groups) {
+  // groups: [{ label, data, legendData }] 최대 3개 — 각 열에 제목 + 파이 차트 + 화면과 동일한 커스텀 범례(라벨/%/값 /보조값)
+  // PowerPoint 기본 범례는 라벨만 표시되고 화면의 "값 /보조값" 쌍은 못 담아서, 범례는 addText로 직접 그려서 그대로 옮김.
+  const slide = pres.addSlide();
+  pptSlideHeader(pres, slide, title);
+  const n = groups.length;
+  const CHART_W = 3.4, GAP = 0.35;
+  const startX = (13.33 - (CHART_W * n + GAP * (n - 1))) / 2;
+  groups.forEach((g, i) => {
+    const x = startX + i * (CHART_W + GAP);
+    slide.addText(g.label, { x, y:1.05, w:CHART_W, h:0.35, fontSize:14, bold:true, align:'center', color:'1F2937', fontFace:'Arial' });
+    if (!g.data.length) {
+      slide.addText('데이터 없음', { x, y:2.6, w:CHART_W, h:0.4, fontSize:14, align:'center', color:'9CA3AF', fontFace:'Arial' });
+      return;
+    }
+    slide.addChart(pres.ChartType.pie, [{ name: g.label, labels: g.data.map(d => d.label), values: g.data.map(d => d.value) }], {
+      x, y:1.45, w:CHART_W, h:CHART_W,
+      chartColors: g.data.map(d => d.color.replace('#', '')),
+      showLegend:false,
+      showPercent:true, dataLabelColor:'FFFFFF', dataLabelFontSize:14, dataLabelFontFace:'Arial', dataLabelFontBold:true,
+      dataLabelPosition:'inEnd',
+    });
+    // 커스텀 범례 — 화면(makePieLegend)과 동일하게 라벨 + % + 값 /보조값을 한 줄씩
+    const total = g.data.reduce((s, d) => s + d.value, 0);
+    const legendRows = g.legendData || g.data;
+    const legendY = 1.45 + CHART_W + 0.15;
+    legendRows.forEach((d, ri) => {
+      const pct = total ? Math.round((d.value / total) * 100) : 0;
+      const runs = [
+        { text: '● ', options: { color: d.color.replace('#', ''), fontSize: 14 } },
+        { text: `${d.label}  `, options: { color: '475569', fontSize: 14 } },
+        { text: `${pct}%  `, options: { color: '9CA3AF', fontSize: 14 } },
+        { text: `${d.value}`, options: { color: '0F62FE', fontSize: 14, bold: true } },
+      ];
+      if (d.pub != null) runs.push({ text: ` /${d.pub}`, options: { color: '9CA3AF', fontSize: 14 } });
+      slide.addText(runs, { x, y: legendY + ri * 0.32, w: CHART_W, h: 0.3, fontFace: 'Arial', align: 'left', valign: 'middle' });
+    });
+  });
+  return slide;
+}
+
+function addBarSlideRow(pres, title, charts) {
+  // charts: [{ label, data, width }] 최대 2개 — 각각 제목 + 막대 차트(카테고리별 값, 단일 시리즈)
+  const slide = pres.addSlide();
+  pptSlideHeader(pres, slide, title);
+  const n = charts.length;
+  const GAP = 0.4;
+  const CHART_W = (13.33 - 1.0 - GAP * (n - 1)) / n;
+  const CHART_H = 4.6;
+  charts.forEach((c, i) => {
+    const x = 0.5 + i * (CHART_W + GAP);
+    slide.addText(c.label, { x, y:1.1, w:CHART_W, h:0.35, fontSize:14, bold:true, align:'center', color:'1F2937', fontFace:'Arial' });
+    if (!c.data.length) {
+      slide.addText('데이터 없음', { x, y:2.6, w:CHART_W, h:0.4, fontSize:14, align:'center', color:'9CA3AF', fontFace:'Arial' });
+      return;
+    }
+    slide.addChart(pres.ChartType.bar, [{ name: c.label, labels: c.data.map(d => d.label), values: c.data.map(d => d.value) }], {
+      x, y:1.55, w:CHART_W, h:CHART_H,
+      barDir:'col',
+      chartColors: c.data.map(d => d.color.replace('#', '')),
+      showLegend:false,
+      catAxisLabelFontSize:14, catAxisLabelColor:'6B7280',
+      valAxisHidden:false, valAxisLabelFontSize:14, valAxisLabelColor:'94A3B8',
+      showValue:true, dataLabelPosition:'outEnd', dataLabelColor:'475569', dataLabelFontSize:14, dataLabelFontFace:'Arial', dataLabelFontBold:true,
+      valGridLine: { color:'E2E8F0', size:0.5 },
+      catGridLine: { style:'none' },
+    });
+  });
+  return slide;
+}
+
+function addCompletedDashboardPptSlides(pres, list) {
+  const d = computeCompletedDashboardData(list);
+
+  // 요약 카드(Product/Publication Total)는 첫 파이 슬라이드 제목 아래 텍스트로 표시
+  const summarySlide = addPieSlideRow(pres, 'Completed Dashboard — Product View', [
+    { label: 'By BU', data: d.buData, legendData: d.buLegendData },
+    { label: 'By Publication Type', data: d.ptData },
+    { label: 'By Purpose', data: d.purData, legendData: d.purLegendData },
+  ]);
+  summarySlide.addText(
+    `Product Total  ${d.total}      Publication Total  ${d.pubTotal}`,
+    { x:0.5, y:0.95, w:12.3, h:0.3, fontSize:14, bold:true, align:'right', color:'0F62FE', fontFace:'Arial' }
+  );
+
+  // Publication View는 별도 슬라이드라 화면처럼 범례를 공유할 수 없으므로, 이 파이 자신의 값(Publication Count 기준)으로
+  // 계산된 legendData(buLegendDataByPub/purLegendDataByPub)를 써서 파이와 범례의 값/비율이 항상 일치하게 함
+  addPieSlideRow(pres, 'Completed Dashboard — Publication View', [
+    { label: 'By BU', data: d.buDataByPub, legendData: d.buLegendDataByPub },
+    { label: 'By Publication Type', data: d.ptDataByPub },
+    { label: 'By Purpose', data: d.purDataByPub, legendData: d.purLegendDataByPub },
+  ]);
+
+  addBarSlideRow(pres, 'Completed Dashboard — Publication / Lead Time', [
+    { label: 'Publication Distribution (Top 12)', data: d.pubData },
+    { label: 'Lead Time Distribution', data: d.ltData },
+  ]);
+
+  addBarSlideRow(pres, 'Completed Dashboard — Monthly Trends', [
+    { label: 'Monthly Completed Count (by Release Date)', data: d.releaseData },
+    { label: 'Monthly NEW Count (Publication Type: NEW)', data: d.newData },
+  ]);
+}
+
 function addRecordPptSlides(pres) {
   const list = recordsForPpt();
   if (!list.length) { alert('PPTX에 포함하도록 체크된 캡처가 없습니다. Record 페이지에서 날짜별 체크박스를 확인해주세요.'); return false; }
@@ -6156,7 +6279,15 @@ function buildPptDeckForExport(pres) {
   if (ctx.kind === 'dashboard') {
     const pageId = DB_PAGE_ORDER[ctx.dbPage];
     if (pageId === 'dbPage0') addResourceDashboardPptSlide(pres);
-    else if (pageId === 'dbPage1') addDeliveryChartPptSlide(pres);
+    else if (pageId === 'dbPage1') {
+      addDeliveryChartPptSlide(pres);
+      // Delivery Acceleration 화면 하단에 병합된 Completed Dashboard도 화면에 보이는 BU/기간 필터 그대로 내보냄
+      const cdbList = projects.filter(p => {
+        const bt = p.boardTypes || [];
+        return (bt.includes('M') || bt.includes('Q') || bt.includes('Y')) && matchesCdbPage(p) && matchesDbDateRange(p);
+      });
+      addCompletedDashboardPptSlides(pres, cdbList);
+    }
     else if (pageId === 'dbPage2') addInActiveChartPptSlide(pres);
     else { alert('이 Dashboard 페이지는 아직 준비 중이라 내보낼 내용이 없습니다.'); return false; }
     return true;
@@ -6374,8 +6505,9 @@ function _isLightColor(hex) {
   return (0.299 * r + 0.587 * g + 0.114 * b) > 165;
 }
 
-// legendData를 따로 넘기면 파이 조각은 data(원래 규칙: 값 큰 순) 순서로 그리고, 범례 텍스트만 legendData 순서로 표시
-function makePieChart(data, size = 180, legendData) {
+// 파이 조각(SVG)만 그림 — <svg> 태그만 반환. 범례 없이 단독으로 쓸 때
+// (예: Completed Dashboard의 Product/Publication View처럼 범례를 공유하는 두 파이)
+function makePieSvg(data, size = 180) {
   const total = data.reduce((s, d) => s + d.value, 0);
   if (!total) return '<span style="color:var(--text-muted);font-size:12px;">데이터 없음</span>';
   const cx = size / 2, cy = size / 2, r = size / 2 - 4;
@@ -6398,6 +6530,14 @@ function makePieChart(data, size = 180, legendData) {
     }
     return `<path d="M${cx},${cy} L${x1.toFixed(2)},${y1.toFixed(2)} A${r},${r} 0 ${large},1 ${x2.toFixed(2)},${y2.toFixed(2)} Z" fill="${d.color}" stroke="var(--surface)" stroke-width="1.5"/>${pctLabel}`;
   }).join('');
+  return `<div style="display:flex;justify-content:center;"><svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">${slices}</svg></div>`;
+}
+
+// 범례만 따로 렌더링 — data의 value/total 기준 %와 함께, value/pub 쌍(있으면)을 표시
+// legendData를 따로 넘기면 순서만 legendData 기준으로 표시(값 자체는 data 기준으로 계산)
+function makePieLegend(data, legendData) {
+  const total = data.reduce((s, d) => s + d.value, 0);
+  if (!total) return '';
   const legend = (legendData || data).map(d => {
     const pct = Math.round((d.value / total) * 100);
     const valueHTML = d.pub != null
@@ -6405,10 +6545,16 @@ function makePieChart(data, size = 180, legendData) {
       : `<span style="display:inline-block;width:22px;text-align:right;"><b style="color:var(--accent);">${d.value}</b></span>`;
     return `<div class="cp-dash-legend-row"><div class="cp-dash-legend-dot" style="background:${d.color}"></div><span>${escapeHtml(d.label)}</span><span style="margin-left:auto;padding-left:10px;display:flex;align-items:center;"><span style="display:inline-block;width:32px;text-align:right;color:var(--text-muted);font-size:11px;">${pct}%</span>${valueHTML}</span></div>`;
   }).join('');
-  return `<div class="cp-dash-chart-inner">
-    <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">${slices}</svg>
-    <div class="cp-dash-legend">${legend}</div>
-  </div>`;
+  return `<div class="cp-dash-legend">${legend}</div>`;
+}
+
+// legendData를 따로 넘기면 파이 조각은 data(원래 규칙: 값 큰 순) 순서로 그리고, 범례 텍스트만 legendData 순서로 표시
+// (파이+범례를 한 세트로 같이 쓰고 싶을 때의 조합 헬퍼. Completed Dashboard의 Product/Publication View처럼
+//  범례를 공유하는 경우엔 makePieSvg/makePieLegend를 따로 호출한다.)
+function makePieChart(data, size = 180, legendData) {
+  const svg = makePieSvg(data, size);
+  if (!data.reduce((s, d) => s + d.value, 0)) return svg;
+  return `<div class="cp-dash-chart-inner">${svg}${makePieLegend(data, legendData)}</div>`;
 }
 
 function makeBarChart(data, { width = 320, height = 152, color = '#3b82f6', labelMaxChars = 6 } = {}) {
@@ -6459,6 +6605,20 @@ function _distMapWithPub(list, fn, label = '(기타)', colorFn) {
   });
 }
 
+// _distMapWithPub과 반대로, Publication Count 합계를 파이 조각 크기(value)로 쓰고
+// 상품/프로젝트 개수는 범례 보조 숫자(pub)로 표시 — "BU Distribution (by Publication Count)" 등에 사용
+function _distMapByPubCount(list, fn, label = '(기타)', colorFn) {
+  return _distMap(list, fn, label)
+    .map(([lbl, count], i) => {
+      const pubSum = list
+        .filter(p => ((fn(p) || '').trim() || label) === lbl)
+        .reduce((s, p) => s + (Number(p.publicationCount) || 0), 0);
+      const color = colorFn ? colorFn(lbl, i) : CHART_COLORS_NO_BU[i % CHART_COLORS_NO_BU.length];
+      return { label: lbl, value: pubSum, pub: count, color };
+    })
+    .sort((a, b) => b.value - a.value);
+}
+
 // Purpose 라벨에 Delivery 또는 Certification이라는 단어가 들어가면 항상 빨간색으로 표시
 const RED_PURPOSE_KEYWORDS = ['delivery', 'certification'];
 function isRedPurposeLabel(label) {
@@ -6491,16 +6651,18 @@ function reorderPurposeLegend(data, order) {
   return ordered;
 }
 
-function renderCompletedDashboard(list) {
+// Completed Dashboard(화면 렌더 + PPTX 내보내기)가 공유하는 데이터 집계 —
+// 여기서 계산만 하고 HTML/PPTX로 그리는 건 각각 renderCompletedDashboard / addCompletedDashboardPptSlides가 담당
+function computeCompletedDashboardData(list) {
   const total = list.length;
   const pubTotal = list.reduce((sum, p) => sum + (Number(p.publicationCount) || 0), 0);
 
   // BU / Publication Type / Purpose 모두 Product/Publication Count 쌍으로 표시
   // BU 분포는 In Active 차트와 동일한 IBU/RBU/OBU 고유 색상(짙은 색)을 그대로 사용
   const BU_COLOR_MAP = Object.fromEntries(DB_BU_GROUPS.map(([, buLabel, color]) => [buLabel, color]));
-  const buData = _distMapWithPub(list, p => p.bu, '(미지정)', (lbl, i) => BU_COLOR_MAP[lbl] || CHART_COLORS_NO_BU[i % CHART_COLORS_NO_BU.length]);
-  // 파이 조각은 원래 규칙(값 큰 순)대로, 범례 텍스트만 IBU → RBU → OBU 순서로 별도 표시
-  const buLegendData = reorderLegend(buData, ['IBU', 'RBU', 'OBU']);
+  // BU는 값 큰 순이 아니라 항상 IBU → RBU → OBU 고정 순서로 표시 (파이 조각·범례 모두 이 순서를 따름)
+  const buData = reorderLegend(_distMapWithPub(list, p => p.bu, '(미지정)', (lbl, i) => BU_COLOR_MAP[lbl] || CHART_COLORS_NO_BU[i % CHART_COLORS_NO_BU.length]), ['IBU', 'RBU', 'OBU']);
+  const buLegendData = buData;
   const PT_COLOR_MAP = { 'NEW': '#ef4444', 'Revision': '#f59e0b', 'Regular Release': '#d1d5db' };
   const ptData = _distMapWithPub(list, p => p.publicationType, '(미지정)', (lbl, i) => PT_COLOR_MAP[lbl] || CHART_COLORS_NO_BU[i % CHART_COLORS_NO_BU.length]);
   // 파이 조각은 원래 규칙(값 큰 순)대로, 범례 텍스트만 Delivery/Certification(빨간색)을 맨 앞으로 묶어 별도 표시
@@ -6510,6 +6672,19 @@ function renderCompletedDashboard(list) {
     isRedPurposeLabel(lbl) ? '#ef4444' : PURPOSE_FALLBACK_COLORS[i % PURPOSE_FALLBACK_COLORS.length]
   );
   const purLegendData = reorderPurposeLegend(purData, PURPOSE_LEGEND_ORDER);
+
+  // 위 3개와 동일한 분류(BU/Publication Type/Purpose)를, 이번엔 Publication Count 합계 기준으로 한 번 더
+  // (화면에서는 조각 크기만 다르고 범례는 위(Product 기준)와 같은 숫자라 공유해서 재사용하지만,
+  //  PPTX는 슬라이드가 분리돼 있어 각 파이가 자기 자신의 값/비율로 앞뒤 안 맞는 legend를 보여줄 수 없으므로
+  //  이 데이터 기준으로도 정렬된 legendData를 별도로 만들어둔다 — buLegendDataByPub/purLegendDataByPub)
+  // BU는 여기서도 항상 IBU → RBU → OBU 고정 순서
+  const buDataByPub = reorderLegend(_distMapByPubCount(list, p => p.bu, '(미지정)', (lbl, i) => BU_COLOR_MAP[lbl] || CHART_COLORS_NO_BU[i % CHART_COLORS_NO_BU.length]), ['IBU', 'RBU', 'OBU']);
+  const buLegendDataByPub = buDataByPub;
+  const ptDataByPub = _distMapByPubCount(list, p => p.publicationType, '(미지정)', (lbl, i) => PT_COLOR_MAP[lbl] || CHART_COLORS_NO_BU[i % CHART_COLORS_NO_BU.length]);
+  const purDataByPub = _distMapByPubCount(list, p => p.purpose, '(미지정)', (lbl, i) =>
+    isRedPurposeLabel(lbl) ? '#ef4444' : PURPOSE_FALLBACK_COLORS[i % PURPOSE_FALLBACK_COLORS.length]
+  );
+  const purLegendDataByPub = reorderPurposeLegend(purDataByPub, PURPOSE_LEGEND_ORDER);
 
   // Publication (top 12 bar) — Product/Publication Count 쌍
   const pubMap = {};
@@ -6560,25 +6735,47 @@ function renderCompletedDashboard(list) {
   });
   const ltData = Object.entries(ltBuckets).map(([label, d]) => ({ label, value: d.value, pub: d.pub, color: '#8b5cf6' }));
 
+  return { total, pubTotal, buData, buLegendData, ptData, purData, purLegendData, buDataByPub, buLegendDataByPub, ptDataByPub, purDataByPub, purLegendDataByPub, pubData, releaseData, newData, ltData };
+}
+
+function renderCompletedDashboard(list) {
+  const {
+    total, pubTotal,
+    buData, buLegendData, ptData, purData, purLegendData,
+    buDataByPub, buLegendDataByPub, ptDataByPub, purDataByPub, purLegendDataByPub,
+    pubData, releaseData, newData, ltData,
+  } = computeCompletedDashboardData(list);
   const noData = s => `<span style="color:var(--text-muted);font-size:12px;">${s}</span>`;
+  // 파이 + 그 파이 자신의 값 기준 범례를 한 칸에 같이 표시 (Product/Publication View 각각 자기 비율로)
+  const pieCell = (data, legendData, emptyMsg) => data.length
+    ? `${makePieSvg(data, 180)}${makePieLegend(data, legendData)}`
+    : noData(emptyMsg);
 
   return `<div class="cp-dash">
     <div class="cp-dash-cards">
-      <div class="cp-dash-card"><div class="cp-dash-card-val">${total}</div><div class="cp-dash-card-label">Product Total</div></div>
+      <div class="cp-dash-card"><div class="cp-dash-card-val">${total}</div><div class="cp-dash-card-label" style="color:var(--accent);">Product Total</div></div>
       <div class="cp-dash-card"><div class="cp-dash-card-val" style="color:var(--text-muted);">${pubTotal}</div><div class="cp-dash-card-label">Publication Total</div></div>
     </div>
-    <div class="cp-dash-charts">
-      <div class="cp-dash-chart-wrap">
-        <p class="cp-dash-chart-title">BU Distribution</p>
-        ${buData.length ? makePieChart(buData, 180, buLegendData) : noData('BU 데이터 없음')}
+    <div class="cp-dash-outer-card">
+      <!-- 열 제목(By BU/By Publication Type/By Purpose)은 맨 위에 한 번만 표시 -->
+      <div class="cp-dash-charts">
+        <div class="cp-dash-subchart"><p class="cp-dash-col-title">By BU</p></div>
+        <div class="cp-dash-subchart"><p class="cp-dash-col-title">By Publication Type</p></div>
+        <div class="cp-dash-subchart"><p class="cp-dash-col-title">By Purpose</p></div>
       </div>
-      <div class="cp-dash-chart-wrap">
-        <p class="cp-dash-chart-title">Publication Type Distribution</p>
-        ${ptData.length ? makePieChart(ptData) : noData('데이터 없음')}
+      <!-- Product View: 파이 비율은 상품(프로젝트) 개수 기준 -->
+      <p class="cp-dash-section-title" style="color:var(--accent);">Product View</p>
+      <div class="cp-dash-charts">
+        <div class="cp-dash-subchart">${pieCell(buData, buLegendData, 'BU 데이터 없음')}</div>
+        <div class="cp-dash-subchart">${pieCell(ptData, null, '데이터 없음')}</div>
+        <div class="cp-dash-subchart">${pieCell(purData, purLegendData, '데이터 없음')}</div>
       </div>
-      <div class="cp-dash-chart-wrap">
-        <p class="cp-dash-chart-title">Purpose Distribution</p>
-        ${purData.length ? makePieChart(purData, 180, purLegendData) : noData('데이터 없음')}
+      <!-- Publication View: 파이 비율은 Publication Count 합계 기준 -->
+      <p class="cp-dash-section-title" style="margin-top:20px;">Publication View</p>
+      <div class="cp-dash-charts">
+        <div class="cp-dash-subchart">${pieCell(buDataByPub, buLegendDataByPub, 'BU 데이터 없음')}</div>
+        <div class="cp-dash-subchart">${pieCell(ptDataByPub, null, '데이터 없음')}</div>
+        <div class="cp-dash-subchart">${pieCell(purDataByPub, purLegendDataByPub, '데이터 없음')}</div>
       </div>
     </div>
     <div class="cp-dash-charts" style="margin-top:16px;">
@@ -9221,16 +9418,16 @@ function showDashboardPage() {
     const el = document.getElementById(DB_PAGE_ORDER[i]);
     if (el) el.style.display = i === currentDbPage ? '' : 'none';
   }
-  const DB_PAGE_TITLES = ['Delivery Acceleration', 'In Active', 'Dashboard 4', 'Resource Dashboard', 'Completed Dashboard'];
+  const DB_PAGE_TITLES = ['Delivery Acceleration', 'In Active', 'Dashboard 4', 'Resource Dashboard'];
   const dbLabel = document.getElementById('dbPageLabel');
   const dbSubtitle = document.getElementById('dbPageSubtitle');
   dbLabel.textContent = DB_PAGE_TITLES[currentDbPage] || `Dashboard ${currentDbPage + 1}`;
   dbSubtitle.style.display = curId === 'dbPage0' ? '' : 'none';
 
-  if (curId === 'dbPage1') { renderDeliveryChart(); return; }
+  // Completed Dashboard는 이제 별도 페이지가 아니라 Delivery Acceleration(dbPage1) 하단에 항상 같이 표시됨
+  if (curId === 'dbPage1') { renderDeliveryChart(); renderCompletedDbPage(); return; }
   if (curId === 'dbPage2') { renderInActiveChart(); return; }
-  if (curId === 'dbPage4') { renderCompletedDbPage(); return; }
-  if (curId !== 'dbPage0') return; // 3페이지(dbPage3)는 아직 준비 중 (데이터 렌더링 불필요)
+  if (curId !== 'dbPage0') return; // dbPage3는 아직 준비 중 (데이터 렌더링 불필요)
 
   const all = projects.filter(matchesDbDateRange);
   const active = all.filter(p => overallPercent(p) < 100);
