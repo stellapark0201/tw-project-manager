@@ -289,7 +289,8 @@
     padding: 5px 10px; font-size: 12px;
     border: 1px solid #ffd7d9;
   }
-  .btn-danger:hover { background: #ffd7d9; }
+  .btn-danger:hover:not(:disabled) { background: #ffd7d9; }
+  .btn-danger:disabled { opacity:0.4; cursor:not-allowed; }
   .btn-ppt {
     background: var(--accent); color: #fff;
     padding: 7px 14px; font-size: 12px; font-weight: 400;
@@ -321,6 +322,26 @@
     padding:1px 5px; line-height:15px; flex-shrink:0;
     user-select:none; pointer-events:none;
   }
+  .badge-hold {
+    display:inline-block; font-size:9px; font-weight:700; letter-spacing:.5px;
+    color:#fff; background:#9ca3af; border-radius:3px;
+    padding:1px 5px; line-height:15px; flex-shrink:0;
+    user-select:none; pointer-events:none; white-space:nowrap;
+  }
+  /* NEW가 ON HOLD와 함께 표시될 때는 배경 없는 빨간 텍스트로 축소 */
+  .badge-new-text {
+    display:inline-block; font-size:9px; font-weight:700; letter-spacing:.5px;
+    color:#ef4444; flex-shrink:0; user-select:none; pointer-events:none; white-space:nowrap;
+  }
+  .badge-deprioritized {
+    display:inline-block; font-size:9px; font-weight:700; letter-spacing:.5px;
+    color:#fff; background:#f59e0b; border-radius:3px;
+    padding:1px 5px; line-height:15px; flex-shrink:0;
+    user-select:none; pointer-events:none; white-space:nowrap;
+  }
+  .name-badges { display:inline-flex; align-items:center; gap:4px; }
+  /* ON HOLD: 체크박스 자동 해제와 함께 row 텍스트를 흐리게 표시 */
+  tr.row-dimmed .cell-input { color: var(--text-muted); }
   .customer-wrap { display:flex; align-items:center; gap:0; flex-shrink:0; }
   .customer-paren { font-size:14px; color:var(--text-secondary); line-height:1; pointer-events:none; }
   .product-name {
@@ -576,7 +597,7 @@
     margin:0; font-size:14px; font-weight: 400; color: var(--text-muted);
   }
   .deleted-clear-btn {
-    margin-left:auto; background: var(--red-light); color: var(--red); border:1px solid #ffd7d9;
+    background: var(--red-light); color: var(--red); border:1px solid #ffd7d9;
     font-size:13px; padding:4px 10px; border-radius:0; cursor:pointer; font-family:inherit;
   }
   .deleted-clear-btn:hover { background:#ffd7d9; }
@@ -715,6 +736,9 @@
   .project-table tbody tr.row-dragging { opacity: 0.35; background: var(--accent-light) !important; }
   .project-table tbody tr.row-drag-over td { background: var(--accent-light) !important; }
   .project-table tbody tr.row-drag-over { outline: 2px solid var(--accent); outline-offset: -2px; }
+  /* 드롭 위치 표시선: 대상 행의 위(앞) / 아래(뒤) */
+  .project-table tbody tr.row-drop-before td { box-shadow: inset 0 3px 0 0 var(--accent); }
+  .project-table tbody tr.row-drop-after td  { box-shadow: inset 0 -3px 0 0 var(--accent); }
   .td-actions { white-space:nowrap; padding-left:6px !important; padding-right:6px !important; }
   .td-actions-inner { display:flex; flex-direction:column; gap:4px; align-items:flex-start; }
   .td-actions-btns { display:flex; flex-direction:row; flex-wrap:wrap; gap:3px; align-items:center; }
@@ -1284,6 +1308,12 @@
   <div id="deletedSection" class="deleted-section" style="display:none;opacity:0.72;filter:grayscale(0.3);">
     <div class="deleted-section-head" onclick="toggleDeletedList()">
       <h3 id="deletedSectionTitle" style="font-size:18px;font-weight:600;color:var(--accent);letter-spacing:-0.2px;margin:0;">Deleted Projects</h3>
+      <button id="deletedBulkDeleteBtn" onclick="deleteSelectedDeleted(event)" title="선택 영구 삭제" disabled
+        style="margin-left:auto;background:none;border:none;cursor:pointer;color:#ef4444;padding:4px 6px;border-radius:6px;display:flex;align-items:center;gap:3px;transition:all 0.13s;opacity:0.35;"
+        onmouseover="if(!this.disabled)this.style.background='var(--red-light)'" onmouseout="this.style.background='none'">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+        <span id="deletedBulkDeleteCount" style="font-size:12px;font-weight:600;">0</span>
+      </button>
       <button class="deleted-clear-btn" onclick="clearDeletedList(event)">전체 영구 삭제</button>
     </div>
     <div id="deletedListBody">
@@ -1304,7 +1334,14 @@
               <th colspan="8" style="background:var(--analysis-bg);padding:4px 14px;font-size:11px;font-weight:600;letter-spacing:1.2px;text-transform:uppercase;text-align:center;border-bottom:none;">Analysis</th>
             </tr>
             <tr>
-              <th style="text-align:center;background:var(--header-bg);"></th>
+              <th style="text-align:center;background:var(--header-bg);">
+                <div style="display:flex;align-items:center;justify-content:center;gap:4px;">
+                  <span class="drag-handle" style="visibility:hidden;pointer-events:none;"></span>
+                  <input type="checkbox" id="deletedSelectAllCb" onchange="toggleDeletedSelectAll(this.checked)" title="전체 선택" style="width:15px;height:15px;accent-color:#3b82f6;cursor:pointer;" />
+                  <span style="display:inline-block;width:24px;flex-shrink:0;visibility:hidden;"></span>
+                  <span style="display:inline-block;width:26px;flex-shrink:0;visibility:hidden;"></span>
+                </div>
+              </th>
               <th style="background:var(--header-bg);">Product</th>
               <th style="background:var(--header-bg);">Customer</th>
               <th style="background:var(--header-bg);">Publication</th>
@@ -1702,7 +1739,7 @@
   <div class="del-modal">
     <div class="del-modal-title">?? 프로젝트 삭제</div>
     <div class="del-modal-body">
-      아래 프로젝트를 삭제하시겠습니까?<br>
+      <span id="delModalIntro">아래 프로젝트를 삭제하시겠습니까?</span><br>
       <span class="del-modal-name" id="delModalName"></span><br>
       <span style="font-size:14px;color:#9ca3af;">삭제된 항목은 하단 삭제 목록에서 확인할 수 있습니다.</span>
     </div>
@@ -2976,19 +3013,66 @@ try { opProjects        = JSON.parse(localStorage.getItem(OP_PROJECTS_KEY)) || [
 try { opDeletedProjects = JSON.parse(localStorage.getItem(OP_DELETED_KEY))  || []; } catch {}
 let _opResourceFilter = new Set();
 
-const STATUS_PAGE_COUNT = 3;
-let currentStatusPage = 1; // 1=IBU, 2=RBU, 3=OBU, 4=Total
-let currentClPage = 0; // 0=IBU, 1=RBU, 2=OBU, 3=Total
+// ── 동적 BU 페이지 시스템 ─────────────────────────────────────────────
+// BU(사업부)마다 상단 페이지가 하나씩 생긴다. 기본 3개(IBU/RBU/OBU)는 항상 있고,
+// BU 컬럼에 새 값(예: TW)이 들어오면 그 뒤에(알파벳순), Total 앞에 페이지가 추가된다.
+// 팀원이 데이터를 공유하므로, 페이지 소속은 pageId(숫자 위치)가 아니라 BU '이름'으로 매칭한다.
+const BASE_BU_NAMES = ['IBU', 'RBU', 'OBU'];
+let BU_PAGE_NAMES = [...BASE_BU_NAMES];            // 예: ['IBU','RBU','OBU','TW']
+let STATUS_PAGE_COUNT = BU_PAGE_NAMES.length;      // BU 페이지 개수(Total 제외) — 동적
+let STATUS_PAGE_FULL_NAMES = [...BU_PAGE_NAMES, 'Total'];
+let STATUS_PAGE_LABELS = _computeBuLabels(STATUS_PAGE_FULL_NAMES);
 
-// Active Projects 페이지가 Total(전체) 뷰인지 여부 — Total일 땐 pageId(BU) 구분 없이 전부 표시
+// 라벨: BU명 첫 글자(IBU→I). 첫 글자가 겹치면(예: TW vs Total) 그 항목들만 전체 텍스트로.
+function _computeBuLabels(names) {
+  const firsts = names.map(n => (n[0] || '').toUpperCase());
+  return names.map((n, i) => firsts.filter(x => x === firsts[i]).length > 1 ? n : firsts[i]);
+}
+// 프로젝트의 BU명 (bu 값 우선, 비어 있으면 기존 pageId로 추론 — 구 데이터 호환)
+function projectBuName(p) {
+  const b = ((p && p.bu) || '').trim().toUpperCase();
+  if (b) return b;
+  return BASE_BU_NAMES[(((p && p.pageId) || 1) - 1)] || 'IBU';
+}
+// pageId(구 데이터 호환용) → BU명
+function buNameByPageId(pageId) { return BU_PAGE_NAMES[(pageId || 1) - 1] || BU_PAGE_NAMES[0]; }
+// BU명 → pageId(현재 정렬 기준 위치). 매칭엔 쓰지 않고 레거시 차트/저장 호환용.
+function pageIdForBu(bu) {
+  const idx = BU_PAGE_NAMES.indexOf((bu || '').trim().toUpperCase());
+  return idx >= 0 ? idx + 1 : 1;
+}
+// 주어진 목록(각 메뉴가 실제 보여주는 데이터)에서만 BU를 스캔해 페이지 목록/개수/라벨을 갱신.
+// list를 생략하면 In Active(projects) 기준. 기본 IBU/RBU/OBU는 데이터가 없어도 항상 표시,
+// 추가 BU(예: TW)는 그 메뉴에 실제 데이터가 있을 때만 페이지가 생긴다.
+function recomputeBuPages(list) {
+  const extras = new Set();
+  const scan = (arr) => (arr || []).forEach(p => {
+    const b = ((p && p.bu) || '').trim().toUpperCase();
+    if (b && !BASE_BU_NAMES.includes(b)) extras.add(b);
+  });
+  if (list) scan(list);
+  else { try { scan(projects); } catch {} }
+  BU_PAGE_NAMES = [...BASE_BU_NAMES, ...[...extras].sort((a, b) => a.localeCompare(b))];
+  STATUS_PAGE_COUNT = BU_PAGE_NAMES.length;
+  STATUS_PAGE_FULL_NAMES = [...BU_PAGE_NAMES, 'Total'];
+  STATUS_PAGE_LABELS = _computeBuLabels(STATUS_PAGE_FULL_NAMES);
+}
+const _isBoardRow = p => ['M', 'Q', 'Y'].some(t => ((p && p.boardTypes) || []).includes(t));
+
+let currentStatusPage = 1; // 1..N=각 BU, N+1=Total
+let currentClPage = 0;     // 0..N-1=각 BU, N=Total (0-base)
+
+// Total 뷰면 전체, 아니면 현재 페이지의 BU명과 일치하는 프로젝트만
 function matchesStatusPage(p) {
-  return currentStatusPage === STATUS_PAGE_COUNT + 1 || (p.pageId || 1) === currentStatusPage;
+  if (currentStatusPage === STATUS_PAGE_COUNT + 1) return true;
+  return projectBuName(p) === BU_PAGE_NAMES[currentStatusPage - 1];
 }
-let currentOpStatusPage = 1; // 1=IBU, 2=RBU, 3=OBU, 4=Total — Operational Task 표 전용, In Active와 독립적
+let currentOpStatusPage = 1; // Operational Task 표 전용, In Active와 독립적
 function matchesOpStatusPage(p) {
-  return currentOpStatusPage === STATUS_PAGE_COUNT + 1 || (p.pageId || 1) === currentOpStatusPage;
+  if (currentOpStatusPage === STATUS_PAGE_COUNT + 1) return true;
+  return projectBuName(p) === BU_PAGE_NAMES[currentOpStatusPage - 1];
 }
-let currentFocusPage = 3; // 0=IBU, 1=RBU, 2=OBU, 3=Total
+let currentFocusPage = 999; // 0..N-1=각 BU, N=Total (기본값 Total; 렌더 시 클램프)
 const DB_PAGE_COUNT = 4;
 // 화면에 표시되는 순서(0~3) → 실제 컨텐츠 div id. Completed Dashboard는 별도 페이지가 아니라 dbPage1(Delivery Acceleration) 하단에 붙어서 표시됨.
 // Dashboard 4(준비 중)와 Resource Dashboard를 맨 뒤로 배치.
@@ -3064,6 +3148,7 @@ function loadProjects() {
 }
 function saveProjects(action, detail, projectId, snapshot) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(projects));
+  recomputeBuPages();
   recordModified();
   if (action) addHistory(action, detail || '', projectId, snapshot);
   if (adminMode) {
@@ -3107,19 +3192,43 @@ let deletedProjects = [];
 try { deletedProjects = JSON.parse(localStorage.getItem(DELETED_KEY)) || []; } catch {}
 
 let _pendingDeleteId = null;
+let _pendingDeleteIds = null; // 2개 이상 체크된 상태에서 row 삭제 아이콘을 눌렀을 때 일괄 삭제 대상
 
 function confirmDelete(id) {
-  const { p } = findAnyProject(id);
+  const { p, isOp } = findAnyProject(id);
   if (!p) return;
+  // 체크박스(=PPTX 내보내기 선택)로 2개 이상 선택된 상태에서, 그중 한 row의 삭제 아이콘을 누르면
+  // 그 row 하나가 아니라 선택된 전체를 일괄 삭제 확인으로 전환한다.
+  if (!isOp && p.selected !== false) {
+    const selectedOnPage = projects.filter(q => matchesStatusPage(q) && q.selected !== false);
+    if (selectedOnPage.length >= 2) {
+      _pendingDeleteId = null;
+      _pendingDeleteIds = selectedOnPage.map(q => q.id);
+      document.getElementById('delModalIntro').textContent = '선택한 프로젝트를 모두 삭제하시겠습니까?';
+      document.getElementById('delModalName').textContent = `${selectedOnPage.length}개 항목`;
+      document.getElementById('delModal').classList.add('show');
+      return;
+    }
+  }
+  _pendingDeleteIds = null;
   _pendingDeleteId = id;
+  document.getElementById('delModalIntro').textContent = '아래 프로젝트를 삭제하시겠습니까?';
   document.getElementById('delModalName').textContent = p.name || '(이름 없음)';
   document.getElementById('delModal').classList.add('show');
 }
 function closeDelModal() {
   _pendingDeleteId = null;
+  _pendingDeleteIds = null;
   document.getElementById('delModal').classList.remove('show');
 }
 function executeDelete() {
+  if (_pendingDeleteIds && _pendingDeleteIds.length) {
+    const ids = _pendingDeleteIds;
+    const targets = projects.filter(p => ids.includes(p.id));
+    closeDelModal();
+    bulkDeleteActiveProjects(targets);
+    return;
+  }
   const id = _pendingDeleteId;
   if (!id) return;
   const { p, isOp } = findAnyProject(id);
@@ -3815,6 +3924,7 @@ function renderStatusBadge(project) {
 
 /* ── Dashboard (Table) ── */
 function renderDashboard() {
+  recomputeBuPages();
   document.getElementById('detail').style.display = 'none';
   document.getElementById('dashboard').style.display = '';
   // Completed 섹션 복원 (detail 뷰에서 숨겼다가 돌아올 때)
@@ -3850,7 +3960,7 @@ function renderDashboard() {
     const sel = p.selected !== false;
     const pub = escapeHtml(p.publication || '');
     const pur = escapeHtml(p.purpose || '');
-    return `<tr data-pid="${p.id}">
+    return `<tr data-pid="${p.id}" class="${(p.onHold || p.deprioritized) ? 'row-dimmed' : ''}">
       <td style="white-space:nowrap;">
         <div style="display:flex;align-items:center;justify-content:center;gap:4px;">
           <span class="drag-handle" title="드래그하여 순서 변경">⠿</span>
@@ -3867,7 +3977,7 @@ function renderDashboard() {
             placeholder="Product Model"
             onblur="saveField('${p.id}','name',this.value)"
             onkeydown="if(event.key==='Enter')this.blur()" />
-          ${p.isNew ? '<span class="badge-new">NEW</span>' : ''}
+          <span class="name-badges">${renderNewHoldBadges(p)}</span>
         </div>
       </td>
       <td data-field="customer">
@@ -4717,7 +4827,30 @@ function toggleProgressBarCore(e, pid, stageNum) {
   });
 })();
 
-/* ── Row Drag & Drop (범용) ── */
+/* ── Row Drag & Drop (범용) ──
+   배열 arr 안에서 srcId 항목을 tgtId 항목의 앞(after=false)/뒤(after=true)로 이동.
+   splice로 제거한 뒤 대상 인덱스를 '다시 계산'하므로 위/아래 어느 방향이든 정확히 놓인다. */
+function reorderById(arr, srcId, tgtId, after) {
+  const si = arr.findIndex(p => p.id === srcId);
+  if (si === -1) return null;
+  const srcName = arr[si].name || '(이름없음)';
+  const snapshot = JSON.parse(JSON.stringify(arr[si]));
+  const [moved] = arr.splice(si, 1);
+  const ti = arr.findIndex(p => p.id === tgtId);   // 제거 후 다시 계산 (off-by-one 방지)
+  if (ti === -1) { arr.splice(si, 0, moved); return null; }
+  const tgtName = arr[ti].name || '(이름없음)';
+  arr.splice(after ? ti + 1 : ti, 0, moved);
+  // updatedAt을 갱신해야 saveToFirebase()의 병합 로직이 이 순서 변경을 "최신"으로 인식한다.
+  // 갱신하지 않으면 fbUpdatedAt > localLatest로 판단해 Firebase에 남아있던 이전 순서로
+  // 되돌려 병합해버려서, 화면에는 잠깐 바뀌었다가 곧바로 원래 순서로 스냅백되는 것처럼 보인다.
+  moved.updatedAt = new Date().toISOString();
+  return { srcName, tgtName, snapshot };
+}
+
+function _clearDropMarks(tbody) {
+  tbody.querySelectorAll('tr').forEach(r => r.classList.remove('row-drag-over', 'row-drop-before', 'row-drop-after'));
+}
+
 function initRowDrag(tbodyId, onDrop) {
   const tbody = document.getElementById(tbodyId);
   if (!tbody) return;
@@ -4742,21 +4875,28 @@ function initRowDrag(tbodyId, onDrop) {
     tr.addEventListener('dragend', () => {
       tr.draggable = false;
       tr.classList.remove('row-dragging');
-      tbody.querySelectorAll('tr').forEach(r => r.classList.remove('row-drag-over'));
+      _clearDropMarks(tbody);
     });
 
     tr.addEventListener('dragover', e => {
       e.preventDefault();
       e.dataTransfer.dropEffect = 'move';
-      tbody.querySelectorAll('tr').forEach(r => r.classList.remove('row-drag-over'));
-      if (getPid() && getPid() !== dragSrcId) tr.classList.add('row-drag-over');
+      if (!getPid() || getPid() === dragSrcId) return;
+      // 포인터가 대상 행의 위 절반이면 '앞', 아래 절반이면 '뒤'에 놓는다 → 맨 위/맨 아래로도 이동 가능
+      const rect = tr.getBoundingClientRect();
+      const after = (e.clientY - rect.top) > rect.height / 2;
+      _clearDropMarks(tbody);
+      tr.classList.add(after ? 'row-drop-after' : 'row-drop-before');
+      tr._dropAfter = after;
     });
 
     tr.addEventListener('drop', e => {
       e.preventDefault();
       const targetId = getPid();
+      const after = !!tr._dropAfter;
+      _clearDropMarks(tbody);
       if (!targetId || targetId === dragSrcId) return;
-      onDrop(dragSrcId, targetId);
+      onDrop(dragSrcId, targetId, after);
     });
   });
 }
@@ -4768,6 +4908,8 @@ function initRowDrag(tbodyId, onDrop) {
   function getCheckboxFromEvent(e) {
     const el = document.elementFromPoint(e.clientX, e.clientY);
     if (!el) return null;
+    // 드래그 핸들(⠿)은 row 순서 변경용 — 같은 td 안의 체크박스를 집어서 드래그 선택으로 오인하면 안 됨
+    if (el.closest('.drag-handle')) return null;
     // 체크박스 자체 또는 체크박스를 포함한 td 첫 번째 자식
     if (el.matches('input[type="checkbox"][onclick*="toggleSelected"]')) return el;
     const chk = el.closest('td')?.querySelector('input[type="checkbox"][onclick*="toggleSelected"]');
@@ -4796,32 +4938,20 @@ function initRowDrag(tbodyId, onDrop) {
 
 // 메인 테이블용
 function initMainRowDrag() {
-  initRowDrag('projectTbody', (srcId, tgtId) => {
-    const si = projects.findIndex(p => p.id === srcId);
-    const ti = projects.findIndex(p => p.id === tgtId);
-    if (si === -1 || ti === -1) return;
-    const srcName = projects[si].name || '(이름없음)';
-    const tgtName = projects[ti].name || '(이름없음)';
-    const snapshot = JSON.parse(JSON.stringify(projects[si]));
-    const [m] = projects.splice(si, 1);
-    projects.splice(ti, 0, m);
-    saveProjects('순서 변경', `${srcName} → ${tgtName} 앞으로 이동`, srcId, snapshot);
+  initRowDrag('projectTbody', (srcId, tgtId, after) => {
+    const r = reorderById(projects, srcId, tgtId, after);
+    if (!r) return;
+    saveProjects('순서 변경', `${r.srcName} → ${r.tgtName} ${after ? '뒤' : '앞'}으로 이동`, srcId, r.snapshot);
     renderDashboard();
   });
 }
 
 // 보고 섹션용
 function initBoardRowDrag(type) {
-  const onDrop = (srcId, tgtId) => {
-    const si = projects.findIndex(p => p.id === srcId);
-    const ti = projects.findIndex(p => p.id === tgtId);
-    if (si === -1 || ti === -1) return;
-    const srcName = projects[si].name || '(이름없음)';
-    const tgtName = projects[ti].name || '(이름없음)';
-    const snapshot = JSON.parse(JSON.stringify(projects[si]));
-    const [m] = projects.splice(si, 1);
-    projects.splice(ti, 0, m);
-    saveProjects('순서 변경', `[${BOARD_INFO[type]?.title||type}] ${srcName} → ${tgtName} 앞으로 이동`, srcId, snapshot);
+  const onDrop = (srcId, tgtId, after) => {
+    const r = reorderById(projects, srcId, tgtId, after);
+    if (!r) return;
+    saveProjects('순서 변경', `[${BOARD_INFO[type]?.title||type}] ${r.srcName} → ${r.tgtName} ${after ? '뒤' : '앞'}으로 이동`, srcId, r.snapshot);
     renderBoardSection(type);
   };
   if (type === 'M' || type === 'Q') {
@@ -4835,16 +4965,11 @@ function initBoardRowDrag(type) {
 
 // 보고 제외(삭제)용
 function initDeletedRowDrag() {
-  initRowDrag('deletedTbody', (srcId, tgtId) => {
-    const si = deletedProjects.findIndex(p => p.id === srcId);
-    const ti = deletedProjects.findIndex(p => p.id === tgtId);
-    if (si === -1 || ti === -1) return;
-    const srcName = deletedProjects[si].name || '(이름없음)';
-    const tgtName = deletedProjects[ti].name || '(이름없음)';
-    const [m] = deletedProjects.splice(si, 1);
-    deletedProjects.splice(ti, 0, m);
+  initRowDrag('deletedTbody', (srcId, tgtId, after) => {
+    const r = reorderById(deletedProjects, srcId, tgtId, after);
+    if (!r) return;
     try { localStorage.setItem(DELETED_KEY, JSON.stringify(deletedProjects)); } catch {}
-    addHistory('순서 변경', `[보고 제외] ${srcName} → ${tgtName} 앞으로 이동`, srcId);
+    addHistory('순서 변경', `[보고 제외] ${r.srcName} → ${r.tgtName} ${after ? '뒤' : '앞'}으로 이동`, srcId);
     renderDeletedList();
   });
 }
@@ -4852,12 +4977,16 @@ function initDeletedRowDrag() {
 function _newBlankProject() {
   const checks = {};
   ITEMS.forEach(it => checks[it.key] = false);
+  // 새 행의 BU/pageId는 현재 보고 있는 Status 페이지를 따른다.
+  // Total(전체) 뷰에서 추가하면 실제 BU가 없으므로 기본 IBU에 배정.
+  recomputeBuPages();
+  const onBuPage = currentStatusPage >= 1 && currentStatusPage <= STATUS_PAGE_COUNT;
+  const buName = onBuPage ? BU_PAGE_NAMES[currentStatusPage - 1] : 'IBU';
   return {
     id: 'p_' + Date.now(), name: '', publication: '', publicationCount: '', purpose: '',
-    targetDate: '', checks, selected: true, resource: '', bu: '',
+    targetDate: '', checks, selected: true, resource: '', bu: onBuPage ? buName : '',
     projectType: '', startDate: '', boardTypes: [], boardDates: {}, releaseDate: '',
-    // Total(전체) 뷰에서 추가하면 실제 BU가 없으므로 기본 IBU(1)에 배정
-    pageId: currentStatusPage <= STATUS_PAGE_COUNT ? currentStatusPage : 1,
+    pageId: pageIdForBu(buName),
     createdAt: new Date().toISOString(), updatedAt: new Date().toISOString()
   };
 }
@@ -4885,6 +5014,18 @@ function addCpYInlineRow() {
 
 function addInlineRow() {
   const newP = _newBlankProject();
+  // 리소스 필터가 켜진 상태에서는 resource가 빈 새 행이 필터에 가려져
+  // 추가가 안 된 것처럼 보이므로, 새 행이 보이도록 보정한다.
+  if (_statusResourceFilter.size > 0 && !matchesResourceFilter(newP)) {
+    const realSel = [..._statusResourceFilter].filter(n => n !== STATUS_BLANK_RESOURCE);
+    if (realSel.length === 1) {
+      // 리소스 1명만 필터 중이면 새 행에 그 리소스를 미리 채워 필터 안에서 보이게
+      newP.resource = realSel[0];
+    } else {
+      // 여러 명/미배정 등 애매한 경우엔 새 행이 보이도록 필터를 해제
+      _statusResourceFilter.clear();
+    }
+  }
   projects.push(newP);
   saveProjects();
   renderDashboard();
@@ -4911,10 +5052,23 @@ function saveResourceField(id, value) {
 function saveBuField(id, value) {
   const { p, isOp } = findAnyProject(id);
   if (!p) return;
-  p.bu = value.trim();
+  const oldBu = (p.bu || '').trim().toUpperCase();
+  // BU는 페이지 키이므로 대문자로 표준화 (ibu→IBU, tw→TW). 새 BU면 그 이름의 페이지가 생긴다.
+  const bu = value.trim().toUpperCase();
+  p.bu = bu;
   p.updatedAt = new Date().toISOString();
-  if (isOp) { saveOpProjects(); refreshOpSideFilters(); }
-  else { saveProjects(); refreshSideFilters(); }
+  recomputeBuPages();                    // 새 BU를 페이지 목록에 등록
+  if (bu) p.pageId = pageIdForBu(bu);     // 레거시(차트/저장) 호환용 pageId 동기화
+  const changed = oldBu !== bu;           // BU가 바뀌면 해당 BU 페이지로 row 이동 → 재렌더로 반영
+  if (isOp) {
+    saveOpProjects();
+    if (changed) { showOpTaskPage(); if (typeof renderOpBoardSections === 'function') renderOpBoardSections(); }
+    refreshOpSideFilters();
+  } else {
+    saveProjects();
+    if (changed) renderDashboard();
+    else refreshSideFilters();
+  }
 }
 function saveProjectTypeField(id, value) {
   const { p, isOp } = findAnyProject(id);
@@ -5298,6 +5452,22 @@ function toggleAllSelected(val, el) {
   renderDashboard();
 }
 
+// 체크된(=PPTX 내보내기 선택) 프로젝트들을 한 번에 휴지통으로 이동.
+// row의 삭제 아이콘을 2개 이상 선택된 상태에서 눌렀을 때 executeDelete()가 호출한다.
+function bulkDeleteActiveProjects(targets) {
+  if (!targets.length) return;
+  const names = targets.map(p => p.name || '(이름없음)');
+  const ids = new Set(targets.map(p => p.id));
+  targets.forEach(p => {
+    deletedProjects.unshift({ ...JSON.parse(JSON.stringify(p)), deletedAt: new Date().toISOString() });
+  });
+  try { localStorage.setItem(DELETED_KEY, JSON.stringify(deletedProjects)); } catch {}
+  projects = projects.filter(p => !ids.has(p.id));
+  saveProjects('프로젝트 삭제(선택)', names.join(', '));
+  renderDashboard();
+  renderDeletedList(); renderBoardSections();
+}
+
 /* ── Inline Name Edit ── */
 function startEditName(id) {
   const cell = document.getElementById('pcell_' + id);
@@ -5338,24 +5508,48 @@ function updateCustomerParens(input) {
   wrap.querySelectorAll('.customer-paren').forEach(el => el.style.display = show ? '' : 'none');
 }
 
+// Product 셀 우클릭으로 상태 순환: 기본 → NEW → NEW+ON HOLD → ON HOLD → DEPRIORITIZED → 기본
+// ON HOLD/DEPRIORITIZED가 섞인 상태에서는 PPTX 내보내기 체크박스를 자동 해제하고 row 텍스트를 흐리게 표시한다.
+// NEW가 ON HOLD와 함께일 땐 배지(pill) 대신 배경 없는 빨간 텍스트로 축소해 표시한다.
+function renderNewHoldBadges(p) {
+  if (p.isNew && p.onHold) return '<span class="badge-new-text">NEW</span><span class="badge-hold">ON HOLD</span>';
+  if (p.isNew) return '<span class="badge-new">NEW</span>';
+  if (p.onHold) return '<span class="badge-hold">ON HOLD</span>';
+  if (p.deprioritized) return '<span class="badge-deprioritized">DEPRIORITIZED</span>';
+  return '';
+}
+
 function toggleNewBadge(event, id) {
   event.preventDefault();
   const { p, isOp } = findAnyProject(id);
   if (!p) return;
-  p.isNew = !p.isNew;
+  if (!p.isNew && !p.onHold && !p.deprioritized) {
+    p.isNew = true;                        // 기본 → NEW
+  } else if (p.isNew && !p.onHold) {
+    p.onHold = true;
+    p.selected = false;                    // NEW → NEW+ON HOLD
+  } else if (p.isNew && p.onHold) {
+    p.isNew = false;                       // NEW+ON HOLD → ON HOLD
+  } else if (p.onHold) {
+    p.onHold = false;
+    p.deprioritized = true;
+    p.selected = false;                    // ON HOLD → DEPRIORITIZED
+  } else {
+    p.deprioritized = false;               // DEPRIORITIZED → 기본
+  }
   p.updatedAt = new Date().toISOString();
   if (isOp) saveOpProjects(); else saveProjects();
-  // 해당 셀만 즉시 업데이트
+  // 해당 row만 즉시 업데이트
   const td = event.currentTarget;
-  const cell = td.querySelector('.product-cell');
-  const existing = cell.querySelector('.badge-new');
-  if (p.isNew && !existing) {
-    const badge = document.createElement('span');
-    badge.className = 'badge-new';
-    badge.textContent = 'NEW';
-    cell.appendChild(badge);
-  } else if (!p.isNew && existing) {
-    existing.remove();
+  const tr = td.closest('tr');
+  const badgesEl = td.querySelector('.name-badges');
+  if (badgesEl) badgesEl.innerHTML = renderNewHoldBadges(p);
+  if (tr) {
+    tr.classList.toggle('row-dimmed', !!(p.onHold || p.deprioritized));
+    const cb = tr.querySelector('input[type="checkbox"][onclick*="toggleSelected"]');
+    if (cb) cb.checked = p.selected !== false;
+    const table = tr.closest('table');
+    if (table) syncHeaderCheckbox(table);
   }
 }
 
@@ -5854,21 +6048,20 @@ function getPptExportPage() {
   return id === 'pptformat' ? pptSourcePage : id;
 }
 
-const PPT_BU_NAMES = { 1: 'IBU', 2: 'RBU', 3: 'OBU', 4: 'Total' };
-
-// pageVar: 0,1,2 = IBU/RBU/OBU 중 하나만, 3 = Total(전체 3개)
+// pageVar: 0..N-1 = 각 BU 하나, N = Total(전체) — 0-base
 function pptBuGroups(pageVar, filterFn, titlePrefix) {
   const groups = [];
-  for (let pid = 1; pid <= 3; pid++) {
-    if (pageVar !== 3 && pageVar !== pid - 1) continue;
-    const list = projects.filter(p => filterFn(p) && (p.pageId || 1) === pid);
-    if (list.length) groups.push({ title: `${titlePrefix} — ${PPT_BU_NAMES[pid]}`, list });
-  }
+  BU_PAGE_NAMES.forEach((buName, i) => {
+    if (pageVar !== STATUS_PAGE_COUNT && pageVar !== i) return;
+    const list = projects.filter(p => filterFn(p) && projectBuName(p) === buName);
+    if (list.length) groups.push({ title: `${titlePrefix} — ${buName}`, list });
+  });
   return groups;
 }
 
 // 현재 페이지가 보여주고 있는 내용 그대로 PPT 대상 데이터를 계산
 function getPptExportGroups() {
+  recomputeBuPages();
   const page = getPptExportPage();
   const notReport = p => !['M','Q','Y'].some(t => (p.boardTypes||[]).includes(t));
 
@@ -5889,7 +6082,8 @@ function getPptExportGroups() {
       const bt = p.boardTypes || [];
       return (bt.includes('M') || bt.includes('Q') || bt.includes('Y')) && matchesCpPage(p);
     });
-    return { kind: 'projects', groups: list.length ? [{ title: `보고 대상 — ${CP_BU_TITLES[currentCpPage] || ''}`, list }] : [] };
+    const cpTitles = [...BU_PAGE_NAMES, 'Total'];
+    return { kind: 'projects', groups: list.length ? [{ title: `보고 대상 — ${cpTitles[Math.min(currentCpPage, STATUS_PAGE_COUNT)] || ''}`, list }] : [] };
   }
   if (page === 'dashboard') {
     return { kind: 'dashboard', dbPage: currentDbPage };
@@ -5901,10 +6095,10 @@ function getPptExportGroups() {
   const pageTitles = (() => { try { return JSON.parse(localStorage.getItem('tw_pm_page_titles')) || {}; } catch { return {}; } })();
   const allSelected = projects.filter(p => p.selected !== false);
   const groups = [];
-  for (let pageNum = 1; pageNum <= STATUS_PAGE_COUNT; pageNum++) {
-    const list = allSelected.filter(p => (p.pageId || 1) === pageNum);
-    if (list.length) groups.push({ title: pageTitles[pageNum] || `[Technical Publication] Status`, list });
-  }
+  BU_PAGE_NAMES.forEach((buName, i) => {
+    const list = allSelected.filter(p => projectBuName(p) === buName);
+    if (list.length) groups.push({ title: pageTitles[i + 1] || `[Technical Publication] ${buName} Status`, list });
+  });
   return { kind: 'projects', groups };
 }
 
@@ -6802,10 +6996,11 @@ function renderCompletedDashboard(list) {
 }
 
 // Dashboard 페이지 5: Completed Dashboard — Completed Projects의 "대시보드" 뷰를 그대로 재사용
-let currentCdbPage = STATUS_PAGE_COUNT; // 0=IBU, 1=RBU, 2=OBU, 3=Total (기본값 Total) — Dashboard의 Completed Dashboard 전용, 다른 페이지와 독립적
+let currentCdbPage = 999; // 0..N-1=각 BU, N=Total (기본값 Total; 렌더 시 클램프) — Completed Dashboard 전용
 
 function matchesCdbPage(p) {
-  return currentCdbPage === STATUS_PAGE_COUNT || (p.pageId || 1) === currentCdbPage + 1;
+  if (currentCdbPage >= STATUS_PAGE_COUNT) return true; // Total
+  return projectBuName(p) === BU_PAGE_NAMES[currentCdbPage];
 }
 
 function gotoCdbPage(n) {
@@ -6815,9 +7010,12 @@ function gotoCdbPage(n) {
 }
 
 function renderCdbDots() {
+  recomputeBuPages(projects.filter(_isBoardRow)); // 보고 대상(M/Q/Y) 데이터에 있는 BU만
+  if (currentCdbPage > STATUS_PAGE_COUNT) currentCdbPage = STATUS_PAGE_COUNT; // 클램프(기본 Total)
+  const titles = [...BU_PAGE_NAMES, 'Total'];
   const el = document.getElementById('cdbNavDots');
   if (el) {
-    el.innerHTML = CP_BU_TITLES.map((title, i) =>
+    el.innerHTML = titles.map((title, i) =>
       `<div class="cl-nav-dot${i === currentCdbPage ? ' active' : ''}" onclick="gotoCdbPage(${i})" title="${title}">${STATUS_PAGE_LABELS[i]}</div>`
     ).join('');
   }
@@ -6825,7 +7023,7 @@ function renderCdbDots() {
   if (titleEl) {
     titleEl.textContent = currentCdbPage === STATUS_PAGE_COUNT
       ? 'Completed Dashboard — All Report Targets'
-      : `Completed Dashboard — ${CP_BU_TITLES[currentCdbPage]} Analysis`;
+      : `Completed Dashboard — ${BU_PAGE_NAMES[currentCdbPage]} Analysis`;
   }
 }
 
@@ -6939,15 +7137,14 @@ function renderBoardSection(type) {
     Q: (date, bu) => `${bu ? bu + ' ' : ''}Publications for the Board Report on ${date}`,
     Y: (date, bu) => `${bu ? bu + ' ' : ''}Publications for the Annual Report on ${date}`,
   };
-  const BOARD_BU_NAMES = { 1: 'IBU', 2: 'RBU', 3: 'OBU' };
-  const BOARD_BU_ORDER = ['IBU', 'RBU', 'OBU'];
+  const BOARD_BU_ORDER = BU_PAGE_NAMES; // 동적 BU 순서(IBU/RBU/OBU + 추가 BU)
 
   if (type === 'M' || type === 'Q' || type === 'Y') {
     const groups = {};
     const groupMeta = {};
     list.forEach(p => {
       const date = (p.boardDates || {})[type] || '';
-      const bu = date ? (BOARD_BU_NAMES[p.pageId || 1] || '') : '';
+      const bu = date ? projectBuName(p) : '';
       const key = date + '||' + bu;
       if (!groups[key]) { groups[key] = []; groupMeta[key] = { date, bu }; }
       groups[key].push(p);
@@ -7037,12 +7234,9 @@ function renderOpBoardSections() {
 }
 
 function initOpBoardRowDrag(type) {
-  const onDrop = (srcId, tgtId) => {
-    const si = opProjects.findIndex(p => p.id === srcId);
-    const ti = opProjects.findIndex(p => p.id === tgtId);
-    if (si === -1 || ti === -1) return;
-    const [m] = opProjects.splice(si, 1);
-    opProjects.splice(ti, 0, m);
+  const onDrop = (srcId, tgtId, after) => {
+    const r = reorderById(opProjects, srcId, tgtId, after);
+    if (!r) return;
     saveOpProjects('순서 변경', `[${BOARD_INFO[type]?.title||type}] 순서 변경`, srcId);
     renderOpBoardSection(type);
   };
@@ -7084,14 +7278,13 @@ function renderOpBoardSection(type) {
     Q: (date, bu) => `${bu ? bu + ' ' : ''}Publications for the Board Report on ${date}`,
     Y: (date, bu) => `${bu ? bu + ' ' : ''}Publications for the Annual Report on ${date}`,
   };
-  const BOARD_BU_NAMES = { 1: 'IBU', 2: 'RBU', 3: 'OBU' };
-  const BOARD_BU_ORDER = ['IBU', 'RBU', 'OBU'];
+  const BOARD_BU_ORDER = BU_PAGE_NAMES; // 동적 BU 순서(IBU/RBU/OBU + 추가 BU)
 
   const groups = {};
   const groupMeta = {};
   list.forEach(p => {
     const date = (p.boardDates || {})[type] || '';
-    const bu = date ? (BOARD_BU_NAMES[p.pageId || 1] || '') : '';
+    const bu = date ? projectBuName(p) : '';
     const key = date + '||' + bu;
     if (!groups[key]) { groups[key] = []; groupMeta[key] = { date, bu }; }
     groups[key].push(p);
@@ -7152,12 +7345,63 @@ function renderOpBoardSection(type) {
   }
 }
 
+let _deletedSelectedIds = new Set();
+
+function toggleDeletedSelect(id, checked) {
+  if (checked) _deletedSelectedIds.add(id);
+  else _deletedSelectedIds.delete(id);
+  updateDeletedSelectionUI();
+}
+
+function toggleDeletedSelectAll(checked) {
+  const pageDeleted = deletedProjects.filter(matchesStatusPage);
+  pageDeleted.forEach(p => { if (checked) _deletedSelectedIds.add(p.id); else _deletedSelectedIds.delete(p.id); });
+  renderDeletedList();
+}
+
+function updateDeletedSelectionUI() {
+  const pageDeleted = deletedProjects.filter(matchesStatusPage);
+  const btn = document.getElementById('deletedBulkDeleteBtn');
+  if (btn) {
+    const n = _deletedSelectedIds.size;
+    const countEl = document.getElementById('deletedBulkDeleteCount');
+    if (countEl) countEl.textContent = n;
+    btn.title = `선택 영구 삭제 (${n})`;
+    btn.disabled = n === 0;
+    btn.style.opacity = n === 0 ? '0.35' : '1';
+  }
+  const selectAllCb = document.getElementById('deletedSelectAllCb');
+  if (selectAllCb) {
+    selectAllCb.checked = pageDeleted.length > 0 && pageDeleted.every(p => _deletedSelectedIds.has(p.id));
+  }
+}
+
+function deleteSelectedDeleted(e) {
+  if (e) e.stopPropagation();
+  if (_deletedSelectedIds.size === 0) return;
+  const targets = deletedProjects.filter(p => _deletedSelectedIds.has(p.id));
+  if (targets.length === 0) return;
+  const names = targets.map(p => p.name || '(이름없음)');
+  if (!confirm(`선택한 ${targets.length}개 프로젝트를 영구 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.\n\n${names.join(', ')}`)) return;
+  targets.forEach(p => addPermDeletedId(p.id));
+  deletedProjects = deletedProjects.filter(p => !_deletedSelectedIds.has(p.id));
+  projects = projects.filter(p => !_deletedSelectedIds.has(p.id));
+  try { localStorage.setItem(DELETED_KEY, JSON.stringify(deletedProjects)); } catch {}
+  saveProjects('영구 삭제(선택)', names.join(', '));
+  _deletedSelectedIds.clear();
+  renderDeletedList();
+}
+
 function renderDeletedList() {
   const section = document.getElementById('deletedSection');
   if (!section) return;
 
   // 현재 페이지 프로젝트만 표시
   const pageDeleted = deletedProjects.filter(matchesStatusPage);
+
+  // 현재 페이지에 없는(다른 페이지로 이동했거나 삭제된) 선택 항목은 정리
+  const pageIdSet = new Set(pageDeleted.map(p => p.id));
+  [..._deletedSelectedIds].forEach(id => { if (!pageIdSet.has(id)) _deletedSelectedIds.delete(id); });
 
   if (pageDeleted.length === 0) { section.style.display = 'none'; return; }
   section.style.display = '';
@@ -7172,11 +7416,17 @@ function renderDeletedList() {
     const fakeP = Object.assign({}, p, { checks });
     const dt = new Date(p.deletedAt);
     const deletedStr = `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')} ${String(dt.getHours()).padStart(2,'0')}:${String(dt.getMinutes()).padStart(2,'0')}`;
-    return `<tr data-del-pid="${p.id}" style="opacity:0.78;">
+    // 선택된(체크된) row는 텍스트/아이콘을 흐림 없이 선명하게 표시
+    const isSel = _deletedSelectedIds.has(p.id);
+    const rowOpacity = isSel ? 1 : 0.78;
+    const cText = isSel ? 'var(--text-primary)' : '#6b7280';
+    const cTextLight = isSel ? 'var(--text-primary)' : '#9ca3af';
+    const iconOpacity = isSel ? 1 : 0.5;
+    return `<tr data-del-pid="${p.id}" style="opacity:${rowOpacity};">
       <td style="text-align:center; white-space:nowrap;">
         <div style="display:flex;align-items:center;justify-content:center;gap:4px;">
           <span class="drag-handle" title="드래그하여 순서 변경">⠿</span>
-          <input type="checkbox" disabled style="width:15px;height:15px;accent-color:#3b82f6;opacity:0.4;" />
+          <input type="checkbox" ${isSel?'checked':''} onclick="event.stopPropagation()" onchange="toggleDeletedSelect('${p.id}', this.checked)" style="width:15px;height:15px;accent-color:#3b82f6;cursor:pointer;" />
           <button class="btn-side-open" onclick="openDeletedSidePanel('${p.id}')" title="체크리스트 보기"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
           <button class="btn-icon btn-icon-detail" onclick="openDeletedDetail('${p.id}')" title="체크리스트 상세보기"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><line x1="9" y1="9" x2="15" y2="9"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="12" y2="17"/></svg></button>
         </div>
@@ -7184,17 +7434,17 @@ function renderDeletedList() {
       <td>
         <div class="product-cell">
           <input class="cell-input cell-input-name" value="${escapeHtml(p.name||'')}" disabled
-            placeholder="Product Model" style="color:#6b7280;" />
+            placeholder="Product Model" style="color:${cText};" />
         </div>
       </td>
       <td><input class="cell-input" value="${escapeHtml(p.customer||'')}" disabled
-        placeholder="Customer" style="color:#9ca3af;" /></td>
-      <td><input class="cell-input" value="${escapeHtml(p.publication||'')}" disabled style="color:#6b7280;" /></td>
-      <td><input class="cell-input" value="${p.publicationCount ?? ''}" disabled style="color:#6b7280;text-align:center;" /></td>
-      <td><input class="cell-input" value="${escapeHtml(p.purpose||'')}" disabled style="color:#6b7280;" /></td>
+        placeholder="Customer" style="color:${cTextLight};" /></td>
+      <td><input class="cell-input" value="${escapeHtml(p.publication||'')}" disabled style="color:${cText};" /></td>
+      <td><input class="cell-input" value="${p.publicationCount ?? ''}" disabled style="color:${cText};text-align:center;" /></td>
+      <td><input class="cell-input" value="${escapeHtml(p.purpose||'')}" disabled style="color:${cText};" /></td>
       <td><div class="progress-bar">${renderProgressBarStatic(fakeP)}</div></td>
       <td><div class="td-target-date">
-        <input type="text" class="cell-input" value="${p.targetDate||''}" disabled style="color:#9ca3af;" />
+        <input type="text" class="cell-input" value="${p.targetDate||''}" disabled style="color:${cTextLight};" />
         <button class="btn-icon btn-icon-restore" onclick="restoreProject('${p.id}')" title="복원">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
         </button>
@@ -7205,48 +7455,49 @@ function renderDeletedList() {
       </div></td>
       <td data-release style="white-space:nowrap;">
         <div style="display:flex;align-items:center;gap:5px;">
-          <button class="btn-board ${p.releaseDate?'active-R':''}" disabled style="flex-shrink:0;opacity:0.5;">R</button>
+          <button class="btn-board ${p.releaseDate?'active-R':''}" disabled style="flex-shrink:0;opacity:${iconOpacity};">R</button>
           <input type="text" class="cell-input" value="${p.releaseDate||''}" disabled
-            style="display:${p.releaseDate?'block':'none'};min-width:95px;color:#9ca3af;" />
+            style="display:${p.releaseDate?'block':'none'};min-width:95px;color:${cTextLight};" />
         </div>
       </td>
       <td></td>
       <td class="td-actions" style="border-right:3px solid var(--accent);"><div class="td-actions-inner">
         <div class="td-actions-btns">
           <div style="display:flex;align-items:center;gap:2px;">
-            <button class="btn-board ${['M','Q','Y'].some(t=>(p.boardTypes||[]).includes(t))?'active-M':''}" disabled style="opacity:0.5;">M</button>
-            <input type="text" class="cell-input" value="${(p.boardDates||{}).M||''}" disabled style="display:${(p.boardTypes||[]).includes('M')?'block':'none'};width:64px;flex:0 0 auto;font-size:10.5px;padding:2px 3px;color:#9ca3af;" />
+            <button class="btn-board ${['M','Q','Y'].some(t=>(p.boardTypes||[]).includes(t))?'active-M':''}" disabled style="opacity:${iconOpacity};">M</button>
+            <input type="text" class="cell-input" value="${(p.boardDates||{}).M||''}" disabled style="display:${(p.boardTypes||[]).includes('M')?'block':'none'};width:64px;flex:0 0 auto;font-size:10.5px;padding:2px 3px;color:${cTextLight};" />
           </div>
           <div style="display:flex;align-items:center;gap:2px;">
-            <button class="btn-board ${['Q','Y'].some(t=>(p.boardTypes||[]).includes(t))?'active-Q':''}" disabled style="opacity:0.5;">Q</button>
-            <input type="text" class="cell-input" value="${(p.boardDates||{}).Q||''}" disabled style="display:${(p.boardTypes||[]).includes('Q')?'block':'none'};width:64px;flex:0 0 auto;font-size:10.5px;padding:2px 3px;color:#9ca3af;" />
+            <button class="btn-board ${['Q','Y'].some(t=>(p.boardTypes||[]).includes(t))?'active-Q':''}" disabled style="opacity:${iconOpacity};">Q</button>
+            <input type="text" class="cell-input" value="${(p.boardDates||{}).Q||''}" disabled style="display:${(p.boardTypes||[]).includes('Q')?'block':'none'};width:64px;flex:0 0 auto;font-size:10.5px;padding:2px 3px;color:${cTextLight};" />
           </div>
           <div style="display:flex;align-items:center;gap:2px;">
-            <button class="btn-board ${(p.boardTypes||[]).includes('Y')?'active-Y':''}" disabled style="opacity:0.5;">Y</button>
-            <input type="text" class="cell-input" value="${(p.boardDates||{}).Y||''}" disabled style="display:${(p.boardTypes||[]).includes('Y')?'block':'none'};width:64px;flex:0 0 auto;font-size:10.5px;padding:2px 3px;color:#9ca3af;" />
+            <button class="btn-board ${(p.boardTypes||[]).includes('Y')?'active-Y':''}" disabled style="opacity:${iconOpacity};">Y</button>
+            <input type="text" class="cell-input" value="${(p.boardDates||{}).Y||''}" disabled style="display:${(p.boardTypes||[]).includes('Y')?'block':'none'};width:64px;flex:0 0 auto;font-size:10.5px;padding:2px 3px;color:${cTextLight};" />
           </div>
           <div style="display:flex;gap:2px;">
-            <button class="btn-icon" onclick="moveRowSection('${p.id}',-1)" title="위 섹션으로" style="padding:2px 4px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg></button>
-            <button class="btn-icon" onclick="moveRowSection('${p.id}',1)" title="아래 섹션으로" style="padding:2px 4px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
+            <button class="btn-icon" onclick="moveRowSection('${p.id}',-1)" title="위 섹션으로" style="padding:2px 4px;opacity:${iconOpacity};"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg></button>
+            <button class="btn-icon" onclick="moveRowSection('${p.id}',1)" title="아래 섹션으로" style="padding:2px 4px;opacity:${iconOpacity};"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg></button>
           </div>
         </div>
       </div></td>
-      <td style="background:#f8fbff;"><input class="cell-input" value="${escapeHtml(p.resource||'')}" disabled style="color:#6b7280;" /></td>
-      <td style="background:#f8fbff;"><input class="cell-input" value="${escapeHtml(p.bu||'')}" disabled style="color:#6b7280;" /></td>
+      <td style="background:#f8fbff;"><input class="cell-input" value="${escapeHtml(p.resource||'')}" disabled style="color:${cText};" /></td>
+      <td style="background:#f8fbff;"><input class="cell-input" value="${escapeHtml(p.bu||'')}" disabled style="color:${cText};" /></td>
       <td style="background:#f8fbff;text-align:center;">${renderStatusBadge(fakeP)}</td>
-      <td style="background:#f8fbff;"><input class="cell-input" value="${escapeHtml(p.projectType||'')}" disabled style="color:#6b7280;" /></td>
+      <td style="background:#f8fbff;"><input class="cell-input" value="${escapeHtml(p.projectType||'')}" disabled style="color:${cText};" /></td>
       <td style="background:#f8fbff;text-align:center;">
-        <span style="font-size:15px;font-weight:400;color:#6b7280;">${overallPercent(fakeP)}%</span>
+        <span style="font-size:15px;font-weight:400;color:${cText};">${overallPercent(fakeP)}%</span>
       </td>
-      <td style="background:#f8fbff;"><input type="date" class="cell-input cell-input-date" value="${p.startDate||''}" disabled style="color:#9ca3af;" /></td>
+      <td style="background:#f8fbff;"><input type="date" class="cell-input cell-input-date" value="${p.startDate||''}" disabled style="color:${cTextLight};" /></td>
       <td style="background:#f8fbff;text-align:center;">
-        <span style="font-size:15px;font-weight:400;color:#6b7280;">${calcLeadTimeWeeks(p.startDate)}</span>
+        <span style="font-size:15px;font-weight:400;color:${cText};">${calcLeadTimeWeeks(p.startDate)}</span>
       </td>
-      <td style="background:#f8fbff;"><input class="cell-input" value="${escapeHtml(p.publicationType||'')}" disabled style="color:#6b7280;" /></td>
+      <td style="background:#f8fbff;"><input class="cell-input" value="${escapeHtml(p.publicationType||'')}" disabled style="color:${cText};" /></td>
     </tr>`;
   }).join('');
 
   initDeletedRowDrag();
+  updateDeletedSelectionUI();
 }
 
 function toggleDeletedList() {
@@ -7288,6 +7539,7 @@ function clearDeletedList(e) {
   if (!confirm('삭제 목록을 전체 지우시겠습니까?')) return;
   deletedProjects.forEach(p => addPermDeletedId(p.id));
   deletedProjects = [];
+  _deletedSelectedIds.clear();
   try { localStorage.removeItem(DELETED_KEY); } catch {}
   renderDeletedList(); renderBoardSections();
 }
@@ -8535,7 +8787,11 @@ function savePageTitles(titles) {
   localStorage.setItem(PAGE_TITLES_KEY, JSON.stringify(titles));
 }
 function getPageTitle(pageId) {
-  return loadPageTitles()[pageId] || (pageId > STATUS_PAGE_COUNT ? 'Total' : DEFAULT_TITLE);
+  const saved = loadPageTitles()[pageId];
+  if (saved) return saved;
+  if (pageId > STATUS_PAGE_COUNT) return 'Total';
+  const buName = BU_PAGE_NAMES[pageId - 1];
+  return buName ? `[Technical Publication] ${buName} Status` : DEFAULT_TITLE;
 }
 function renderPageTitle() {
   const title = getPageTitle(currentStatusPage);
@@ -8558,7 +8814,7 @@ function saveTitleEdit() {
   const display = document.getElementById('pageTitleDisplay');
   const input   = document.getElementById('pageTitleInput');
   if (!display || !input) return;
-  const newTitle = input.value.trim() || (currentStatusPage > STATUS_PAGE_COUNT ? 'Total' : DEFAULT_TITLE);
+  const newTitle = input.value.trim() || getPageTitle(currentStatusPage);
   const titles = loadPageTitles();
   titles[currentStatusPage] = newTitle;
   savePageTitles(titles);
@@ -8702,6 +8958,8 @@ function gotoOpStatusPage(n) {
 }
 
 function renderOpPageNavDots() {
+  recomputeBuPages(opProjects); // Operational Task 데이터에 있는 BU만
+  if (currentOpStatusPage > STATUS_PAGE_COUNT + 1) currentOpStatusPage = STATUS_PAGE_COUNT + 1;
   const el = document.getElementById('opPageNavDots');
   if (!el) return;
   el.innerHTML = Array.from({length: STATUS_PAGE_COUNT + 1}, (_, i) =>
@@ -8717,10 +8975,12 @@ function gotoClPage(n) {
 }
 
 function renderClNavDots() {
+  recomputeBuPages(projects.filter(p => p.selected !== false && !_isBoardRow(p))); // Checklist 대상 데이터에 있는 BU만
+  if (currentClPage > STATUS_PAGE_COUNT) currentClPage = STATUS_PAGE_COUNT;
   const el = document.getElementById('clNavDots');
   const label = document.getElementById('clPageLabel');
   if (!el) return;
-  const CL_TITLES = ['IBU Status', 'RBU Status', 'OBU Status', 'Total'];
+  const CL_TITLES = [...BU_PAGE_NAMES.map(n => `${n} Status`), 'Total'];
   el.innerHTML = CL_TITLES.map((title, i) =>
     `<div class="cl-nav-dot ${i === currentClPage ? 'active' : ''}" onclick="gotoClPage(${i})" title="${title}">${STATUS_PAGE_LABELS[i]}</div>`
   ).join('');
@@ -8734,9 +8994,11 @@ function gotoFocusPage(n) {
 }
 
 function renderFocusNavDots() {
+  recomputeBuPages(projects.filter(isFocusProject)); // Focus 대상 데이터에 있는 BU만
+  if (currentFocusPage > STATUS_PAGE_COUNT) currentFocusPage = STATUS_PAGE_COUNT; // 클램프(기본 Total)
   const el = document.getElementById('focusNavDots');
   if (!el) return;
-  const FOCUS_TITLES = ['IBU', 'RBU', 'OBU', 'Total'];
+  const FOCUS_TITLES = [...BU_PAGE_NAMES, 'Total'];
   el.innerHTML = FOCUS_TITLES.map((title, i) =>
     `<div class="cl-nav-dot ${i === currentFocusPage ? 'active' : ''}" onclick="gotoFocusPage(${i})" title="${title}">${STATUS_PAGE_LABELS[i]}</div>`
   ).join('');
@@ -8755,10 +9017,11 @@ function renderDbNavDots() {
   ).join('');
 }
 
-const STATUS_PAGE_LABELS = ['I', 'R', 'O', 'T'];
-const STATUS_PAGE_FULL_NAMES = ['IBU', 'RBU', 'OBU', 'Total'];
+// STATUS_PAGE_LABELS / STATUS_PAGE_FULL_NAMES 는 동적 BU 페이지 블록(상단)에서 관리됨.
 
 function renderPageNavDots() {
+  recomputeBuPages(projects); // In Active 데이터에 있는 BU만
+  if (currentStatusPage > STATUS_PAGE_COUNT + 1) currentStatusPage = STATUS_PAGE_COUNT + 1;
   const el = document.getElementById('pageNavDots');
   if (!el) return;
   el.innerHTML = Array.from({length: STATUS_PAGE_COUNT + 1}, (_, i) =>
@@ -8895,6 +9158,7 @@ function refreshActiveView() {
 /* ── Operational Task Page ── */
 function saveOpProjects(label, detail, id, snap) {
   localStorage.setItem(OP_PROJECTS_KEY, JSON.stringify(opProjects));
+  recomputeBuPages();
   // In Active와 동일한 수정 이력 패널(#historyPanel)을 공유해서 사용
   if (label) addHistory(label, detail || '', id, snap);
   showSyncStatus('💾 로컬 저장됨', 'var(--text-muted)');
@@ -8913,12 +9177,15 @@ function saveOpField(id, field, val) {
 function _newBlankOpProject() {
   const checks = {};
   ITEMS.forEach(it => checks[it.key] = false);
+  recomputeBuPages();
+  const onBuPage = currentOpStatusPage >= 1 && currentOpStatusPage <= STATUS_PAGE_COUNT;
+  const buName = onBuPage ? BU_PAGE_NAMES[currentOpStatusPage - 1] : 'IBU';
   return {
     id: 'op_' + Date.now(), name: '', publication: '', publicationCount: '', purpose: '', customer: '',
-    targetDate: '', checks, selected: true, resource: '', bu: '',
+    targetDate: '', checks, selected: true, resource: '', bu: onBuPage ? buName : '',
     projectType: '', publicationType: '', startDate: '', releaseDate: '',
     boardTypes: [], boardDates: {}, createdAt: new Date().toISOString(),
-    pageId: currentOpStatusPage <= STATUS_PAGE_COUNT ? currentOpStatusPage : 1
+    pageId: pageIdForBu(buName)
   };
 }
 
@@ -9019,7 +9286,7 @@ function _makeOpRow(p) {
   const fakeP = Object.assign({}, p, { checks: p.checks || checks0() });
   const pub = escapeHtml(p.publication || '');
   const pur = escapeHtml(p.purpose || '');
-  return `<tr data-pid="${p.id}">
+  return `<tr data-pid="${p.id}" class="${(p.onHold || p.deprioritized) ? 'row-dimmed' : ''}">
     <td style="white-space:nowrap;">
       <div style="display:flex;align-items:center;justify-content:center;gap:4px;">
         <span class="drag-handle" title="드래그하여 순서 변경">⠿</span>
@@ -9035,7 +9302,7 @@ function _makeOpRow(p) {
           placeholder="Product Model"
           onblur="saveField('${p.id}','name',this.value)"
           onkeydown="if(event.key==='Enter')this.blur()" />
-        ${p.isNew ? '<span class="badge-new">NEW</span>' : ''}
+        <span class="name-badges">${renderNewHoldBadges(p)}</span>
       </div>
     </td>
     <td><input class="cell-input" value="${escapeHtml(p.customer||'')}"
@@ -9366,24 +9633,18 @@ function showOpTaskPage() {
   }
 
   // drag-drop reorder for active rows
-  initRowDrag('opProjectTbody', (srcId, tgtId) => {
-    const si = opProjects.findIndex(p => p.id === srcId);
-    const ti = opProjects.findIndex(p => p.id === tgtId);
-    if (si === -1 || ti === -1) return;
-    const [moved] = opProjects.splice(si, 1);
-    opProjects.splice(ti, 0, moved);
+  initRowDrag('opProjectTbody', (srcId, tgtId, after) => {
+    const r = reorderById(opProjects, srcId, tgtId, after);
+    if (!r) return;
     saveOpProjects('순서 변경', '');
     showOpTaskPage();
   });
 
   // drag-drop reorder for deleted rows
   if (opDeletedProjects.length && _opDeletedOpen) {
-    initRowDrag('opDeletedTbody', (srcId, tgtId) => {
-      const si = opDeletedProjects.findIndex(p => p.id === srcId);
-      const ti = opDeletedProjects.findIndex(p => p.id === tgtId);
-      if (si === -1 || ti === -1) return;
-      const [moved] = opDeletedProjects.splice(si, 1);
-      opDeletedProjects.splice(ti, 0, moved);
+    initRowDrag('opDeletedTbody', (srcId, tgtId, after) => {
+      const r = reorderById(opDeletedProjects, srcId, tgtId, after);
+      if (!r) return;
       localStorage.setItem(OP_DELETED_KEY, JSON.stringify(opDeletedProjects));
       showOpTaskPage();
     });
@@ -9834,12 +10095,12 @@ function renderInActiveChart() {
     `</div>`;
 }
 
-let currentCpPage = STATUS_PAGE_COUNT; // 0=IBU, 1=RBU, 2=OBU, 3=Total (기본값 Total)
-const CP_BU_TITLES = ['IBU', 'RBU', 'OBU', 'Total'];
+let currentCpPage = 999; // 0..N-1=각 BU, N=Total (기본값 Total; 렌더 시 클램프)
 
 // Completed Projects 페이지 전용 BU 선택 — Active Projects의 currentStatusPage와는 독립적
 function matchesCpPage(p) {
-  return currentCpPage === STATUS_PAGE_COUNT || (p.pageId || 1) === currentCpPage + 1;
+  if (currentCpPage >= STATUS_PAGE_COUNT) return true; // Total
+  return projectBuName(p) === BU_PAGE_NAMES[currentCpPage];
 }
 
 function gotoCpPage(n) {
@@ -9849,11 +10110,14 @@ function gotoCpPage(n) {
 }
 
 function _renderCpDots() {
-  document.getElementById('cpNavDots').innerHTML = CP_BU_TITLES.map((title, i) =>
+  recomputeBuPages(projects.filter(_isBoardRow)); // 보고 대상(M/Q/Y) 데이터에 있는 BU만
+  if (currentCpPage > STATUS_PAGE_COUNT) currentCpPage = STATUS_PAGE_COUNT; // 클램프(기본 Total)
+  const titles = [...BU_PAGE_NAMES, 'Total'];
+  document.getElementById('cpNavDots').innerHTML = titles.map((title, i) =>
     `<div class="cl-nav-dot${i === currentCpPage ? ' active' : ''}" onclick="gotoCpPage(${i})" title="${title}">${STATUS_PAGE_LABELS[i]}</div>`
   ).join('');
   document.getElementById('cpPageLabel').textContent =
-    currentCpPage === STATUS_PAGE_COUNT ? '보고 대상 전체' : `보고 대상 — ${CP_BU_TITLES[currentCpPage]}`;
+    currentCpPage === STATUS_PAGE_COUNT ? '보고 대상 전체' : `보고 대상 — ${BU_PAGE_NAMES[currentCpPage]}`;
 }
 
 function showCompletedPage() {
@@ -9900,14 +10164,10 @@ function showCompletedPage() {
   wrap.appendChild(tbl);
   tablePane.appendChild(wrap);
   syncHeaderCheckbox(tbl); // 헤더 체크박스를 이 표 행들의 선택 상태에 맞춤
-  initRowDrag('cpYTbody_0', (srcId, tgtId) => {
-    const si = projects.findIndex(q => q.id === srcId);
-    const ti = projects.findIndex(q => q.id === tgtId);
-    if (si === -1 || ti === -1) return;
-    const snap = JSON.parse(JSON.stringify(projects[si]));
-    const [m] = projects.splice(si, 1);
-    projects.splice(ti, 0, m);
-    saveProjects('순서 변경', `[보고 대상] ${projects[ti]?.name||''} 순서 변경`, srcId, snap);
+  initRowDrag('cpYTbody_0', (srcId, tgtId, after) => {
+    const r = reorderById(projects, srcId, tgtId, after);
+    if (!r) return;
+    saveProjects('순서 변경', `[보고 대상] ${r.srcName} → ${r.tgtName} ${after ? '뒤' : '앞'}으로 이동`, srcId, r.snapshot);
     showCompletedPage();
   });
   if (window._syncDeletedCols) window._syncDeletedCols();
@@ -9978,7 +10238,7 @@ function filterFocusResource(name) {
     if (el.dataset.name === '__all__') el.classList.toggle('active', allActive);
     else el.classList.toggle('active', _focusResourceFilter.has(el.dataset.name));
   });
-  const focus = projects.filter(p => isFocusProject(p) && (currentFocusPage === 3 || (p.pageId || 1) === currentFocusPage + 1));
+  const focus = projects.filter(p => isFocusProject(p) && (currentFocusPage >= STATUS_PAGE_COUNT || projectBuName(p) === BU_PAGE_NAMES[currentFocusPage]));
   document.querySelectorAll('#focusTbody tr[data-pid]').forEach(tr => {
     const p = focus.find(p => p.id === tr.dataset.pid);
     if (!p) return;
@@ -9993,7 +10253,7 @@ function showFocusPage() {
 
   renderFocusNavDots();
 
-  const focus = projects.filter(p => isFocusProject(p) && (currentFocusPage === 3 || (p.pageId || 1) === currentFocusPage + 1));
+  const focus = projects.filter(p => isFocusProject(p) && (currentFocusPage >= STATUS_PAGE_COUNT || projectBuName(p) === BU_PAGE_NAMES[currentFocusPage]));
   document.getElementById('focusCount').textContent = `${focus.length}개`;
 
   // 리소스 목록 수집 & 필터 칩 렌더링 (Active Projects와 동일한 고정 이니셜 규칙: STATUS_FIXED_INITIALS 우선 표시, 없는 이니셜은 흐리게)
@@ -10198,13 +10458,14 @@ async function generatePptxBase64() {
   const pageTitles = (() => { try { return JSON.parse(localStorage.getItem('tw_pm_page_titles'))||{}; } catch { return {}; } })();
   let slideNum = 0;
 
-  for (let pageNum = 1; pageNum <= STATUS_PAGE_COUNT; pageNum++) {
-    const exportList = allSelected.filter(p => (p.pageId||1) === pageNum);
-    if (!exportList.length) continue;
+  recomputeBuPages();
+  BU_PAGE_NAMES.forEach((buName, i) => {
+    const exportList = allSelected.filter(p => projectBuName(p) === buName);
+    if (!exportList.length) return;
     slideNum++;
     // exportToPPT 내부와 동일한 슬라이드 생성 (공통 함수 buildPptSlideOnPres 사용)
-    buildPptSlideOnPres(pres, exportList, pageTitles[pageNum] || `Status Page ${pageNum}`, slideNum);
-  }
+    buildPptSlideOnPres(pres, exportList, pageTitles[i + 1] || `Status Page ${i + 1}`, slideNum);
+  });
 
   return pres.write({ outputType: 'base64' });
 }
@@ -10353,7 +10614,7 @@ function showChecklistPage() {
   const selected = projects.filter(p =>
     p.selected !== false &&
     !['M','Q','Y'].some(t => (p.boardTypes||[]).includes(t)) &&
-    (currentClPage === 3 || (p.pageId || 1) === currentClPage + 1)
+    (currentClPage >= STATUS_PAGE_COUNT || projectBuName(p) === BU_PAGE_NAMES[currentClPage])
   );
 
   const content = document.getElementById('checklistPageContent');
