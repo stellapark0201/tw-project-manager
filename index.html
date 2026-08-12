@@ -320,24 +320,24 @@
     display:inline-block; font-size:9px; font-weight:700; letter-spacing:.5px;
     color:#fff; background:#ef4444; border-radius:3px;
     padding:1px 5px; line-height:15px; flex-shrink:0;
-    user-select:none; pointer-events:none;
+    user-select:text;
   }
   .badge-hold {
     display:inline-block; font-size:9px; font-weight:700; letter-spacing:.5px;
     color:#fff; background:#9ca3af; border-radius:3px;
     padding:1px 5px; line-height:15px; flex-shrink:0;
-    user-select:none; pointer-events:none; white-space:nowrap;
+    user-select:text; white-space:nowrap;
   }
   /* NEW가 ON HOLD와 함께 표시될 때는 배경 없는 빨간 텍스트로 축소 */
   .badge-new-text {
     display:inline-block; font-size:9px; font-weight:700; letter-spacing:.5px;
-    color:#ef4444; flex-shrink:0; user-select:none; pointer-events:none; white-space:nowrap;
+    color:#ef4444; flex-shrink:0; user-select:text; white-space:nowrap;
   }
   .badge-deprioritized {
-    display:inline-block; font-size:9px; font-weight:700; letter-spacing:.5px;
-    color:#fff; background:#f59e0b; border-radius:3px;
-    padding:1px 5px; line-height:15px; flex-shrink:0;
-    user-select:none; pointer-events:none; white-space:nowrap;
+    display:inline-block; font-family: 'Segoe Print', 'Bradley Hand', 'Comic Sans MS', cursive;
+    font-size:12px; font-style:italic; font-weight:600; letter-spacing:.2px;
+    color: var(--text-muted); flex-shrink:0;
+    user-select:text; white-space:nowrap;
   }
   .name-badges { display:inline-flex; align-items:center; gap:4px; }
   /* ON HOLD: 체크박스 자동 해제와 함께 row 텍스트를 흐리게 표시 */
@@ -1036,6 +1036,25 @@
   .mf-item input[type="checkbox"] { accent-color:#3b82f6; width:13px; height:13px; flex-shrink:0; }
   .mf-separator { height:1px; background:rgba(255,255,255,0.08); margin:3px 0; }
 
+  /* ── 프로젝트별 메모(연필 아이콘 토글) ── */
+  .memo-wrap { position:relative; display:inline-flex; flex-shrink:0; }
+  .btn-memo { color: var(--text-muted); flex-shrink:0; padding:4px 3px; }
+  .btn-memo:hover { background: var(--accent-light); color: var(--accent); }
+  .btn-memo.has-memo { color: var(--accent); }
+  .memo-popover {
+    display:none; position:fixed; z-index:2000;
+    width:220px; background:var(--surface); border:1px solid var(--border);
+    border-radius:6px; box-shadow:0 8px 24px rgba(0,0,0,0.28); padding:8px;
+  }
+  .memo-popover.open { display:block; }
+  .memo-popover textarea {
+    display:block; width:100%; box-sizing:border-box; min-height:70px; resize:vertical;
+    border:1px solid var(--border); border-radius:4px; padding:6px 8px;
+    font-family:inherit; font-size:12.5px; background:var(--surface-2); color:var(--text-primary);
+    outline:none;
+  }
+  .memo-popover textarea:focus { border-color:var(--accent); }
+
   .btn-std-update {
     background:var(--accent-light); border:1px solid var(--accent); border-radius:0;
     color:var(--accent); padding:8px 24px; cursor:pointer;
@@ -1166,7 +1185,7 @@
     <div class="table-wrap" style="overflow-x:auto;">
       <table class="project-table" id="mainTable">
         <colgroup>
-          <col id="col0" style="width:110px">
+          <col id="col0" style="width:134px">
           <col id="col1" style="width:160px">
           <col id="col_cust" style="width:120px">
           <col id="col2" style="width:180px">
@@ -1203,6 +1222,7 @@
                   onchange="toggleAllSelected(this.checked, this)" />
                 <span style="display:inline-block;width:24px;flex-shrink:0;visibility:hidden;"></span>
                 <span style="display:inline-block;width:26px;flex-shrink:0;visibility:hidden;"></span>
+                <span style="display:inline-block;width:20px;flex-shrink:0;visibility:hidden;"></span>
               </div>
             </th>
             <th style="background:var(--header-bg);">Product<div class="col-resizer" data-col="1"></div></th>
@@ -3969,6 +3989,12 @@ function renderDashboard() {
             onclick="event.stopPropagation();toggleSelected('${p.id}',this.checked)" />
           <button class="btn-side-open" onclick="openSidePanel('${p.id}')" title="체크리스트 보기"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
           <button class="btn-icon btn-icon-detail" onclick="showDetail('${p.id}')" title="체크리스트 상세보기"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><line x1="9" y1="9" x2="15" y2="9"/><line x1="9" y1="13" x2="15" y2="13"/><line x1="9" y1="17" x2="12" y2="17"/></svg></button>
+          <div class="memo-wrap">
+            <button class="btn-icon btn-memo${p.memo ? ' has-memo' : ''}" onclick="toggleMemoPopover(event,'${p.id}')" title="메모"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>
+            <div class="memo-popover" id="memoPopover_${p.id}" onclick="event.stopPropagation()">
+              <textarea placeholder="메모를 입력하세요…" onblur="saveMemoField('${p.id}', this.value)">${escapeHtml(p.memo || '')}</textarea>
+            </div>
+          </div>
         </div>
       </td>
       <td data-field="name" oncontextmenu="toggleNewBadge(event,'${p.id}')">
@@ -5515,7 +5541,7 @@ function renderNewHoldBadges(p) {
   if (p.isNew && p.onHold) return '<span class="badge-new-text">NEW</span><span class="badge-hold">ON HOLD</span>';
   if (p.isNew) return '<span class="badge-new">NEW</span>';
   if (p.onHold) return '<span class="badge-hold">ON HOLD</span>';
-  if (p.deprioritized) return '<span class="badge-deprioritized">DEPRIORITIZED</span>';
+  if (p.deprioritized) return '<span class="badge-deprioritized">deprioritized</span>';
   return '';
 }
 
@@ -5551,6 +5577,52 @@ function toggleNewBadge(event, id) {
     const table = tr.closest('table');
     if (table) syncHeaderCheckbox(table);
   }
+}
+
+// 연필 아이콘 클릭 → 메모 입력창 토글 (열면 아이콘만 있던 자리에 텍스트 입력 박스가 뜨고,
+// 닫으면 다시 아이콘만 보인다). 다른 곳 클릭 시 자동으로 닫힘.
+function toggleMemoPopover(e, id) {
+  e.stopPropagation();
+  document.querySelectorAll('.memo-popover.open').forEach(el => {
+    if (el.id !== 'memoPopover_' + id) el.classList.remove('open');
+  });
+  const pop = document.getElementById('memoPopover_' + id);
+  if (!pop) return;
+  const opening = !pop.classList.contains('open');
+  if (opening) {
+    // position:fixed로 뷰포트 기준 배치 — table-wrap의 overflow:auto에 잘리지 않도록 함
+    const rect = e.currentTarget.getBoundingClientRect();
+    const popW = 220, popH = 110;
+    let left = rect.left;
+    if (left + popW > window.innerWidth - 8) left = window.innerWidth - popW - 8;
+    if (left < 8) left = 8;
+    let top = rect.bottom + 4;
+    if (top + popH > window.innerHeight - 8) top = rect.top - popH - 4;
+    pop.style.left = left + 'px';
+    pop.style.top = top + 'px';
+  }
+  pop.classList.toggle('open', opening);
+  if (opening) {
+    const ta = pop.querySelector('textarea');
+    if (ta) setTimeout(() => ta.focus(), 0);
+  }
+}
+document.addEventListener('click', () => {
+  document.querySelectorAll('.memo-popover.open').forEach(d => d.classList.remove('open'));
+});
+
+function saveMemoField(id, value) {
+  const { p, isOp } = findAnyProject(id);
+  if (!p) return;
+  const newVal = (value || '').trim();
+  if ((p.memo || '') === newVal) return;
+  p.memo = newVal;
+  p.updatedAt = new Date().toISOString();
+  if (isOp) saveOpProjects(); else saveProjects();
+  document.querySelectorAll(`.memo-wrap .btn-memo`).forEach(btn => {
+    const pop = btn.nextElementSibling;
+    if (pop && pop.id === 'memoPopover_' + id) btn.classList.toggle('has-memo', !!newVal);
+  });
 }
 
 function saveField(id, field, value) {
@@ -9294,6 +9366,12 @@ function _makeOpRow(p) {
           style="width:15px;height:15px;accent-color:#3b82f6;cursor:pointer;margin:0;"
           onclick="event.stopPropagation();toggleSelected('${p.id}',this.checked)" />
         <button class="btn-side-open" onclick="openSidePanel('${p.id}')" title="체크리스트 보기"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></button>
+        <div class="memo-wrap">
+          <button class="btn-icon btn-memo${p.memo ? ' has-memo' : ''}" onclick="toggleMemoPopover(event,'${p.id}')" title="메모"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>
+          <div class="memo-popover" id="memoPopover_${p.id}" onclick="event.stopPropagation()">
+            <textarea placeholder="메모를 입력하세요…" onblur="saveMemoField('${p.id}', this.value)">${escapeHtml(p.memo || '')}</textarea>
+          </div>
+        </div>
       </div>
     </td>
     <td data-field="name" oncontextmenu="toggleNewBadge(event,'${p.id}')">
@@ -9444,7 +9522,7 @@ function showOpTaskPage() {
   renderOpPageNavDots();
 
   const colgroup = `<colgroup>
-    <col id="opCol0" style="width:110px">
+    <col id="opCol0" style="width:134px">
     <col id="opCol1" style="width:160px">
     <col id="opCol_cust" style="width:120px">
     <col id="opCol2" style="width:180px">
@@ -9479,6 +9557,7 @@ function showOpTaskPage() {
             style="width:15px;height:15px;accent-color:var(--accent);cursor:pointer;margin:0;"
             onchange="toggleAllSelected(this.checked, this)" />
           <span style="display:inline-block;width:24px;flex-shrink:0;visibility:hidden;"></span>
+          <span style="display:inline-block;width:20px;flex-shrink:0;visibility:hidden;"></span>
         </div>
       </th>
       <th style="background:var(--header-bg);">Product Model<div class="col-resizer" data-col="op1"></div></th>
