@@ -774,9 +774,9 @@
   }
   .progress-segment:hover { filter:brightness(0.93); }
   .progress-segment:last-child { border-right:none; }
-  .progress-segment.ps-wip  { background:linear-gradient(135deg, #B0BEC5 50%, #f4f4f4 50%); color:#1F3864; }
+  .progress-segment.ps-wip  { background:#B0BEC5; color:#1F3864; }
   .progress-segment.ps-done { background:#B0BEC5; color:#1F3864; }
-  .progress-segment.ps-core-tri  { background:linear-gradient(135deg, #00aee6 50%, #f4f4f4 50%); color:#1F3864; }
+  .progress-segment.ps-core-tri  { background:#00aee6; color:#1F3864; }
   .progress-segment.ps-core-full { background:#00aee6; color:#1F3864; }
   /* ? indicator (progress-bar 설정 항목) */
   /* 3-state 커스텀 체크박스 */
@@ -2361,6 +2361,24 @@ function showConflictDialog(conflicts, fbProjects, fbDeletedProjects) {
   document.body.appendChild(el);
 }
 
+// incoming(Firebase)/local 두 Map을 병합. 값은 항상 각 project의 updatedAt이 더 최신인 쪽이 이기지만,
+// 배열 "순서"는 그냥 incoming 순서로 고정하면 방금 로컬에서 드래그로 바꾼 순서가 뒤이어 들어오는 다른
+// 팀원의 스냅샷(그 팀원은 아직 내 순서 변경을 못 받은 상태)에 의해 조용히 되돌아가 버린다(스냅백 버그).
+// localNewer=true(로컬에 더 최근 변경이 있음)면 로컬 순서를 기준으로 병합해 이를 막는다.
+function mergeProjectsByUpdatedAt(incomingMap, localMap, localNewer) {
+  const baseKeys  = localNewer ? localMap.keys() : incomingMap.keys();
+  const otherMap  = localNewer ? incomingMap : localMap;
+  const allIds = new Set([...baseKeys, ...otherMap.keys()]);
+  const merged = [];
+  allIds.forEach(id => {
+    const fbP = incomingMap.get(id), localP = localMap.get(id);
+    if (!fbP) { merged.push(localP); return; }
+    if (!localP) { merged.push(fbP); return; }
+    merged.push((fbP.updatedAt || '') >= (localP.updatedAt || '') ? fbP : localP);
+  });
+  return merged;
+}
+
 async function saveToFirebase() {
   if (adminMode) return;
   if (!fbDb || !useFirebase) { saveToServer(); return; }
@@ -2369,27 +2387,27 @@ async function saveToFirebase() {
     if (snap.exists) {
       const fbData = snap.data();
       const fbUpdatedAt = fbData.updatedAt ? (fbData.updatedAt.toDate ? fbData.updatedAt.toDate().toISOString() : fbData.updatedAt) : '';
+      // "Firebase가 더 최신인가?"를 localLatest(클라이언트 PC 시계)와 fbUpdatedAt(Firestore 서버 시계)를
+      // 직접 비교해서 판단하면, PC 시계가 서버보다 단 몇 초만 느려도 방금 만든 로컬 변경(예: 드래그 순서
+      // 변경)이 매번 "예전 것"으로 오판되어 저장 직후 곧바로 원격의 예전 데이터로 덮어써진다 — 드래그가
+      // 끝까지 성공했는데도 그 직후 제자리로 돌아가 보이는 버그의 실제 원인이었다.
+      // _lastFbUpdatedAt은 내가 마지막으로 확인한 Firestore 상태(역시 서버 시계 값)이므로, 이것과 비교하면
+      // 서버 시계끼리의 비교라 시계 오차의 영향을 받지 않는다. 이번 세션에서 아직 한 번도 Firestore를
+      // 못 본 경우(_lastFbUpdatedAt이 비어있음)에만 기존처럼 localLatest와 비교해 안전하게 판단한다.
       const localLatest = (projects || []).reduce((max, p) => p.updatedAt > max ? p.updatedAt : max, '');
-      if (fbUpdatedAt && localLatest && fbUpdatedAt > localLatest) {
+      const remoteChanged = !!fbUpdatedAt && (_lastFbUpdatedAt ? fbUpdatedAt > _lastFbUpdatedAt : fbUpdatedAt > localLatest);
+      if (fbUpdatedAt) _lastFbUpdatedAt = fbUpdatedAt;
+      if (remoteChanged) {
         const incomingProjects = fbData.projects || [];
         const mergedDeleted2 = filterPermDeleted(unionDeleted(deletedProjects, fbData.deletedProjects));
         const deletedIds2 = new Set(mergedDeleted2.map(p => p.id));
         const incomingMap = new Map(filterPermDeleted(incomingProjects).filter(p => !deletedIds2.has(p.id)).map(p => [p.id, p]));
         const localMap = new Map(filterPermDeleted(projects || []).filter(p => !deletedIds2.has(p.id)).map(p => [p.id, p]));
-        const allIds = new Set([...incomingMap.keys(), ...localMap.keys()]);
-        const merged = [];
-        allIds.forEach(id => {
-          const fbP = incomingMap.get(id), localP = localMap.get(id);
-          if (!fbP) { merged.push(localP); return; }
-          if (!localP) { merged.push(fbP); return; }
-          merged.push((fbP.updatedAt || '') >= (localP.updatedAt || '') ? fbP : localP);
-        });
-        projects = merged;
+        projects = mergeProjectsByUpdatedAt(incomingMap, localMap, localLatest >= fbUpdatedAt);
         deletedProjects = mergedDeleted2;
         try { localStorage.setItem(STORAGE_KEY, JSON.stringify(projects)); } catch {}
         renderDashboard(); renderDeletedList(); renderBoardSections(); refreshActiveView();
         showSyncStatus('⚠ 팀원 최신 데이터 병합 후 저장', 'var(--amber)');
-        if (_lastFbUpdatedAt !== fbUpdatedAt) _lastFbUpdatedAt = fbUpdatedAt;
       }
     }
   } catch(e) {}
@@ -2405,6 +2423,10 @@ function listenFirebase() {
   fbUnsubscribe = fbDb.doc(FB_DATA_PATH).onSnapshot(snap => {
     if (!snap.exists) return;
     if (Date.now() - _lastSaveTime < 5000) return;
+    // 행 드래그 중에 원격 데이터로 tbody를 다시 그리면 드래그 중인 <tr>이 DOM에서 사라져
+    // 네이티브 드래그가 그대로 취소된다(옮겨지다가 자리 못 잡고 바로 원위치). 드래그가 끝난 뒤
+    // 다음 스냅샷에서 자연스럽게 반영되도록 지금 들어온 갱신은 건너뛴다.
+    if (_rowDragActive) return;
     const d = snap.data();
     const incoming = d.projects || [];
     if (incoming.length === 0 && Array.isArray(projects) && projects.length > 0) {
@@ -2418,15 +2440,10 @@ function listenFirebase() {
     const deletedIds = new Set(mergedDeleted.map(p => p.id));
     const incomingMap = new Map(filterPermDeleted(incoming).filter(p => !deletedIds.has(p.id)).map(p => [p.id, p]));
     const localMap = new Map(filterPermDeleted(projects || []).filter(p => !deletedIds.has(p.id)).map(p => [p.id, p]));
-    const allIds = new Set([...incomingMap.keys(), ...localMap.keys()]);
-    const merged = [];
-    allIds.forEach(id => {
-      const fbP = incomingMap.get(id), localP = localMap.get(id);
-      if (!fbP) { merged.push(localP); return; }
-      if (!localP) { merged.push(fbP); return; }
-      merged.push((fbP.updatedAt || '') >= (localP.updatedAt || '') ? fbP : localP);
-    });
-    projects = merged;
+    // 드래그로 순서만 바꾼 직후엔 필드는 그대로라도 moved.updatedAt이 갱신돼 있으므로,
+    // 로컬이 이 스냅샷보다 최신이면 로컬 순서를 기준으로 병합해 순서가 되돌아가지 않게 한다.
+    const localLatest = (projects || []).reduce((max, p) => p.updatedAt > max ? p.updatedAt : max, '');
+    projects = mergeProjectsByUpdatedAt(incomingMap, localMap, localLatest >= fbUpdatedAt);
     deletedProjects = mergedDeleted;
     ensureAllSelected();
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(projects)); } catch {}
@@ -2456,6 +2473,7 @@ function switchToPolling() {
   updateConnectionStatus('polling');
   showSyncStatus('⚠ Firebase 한도 초과 → 폴링 전환', 'var(--amber)');
   pollingTimer = setInterval(async () => {
+    if (_rowDragActive) return; // 행 드래그 중엔 renderDashboard()를 유발하지 않는다(위 listenFirebase와 동일한 이유)
     const d = await fetchFromServer();
     if (d && Array.isArray(d.projects)) {
       // 🛡️ 안전장치: 서버가 비었는데 로컬에 데이터가 있으면 덮어쓰지 않음
@@ -3442,7 +3460,7 @@ function renderProgressBar(project) {
     const cls = core === 1 ? 'ps-core-tri' : core === 2 ? 'ps-core-full' : psClassFromState(displayStates[i]);
     const { done, total } = stageProgress(project, stage);
     return `<div class="progress-segment ${cls}"
-      title="${stage.label}: ${done}/${total} — 클릭으로 전환(전체→삼각형→원래대로) / 우클릭으로 파란색 순환(전체→삼각형→원래대로)"
+      title="${stage.label}: ${done}/${total} — 클릭으로 전환(전체→원래대로) / 우클릭으로 파란색 순환(전체→원래대로)"
       onclick="clickProgressBar('${project.id}',${stage.num})"
       oncontextmenu="toggleProgressBarCore(event,'${project.id}',${stage.num})">${stage.num}</div>`;
   }).join('');
@@ -3554,13 +3572,13 @@ function clickProgressBar(id, stageNum, fromHeader = false) {
 
   if (!p.pbStates) p.pbStates = {};
 
-  // Stage 1이 삼각형(1, 순환의 마지막 단계)일 때 클릭 → 전체 초기화
-  if (stageNum === 1 && (p.pbStates[1] || 0) === 1) {
+  // Stage 1이 전체 색상(2, 순환의 마지막 단계)일 때 클릭 → 전체 초기화
+  if (stageNum === 1 && (p.pbStates[1] || 0) === 2) {
     resetAllStages(p);
   } else {
-    // 3단계 순환: 0 없음 → 2 전체 색상 → 1 삼각형(절반) → 0 없음
+    // 2단계 순환: 0 없음 → 2 전체 색상 → 0 없음
     const cur = p.pbStates[stageNum] || 0;
-    const next = cur === 0 ? 2 : (cur === 2 ? 1 : 0);
+    const next = cur === 0 ? 2 : 0;
     p.pbStates[stageNum] = next;
 
     if (next === 0) {
@@ -3569,9 +3587,6 @@ function clickProgressBar(id, stageNum, fromHeader = false) {
     } else if (next === 2) {
       // 전체 색상: 모든 항목 pb로 채우기
       stage.items.forEach(k => { p.checks[k] = 'pb'; });
-    } else if (next === 1) {
-      // 삼각형(절반): 첫 항목만 pb
-      stage.items.forEach((k, i) => { p.checks[k] = i === 0 ? 'pb' : false; });
     }
 
     // 작은 단계에 색상이 들어가면, 그보다 큰 단계는 무조건 전체 색상으로 채워짐
@@ -4867,7 +4882,7 @@ function toggleKanbanCoreStar(pid, stageNum) {
     document.getElementById('sidePanelChecklist').innerHTML = buildKanban(p, 'toggleSideCheck');
 }
 
-/* ── Progress Bar 우클릭 → 파란색 순환 (전체 → 삼각형 → 원래대로) ──
+/* ── Progress Bar 우클릭 → 파란색 순환 (전체 → 원래대로) ──
    pbState(회색 삼각형/전체)와는 독립된 오버레이. 켜져 있는 동안은 그 모양대로 파란색으로 보이고,
    원래대로(0)가 되면 원래 pbState 기반 회색 표시로 복귀한다. */
 function toggleProgressBarCore(e, pid, stageNum) {
@@ -4879,7 +4894,7 @@ function toggleProgressBarCore(e, pid, stageNum) {
   if (!p.pbCore) p.pbCore = {};
 
   const cur = p.pbCore[stageNum] || 0;
-  const next = cur === 0 ? 2 : (cur === 2 ? 1 : 0);
+  const next = cur === 0 ? 2 : 0;
   if (next > 0) p.pbCore = {};   // 프로젝트당 한 번에 하나의 스테이지만 파란색 표시
   p.pbCore[stageNum] = next;
   p.coreStages = next > 0 ? [stageNum] : [];   // 칸반 헤더 별표 아이콘과 동기화
@@ -4948,10 +4963,19 @@ function _clearDropMarks(tbody) {
   tbody.querySelectorAll('tr').forEach(r => r.classList.remove('row-drag-over', 'row-drop-before', 'row-drop-after'));
 }
 
+// 행 드래그 진행 중 여부(표 종류 무관, 전역 1개로 충분). 이 사이에 Firebase 실시간 리스너/폴링이
+// projects를 통째로 갈아끼우면 드래그 중인 <tr>이 DOM에서 사라져 네이티브 드래그가 그 즉시 취소되고
+// 원위치로 튕겨 보인다("옮겨지다가 자리 못 잡고 바로 돌아감") — listenFirebase/폴링 쪽에서 이 플래그를
+// 보고 드래그가 끝날 때까지 원격 갱신 반영을 미룬다.
+let _rowDragActive = false;
+
 function initRowDrag(tbodyId, onDrop) {
   const tbody = document.getElementById(tbodyId);
   if (!tbody) return;
-  let dragSrcId = null;
+  // dragSrcId는 tbody 자체에 저장한다 — renderDashboard()가 tbody.innerHTML만 새로 그리고 tbody 엘리먼트
+  // 자체는 재사용하므로, 렌더 때마다 새로 만드는 로컬 클로저 대신 이렇게 해야 아래 "한 번만 등록" 블록의
+  // 리스너(첫 렌더 시점 클로저)가 이후 렌더에서 갱신된 dragSrcId도 계속 정확히 읽을 수 있다.
+  tbody._dragSrcId = null;
 
   tbody.querySelectorAll('tr[data-pid], tr[data-del-pid]').forEach(tr => {
     const getPid = () => tr.dataset.pid || tr.dataset.delPid;
@@ -4963,22 +4987,24 @@ function initRowDrag(tbodyId, onDrop) {
     }
 
     tr.addEventListener('dragstart', e => {
-      dragSrcId = getPid();
+      tbody._dragSrcId = getPid();
+      _rowDragActive = true;
       tr.classList.add('row-dragging');
       e.dataTransfer.effectAllowed = 'move';
-      e.dataTransfer.setData('text/plain', dragSrcId);
+      e.dataTransfer.setData('text/plain', tbody._dragSrcId);
     });
 
     tr.addEventListener('dragend', () => {
       tr.draggable = false;
       tr.classList.remove('row-dragging');
       _clearDropMarks(tbody);
+      _rowDragActive = false;
     });
 
     tr.addEventListener('dragover', e => {
       e.preventDefault();
       e.dataTransfer.dropEffect = 'move';
-      if (!getPid() || getPid() === dragSrcId) return;
+      if (!getPid() || getPid() === tbody._dragSrcId) return;
       // 포인터가 대상 행의 위 절반이면 '앞', 아래 절반이면 '뒤'에 놓는다 → 맨 위/맨 아래로도 이동 가능
       const rect = tr.getBoundingClientRect();
       const after = (e.clientY - rect.top) > rect.height / 2;
@@ -4992,9 +5018,37 @@ function initRowDrag(tbodyId, onDrop) {
       const targetId = getPid();
       const after = !!tr._dropAfter;
       _clearDropMarks(tbody);
-      if (!targetId || targetId === dragSrcId) return;
-      onDrop(dragSrcId, targetId, after);
+      // drop이 접수된 시점에 바로 내린다 — 네이티브 dragend는 이 핸들러가 끝난 뒤에야 뒤늦게 오므로,
+      // 그때까지 기다리면 onDrop()이 부르는 renderDashboard() 동안 Firebase 리스너/폴링이 계속 차단된 채로 남는다.
+      _rowDragActive = false;
+      if (!targetId || targetId === tbody._dragSrcId) return;
+      onDrop(tbody._dragSrcId, targetId, after);
     });
+  });
+
+  // 마지막 데이터 행 아래(＋ 추가 버튼 행 등 빈 공간)에는 개별 행 리스너가 없어 드롭이 씹힌다.
+  // 필터로 표시 행이 적을 때 특히 이 빈 공간이 넓어져 자주 겪는 문제라, tbody 레벨에서 보강한다.
+  // renderDashboard()가 호출될 때마다 initRowDrag가 다시 실행돼도 tbody 엘리먼트 자체는 재사용되므로,
+  // 여기 리스너는 한 번만 등록해 렌더할 때마다 중복으로 쌓이지 않게 한다.
+  if (tbody._rowDragFallbackBound) return;
+  tbody._rowDragFallbackBound = true;
+  const isDataRow = el => !!el.closest('tr[data-pid], tr[data-del-pid]');
+  tbody.addEventListener('dragover', e => {
+    if (isDataRow(e.target)) return; // 개별 행 리스너가 이미 처리
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  });
+  tbody.addEventListener('drop', e => {
+    if (isDataRow(e.target)) return;
+    e.preventDefault();
+    _clearDropMarks(tbody);
+    _rowDragActive = false; // 위 tr 'drop' 핸들러와 동일한 이유
+    const rows = tbody.querySelectorAll('tr[data-pid], tr[data-del-pid]');
+    const lastRow = rows[rows.length - 1];
+    const targetId = lastRow && (lastRow.dataset.pid || lastRow.dataset.delPid);
+    const srcId = tbody._dragSrcId;
+    if (!targetId || targetId === srcId) return;
+    onDrop(srcId, targetId, true);
   });
 }
 
