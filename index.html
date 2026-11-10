@@ -108,6 +108,7 @@
   .page-title-edit-hint {
     opacity: 0; font-size: 13px; color: var(--text-muted);
     transition: opacity 0.15s; cursor: pointer;
+    display: inline-flex; align-items: center; flex-shrink: 0;
   }
   .page-title-wrap:hover .page-title-edit-hint { opacity: 1; }
   #pageTitleInput {
@@ -144,6 +145,10 @@
   }
   .cl-nav-dot:hover { background:var(--accent-light); border-color:var(--accent); color:var(--accent); }
   .cl-nav-dot.active { background:var(--accent); border-color:var(--accent); color:#fff; }
+  /* 네비 버튼 드래그 순서 변경 */
+  .cl-nav-dot.nav-dragging { opacity:0.35; }
+  .cl-nav-dot.nav-drop-before { box-shadow:-3px 0 0 0 var(--accent); }
+  .cl-nav-dot.nav-drop-after  { box-shadow: 3px 0 0 0 var(--accent); }
 
   /* ── PPT Preview ── */
   .ppt-preview-section { margin-bottom:40px; }
@@ -1227,20 +1232,20 @@
   <!-- Dashboard (Table) -->
   <div id="dashboard">
     <div style="display:flex;align-items:center;gap:16px;margin:0 0 20px;position:relative;">
-      <div class="page-title-wrap" onclick="startTitleEdit()" style="flex:1;min-width:0;">
+      <div class="page-title-wrap" onclick="startTitleEdit()" title="클릭해서 제목 수정 — 첫 단어의 첫 글자가 상단 네비 글자가 됩니다" style="flex:1;min-width:0;cursor:text;">
         <h2 id="pageTitleDisplay" style="font-size:23px;font-weight:500;color:var(--text-primary);margin:0;letter-spacing:-0.3px;">[Technical Publication] IBU Status</h2>
         <input id="pageTitleInput" style="display:none;" type="text"
           onblur="saveTitleEdit()"
           onkeydown="if(event.key==='Enter')this.blur(); if(event.key==='Escape'){cancelTitleEdit();}" />
-        <span class="page-title-edit-hint">?</span>
+        <span class="page-title-edit-hint" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z"/></svg></span>
       </div>
       <div class="page-nav" style="position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);">
         <button onclick="goHome()" title="홈 — Status 페이지" style="background:none;border:none;cursor:pointer;padding:2px 4px;display:inline-flex;align-items:center;color:rgba(255,255,255,0.75);margin-right:4px;">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
         </button>
-        <button class="page-nav-arrow" onclick="gotoStatusPage(currentStatusPage - 1)" title="이전 페이지">&#8592;</button>
+        <button class="page-nav-arrow" onclick="gotoStatusPageByOffset(-1)" title="이전 페이지">&#8592;</button>
         <div class="page-nav-dots" id="pageNavDots"></div>
-        <button class="page-nav-arrow" onclick="gotoStatusPage(currentStatusPage + 1)" title="다음 페이지">&#8594;</button>
+        <button class="page-nav-arrow" onclick="gotoStatusPageByOffset(1)" title="다음 페이지">&#8594;</button>
       </div>
     </div>
     <div style="display:flex;align-items:center;gap:10px;margin:0 0 12px 2px;">
@@ -1531,9 +1536,9 @@
       <button onclick="goHome()" title="홈 — Status 페이지" style="background:none;border:none;cursor:pointer;padding:2px 4px;display:inline-flex;align-items:center;color:rgba(255,255,255,0.75);margin-right:4px;">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
       </button>
-      <button class="page-nav-arrow" onclick="gotoClPage(currentClPage - 1)" title="이전">&#8592;</button>
+      <button class="page-nav-arrow" onclick="gotoClPageByOffset(-1)" title="이전">&#8592;</button>
       <div class="page-nav-dots" id="clNavDots"></div>
-      <button class="page-nav-arrow" onclick="gotoClPage(currentClPage + 1)" title="다음">&#8594;</button>
+      <button class="page-nav-arrow" onclick="gotoClPageByOffset(1)" title="다음">&#8594;</button>
     </div>
   </div>
   <div style="display:flex;align-items:center;gap:6px;margin-bottom:14px;">
@@ -1660,9 +1665,9 @@
       <button onclick="goHome()" title="홈 — Status 페이지" style="background:none;border:none;cursor:pointer;padding:2px 4px;display:inline-flex;align-items:center;color:rgba(255,255,255,0.75);margin-right:4px;">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
       </button>
-      <button class="page-nav-arrow" onclick="gotoCpPage(currentCpPage - 1)" title="이전">&#8592;</button>
+      <button class="page-nav-arrow" onclick="gotoCpPageByOffset(-1)" title="이전">&#8592;</button>
       <div class="page-nav-dots" id="cpNavDots"></div>
-      <button class="page-nav-arrow" onclick="gotoCpPage(currentCpPage + 1)" title="다음">&#8594;</button>
+      <button class="page-nav-arrow" onclick="gotoCpPageByOffset(1)" title="다음">&#8594;</button>
     </div>
   </div>
   <div id="completedTablePane"></div>
@@ -1697,9 +1702,9 @@
       <button onclick="goHome()" title="홈 — Status 페이지" style="background:none;border:none;cursor:pointer;padding:2px 4px;display:inline-flex;align-items:center;color:rgba(255,255,255,0.75);margin-right:4px;">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
       </button>
-      <button class="page-nav-arrow" onclick="gotoOpStatusPage(currentOpStatusPage - 1)" title="이전 페이지">&#8592;</button>
+      <button class="page-nav-arrow" onclick="gotoOpStatusPageByOffset(-1)" title="이전 페이지">&#8592;</button>
       <div class="page-nav-dots" id="opPageNavDots"></div>
-      <button class="page-nav-arrow" onclick="gotoOpStatusPage(currentOpStatusPage + 1)" title="다음 페이지">&#8594;</button>
+      <button class="page-nav-arrow" onclick="gotoOpStatusPageByOffset(1)" title="다음 페이지">&#8594;</button>
     </div>
   </div>
   <div style="display:flex;align-items:center;gap:10px;margin:0 0 12px 2px;">
@@ -1751,9 +1756,9 @@
       <button onclick="goHome()" title="홈 — Status 페이지" style="background:none;border:none;cursor:pointer;padding:2px 4px;display:inline-flex;align-items:center;color:rgba(255,255,255,0.75);margin-right:4px;">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
       </button>
-      <button class="page-nav-arrow" onclick="gotoFocusPage(currentFocusPage - 1)" title="이전">&#8592;</button>
+      <button class="page-nav-arrow" onclick="gotoFocusPageByOffset(-1)" title="이전">&#8592;</button>
       <div class="page-nav-dots" id="focusNavDots"></div>
-      <button class="page-nav-arrow" onclick="gotoFocusPage(currentFocusPage + 1)" title="다음">&#8594;</button>
+      <button class="page-nav-arrow" onclick="gotoFocusPageByOffset(1)" title="다음">&#8594;</button>
     </div>
   </div>
   <div id="focusResourceFilter" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;"></div>
@@ -3200,12 +3205,29 @@ const BASE_BU_NAMES = ['IBU', 'RBU', 'OBU'];
 let BU_PAGE_NAMES = [...BASE_BU_NAMES];            // 예: ['IBU','RBU','OBU','TW']
 let STATUS_PAGE_COUNT = BU_PAGE_NAMES.length;      // BU 페이지 개수(Total 제외) — 동적
 let STATUS_PAGE_FULL_NAMES = [...BU_PAGE_NAMES, 'Total'];
-let STATUS_PAGE_LABELS = _computeBuLabels(STATUS_PAGE_FULL_NAMES);
+let STATUS_PAGE_LABELS = _computeStatusPageLabels();
 
-// 라벨: BU명 첫 글자(IBU→I). 첫 글자가 겹치면(예: TW vs Total) 그 항목들만 전체 텍스트로.
+// 라벨: 이름 첫 글자(IBU→I). 첫 글자가 겹치면(예: TW vs Total) 그 항목들만 전체 텍스트로.
 function _computeBuLabels(names) {
   const firsts = names.map(n => (n[0] || '').toUpperCase());
   return names.map((n, i) => firsts.filter(x => x === firsts[i]).length > 1 ? n : firsts[i]);
+}
+
+// 네비 글자의 출처 = 그 페이지의 "제목". 제목을 고치면 상단 네비 글자도 따라 바뀐다.
+// "[Technical Publication] OBU Status" → 앞의 대괄호 수식어를 떼고 첫 단어 "OBU" → 라벨 "O".
+// 제목이 비었거나 읽기 실패하면 기존대로 BU명(fallback)을 쓴다.
+function _navNameFromTitle(pageId, fallback) {
+  try {
+    const t = String(getPageTitle(pageId) || '').replace(/^\s*\[[^\]]*\]\s*/, '').trim();
+    return t.split(/\s+/)[0] || fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+// 페이지별 네비 라벨 (1..N=BU, N+1=Total). 제목 기준으로 뽑되 겹치면 _computeBuLabels가 풀어쓴다.
+function _computeStatusPageLabels() {
+  return _computeBuLabels(STATUS_PAGE_FULL_NAMES.map((n, i) => _navNameFromTitle(i + 1, n)));
 }
 // 프로젝트의 BU명 (bu 값 우선, 비어 있으면 기존 pageId로 추론 — 구 데이터 호환)
 function projectBuName(p) {
@@ -3234,8 +3256,25 @@ function recomputeBuPages(list) {
   BU_PAGE_NAMES = [...BASE_BU_NAMES, ...[...extras].sort((a, b) => a.localeCompare(b))];
   STATUS_PAGE_COUNT = BU_PAGE_NAMES.length;
   STATUS_PAGE_FULL_NAMES = [...BU_PAGE_NAMES, 'Total'];
-  STATUS_PAGE_LABELS = _computeBuLabels(STATUS_PAGE_FULL_NAMES);
+  STATUS_PAGE_LABELS = _computeStatusPageLabels();
 }
+// 그 메뉴가 실제로 보여주는 목록에 들어 있는 BU 이름 집합.
+function _buNamesPresent(list) {
+  const s = new Set();
+  (list || []).forEach(p => { const b = projectBuName(p); if (b) s.add(b); });
+  return s;
+}
+
+// 네비에 그릴 BU 인덱스(0-base) 목록 — 그 메뉴에 데이터가 하나도 없는 BU 버튼은 숨긴다.
+// 기본 BU(IBU/RBU/OBU)도 예외 없이 적용된다. 데이터가 생기면 자동으로 다시 나타난다.
+// 단, 지금 보고 있는 페이지는 빈 표가 되더라도 남겨둔다 — 자기 위치가 사라지면
+// 어느 페이지에 서 있는지 알 수 없고, 보는 중에 화면이 제멋대로 바뀌기 때문.
+function visibleBuIdxs(list, currentIdx) {
+  const present = _buNamesPresent(list);
+  return BU_PAGE_NAMES.map((_, i) => i)
+    .filter(i => present.has(BU_PAGE_NAMES[i]) || i === currentIdx);
+}
+
 const _isBoardRow = p => ['M', 'Q', 'Y'].some(t => ((p && p.boardTypes) || []).includes(t));
 
 let currentStatusPage = 999; // 1..N=각 BU, N+1=Total. 기본값은 Total — renderPageNavDots()가 렌더 시 STATUS_PAGE_COUNT+1로 클램프한다.
@@ -7707,13 +7746,16 @@ function gotoCdbPage(n) {
 }
 
 function renderCdbDots() {
-  recomputeBuPages(projects.filter(_isBoardRow)); // 보고 대상(M/Q/Y) 데이터에 있는 BU만
+  const cdbList = projects.filter(_isBoardRow);
+  recomputeBuPages(cdbList); // 보고 대상(M/Q/Y) 데이터에 있는 BU만
   if (currentCdbPage > STATUS_PAGE_COUNT) currentCdbPage = STATUS_PAGE_COUNT; // 클램프(기본 Total)
   const titles = [...BU_PAGE_NAMES, 'Total'];
   const el = document.getElementById('cdbNavDots');
   if (el) {
-    el.innerHTML = titles.map((title, i) =>
-      `<div class="cl-nav-dot${i === currentCdbPage ? ' active' : ''}" onclick="gotoCdbPage(${i})" title="${title}">${STATUS_PAGE_LABELS[i]}</div>`
+    // 데이터가 있는 BU만 (Total과 현재 페이지는 항상 표시)
+    const idxs = [...visibleBuIdxs(cdbList, currentCdbPage), STATUS_PAGE_COUNT];
+    el.innerHTML = idxs.map(i =>
+      `<div class="cl-nav-dot${i === currentCdbPage ? ' active' : ''}" onclick="gotoCdbPage(${i})" title="${titles[i]}">${STATUS_PAGE_LABELS[i]}</div>`
     ).join('');
   }
   const titleEl = document.getElementById('cdbTitle');
@@ -9629,6 +9671,13 @@ function saveTitleEdit() {
   display.textContent = newTitle;
   display.style.display = '';
   input.style.display = 'none';
+  // 네비 글자는 제목에서 뽑으므로, 제목을 고치면 상단 네비도 바로 다시 그린다.
+  STATUS_PAGE_LABELS = _computeStatusPageLabels();
+  renderPageNavDots();
+  if (typeof renderClNavDots === 'function' &&
+      document.getElementById('page-checklist')?.style.display === '') {
+    renderClNavDots();
+  }
 }
 function cancelTitleEdit() {
   const display = document.getElementById('pageTitleDisplay');
@@ -9770,7 +9819,9 @@ function renderOpPageNavDots() {
   if (currentOpStatusPage > STATUS_PAGE_COUNT + 1) currentOpStatusPage = STATUS_PAGE_COUNT + 1;
   const el = document.getElementById('opPageNavDots');
   if (!el) return;
-  el.innerHTML = Array.from({length: STATUS_PAGE_COUNT + 1}, (_, i) =>
+  // Operational Task에 데이터가 있는 BU만 (Total과 현재 페이지는 항상 표시)
+  const idxs = [...visibleBuIdxs(opProjects, currentOpStatusPage - 1), STATUS_PAGE_COUNT];
+  el.innerHTML = idxs.map(i =>
     `<div class="cl-nav-dot ${i + 1 === currentOpStatusPage ? 'active' : ''}"
       onclick="gotoOpStatusPage(${i + 1})" title="${STATUS_PAGE_FULL_NAMES[i]}">${STATUS_PAGE_LABELS[i]}</div>`
   ).join('');
@@ -9783,14 +9834,17 @@ function gotoClPage(n) {
 }
 
 function renderClNavDots() {
-  recomputeBuPages(projects.filter(p => p.selected !== false && !_isBoardRow(p))); // Checklist 대상 데이터에 있는 BU만
+  const clList = projects.filter(p => p.selected !== false && !_isBoardRow(p));
+  recomputeBuPages(clList); // Checklist 대상 데이터에 있는 BU만
   if (currentClPage > STATUS_PAGE_COUNT) currentClPage = STATUS_PAGE_COUNT;
   const el = document.getElementById('clNavDots');
   const label = document.getElementById('clPageLabel');
   if (!el) return;
   const CL_TITLES = [...BU_PAGE_NAMES.map(n => `${n} Status`), 'Total'];
-  el.innerHTML = CL_TITLES.map((title, i) =>
-    `<div class="cl-nav-dot ${i === currentClPage ? 'active' : ''}" onclick="gotoClPage(${i})" title="${title}">${STATUS_PAGE_LABELS[i]}</div>`
+  // 데이터가 있는 BU만 (Total과 현재 페이지는 항상 표시)
+  const idxs = [...visibleBuIdxs(clList, currentClPage), STATUS_PAGE_COUNT];
+  el.innerHTML = idxs.map(i =>
+    `<div class="cl-nav-dot ${i === currentClPage ? 'active' : ''}" onclick="gotoClPage(${i})" title="${CL_TITLES[i]}">${STATUS_PAGE_LABELS[i]}</div>`
   ).join('');
   if (label) label.textContent = CL_TITLES[currentClPage];
 }
@@ -9802,13 +9856,16 @@ function gotoFocusPage(n) {
 }
 
 function renderFocusNavDots() {
-  recomputeBuPages(projects.filter(isFocusProject)); // Focus 대상 데이터에 있는 BU만
+  const focusList = projects.filter(isFocusProject);
+  recomputeBuPages(focusList); // Focus 대상 데이터에 있는 BU만
   if (currentFocusPage > STATUS_PAGE_COUNT) currentFocusPage = STATUS_PAGE_COUNT; // 클램프(기본 Total)
   const el = document.getElementById('focusNavDots');
   if (!el) return;
   const FOCUS_TITLES = [...BU_PAGE_NAMES, 'Total'];
-  el.innerHTML = FOCUS_TITLES.map((title, i) =>
-    `<div class="cl-nav-dot ${i === currentFocusPage ? 'active' : ''}" onclick="gotoFocusPage(${i})" title="${title}">${STATUS_PAGE_LABELS[i]}</div>`
+  // 데이터가 있는 BU만 (Total과 현재 페이지는 항상 표시)
+  const idxs = [...visibleBuIdxs(focusList, currentFocusPage), STATUS_PAGE_COUNT];
+  el.innerHTML = idxs.map(i =>
+    `<div class="cl-nav-dot ${i === currentFocusPage ? 'active' : ''}" onclick="gotoFocusPage(${i})" title="${FOCUS_TITLES[i]}">${STATUS_PAGE_LABELS[i]}</div>`
   ).join('');
 }
 
@@ -9827,20 +9884,143 @@ function renderDbNavDots() {
 
 // STATUS_PAGE_LABELS / STATUS_PAGE_FULL_NAMES 는 동적 BU 페이지 블록(상단)에서 관리됨.
 
+/* ── 상단 네비 순서 ──
+   페이지 번호 체계(1..N=BU, N+1=Total)는 Operational Task 등 다른 네비게이터와 공유하므로
+   그대로 두고, "보여주는 순서"만 따로 저장한다. 그래서 순서를 바꿔도 pageId로 저장된
+   페이지 제목·프로젝트 소속은 전혀 흔들리지 않는다.
+   저장 키는 페이지 번호가 아니라 이름(BU명 / 'Total')이라, BU가 새로 생겨 번호가 밀려도 안전하다. */
+const NAV_ORDER_KEY = 'tw_pm_nav_order';
+
+function _navOrderKey(n) { return STATUS_PAGE_FULL_NAMES[n - 1]; }
+function loadNavOrder() {
+  try { const v = JSON.parse(localStorage.getItem(NAV_ORDER_KEY)); return Array.isArray(v) ? v : []; }
+  catch { return []; }
+}
+function saveNavOrder(keys) {
+  try { localStorage.setItem(NAV_ORDER_KEY, JSON.stringify(keys)); } catch {}
+}
+
+// 표시 순서를 페이지 번호 배열로 돌려준다. 저장된 순서가 없으면 기존 기본값(Total이 맨 앞).
+// 저장된 목록에 없는 페이지(새로 생긴 BU)는 맨 뒤에 붙고, 사라진 이름은 무시된다.
+function getNavPageOrder() {
+  const total = STATUS_PAGE_COUNT + 1;
+  const all = Array.from({ length: total }, (_, i) => i + 1);
+  const saved = loadNavOrder();
+  if (!saved.length) return [total, ...all.filter(n => n !== total)];
+  const byKey = new Map(all.map(n => [_navOrderKey(n), n]));
+  const ordered = [];
+  saved.forEach(k => { if (byKey.has(k)) { ordered.push(byKey.get(k)); byKey.delete(k); } });
+  byKey.forEach(n => ordered.push(n));
+  return ordered;
+}
+
+// 실제로 네비에 그려지는 순서 = 저장된 순서 중에서 "그 메뉴에 데이터가 있는 BU"만 남긴 것.
+// Total과 지금 보고 있는 페이지는 데이터가 없어도 항상 남긴다.
+function getVisibleNavPageOrder() {
+  const total = STATUS_PAGE_COUNT + 1;
+  const visible = new Set(visibleBuIdxs(projects, currentStatusPage - 1).map(i => i + 1));
+  visible.add(total);
+  visible.add(currentStatusPage);
+  return getNavPageOrder().filter(n => visible.has(n));
+}
+
+// 좌우 화살표 — 페이지 번호 ±1이 아니라 "지금 보이는 순서"의 앞/뒤로 이동한다.
+function gotoStatusPageByOffset(delta) {
+  const order = getVisibleNavPageOrder();
+  if (!order.length) return;
+  const i = order.indexOf(currentStatusPage);
+  const next = order[((i === -1 ? 0 : i) + delta + order.length) % order.length];
+  gotoStatusPage(next);
+}
+
+/* 화살표 이동 — 숨겨진(그 메뉴에 데이터가 없는) BU 페이지는 건너뛴다.
+   Progress/Focus/Completed Projects는 0-base, Operational Task는 1-base 번호 체계를 쓴다. */
+function _stepVisiblePage(list, current, delta) {
+  const idxs = [...visibleBuIdxs(list, current), STATUS_PAGE_COUNT];
+  const i = idxs.indexOf(current);
+  return idxs[((i === -1 ? 0 : i) + delta + idxs.length) % idxs.length];
+}
+function gotoClPageByOffset(d) {
+  gotoClPage(_stepVisiblePage(projects.filter(p => p.selected !== false && !_isBoardRow(p)), currentClPage, d));
+}
+function gotoFocusPageByOffset(d) {
+  gotoFocusPage(_stepVisiblePage(projects.filter(isFocusProject), currentFocusPage, d));
+}
+function gotoCpPageByOffset(d) {
+  gotoCpPage(_stepVisiblePage(projects.filter(_isBoardRow), currentCpPage, d));
+}
+function gotoOpStatusPageByOffset(d) {
+  const idxs = [...visibleBuIdxs(opProjects, currentOpStatusPage - 1), STATUS_PAGE_COUNT].map(i => i + 1);
+  const i = idxs.indexOf(currentOpStatusPage);
+  gotoOpStatusPage(idxs[((i === -1 ? 0 : i) + d + idxs.length) % idxs.length]);
+}
+
+let _navDragKey = null;
+
+function _clearNavDropMarks(container) {
+  container.querySelectorAll('.cl-nav-dot').forEach(d =>
+    d.classList.remove('nav-drop-before', 'nav-drop-after'));
+}
+
+// 네비 버튼 드래그로 순서 변경. renderPageNavDots가 innerHTML을 통째로 갈아끼우므로
+// 그릴 때마다 다시 붙인다(이전 리스너는 DOM과 함께 사라진다).
+function initNavDotDrag(container) {
+  container.querySelectorAll('.cl-nav-dot').forEach(dot => {
+    dot.addEventListener('dragstart', e => {
+      _navDragKey = _navOrderKey(Number(dot.dataset.page));
+      dot.classList.add('nav-dragging');
+      try {
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', _navDragKey);
+      } catch {}
+    });
+    dot.addEventListener('dragend', () => {
+      dot.classList.remove('nav-dragging');
+      _clearNavDropMarks(container);
+      _navDragKey = null;
+    });
+    dot.addEventListener('dragover', e => {
+      if (!_navDragKey) return;
+      e.preventDefault();
+      const r = dot.getBoundingClientRect();
+      const after = (e.clientX - r.left) > r.width / 2;
+      dot.classList.toggle('nav-drop-before', !after);
+      dot.classList.toggle('nav-drop-after', after);
+    });
+    dot.addEventListener('dragleave', () =>
+      dot.classList.remove('nav-drop-before', 'nav-drop-after'));
+    dot.addEventListener('drop', e => {
+      e.preventDefault();
+      const srcKey = _navDragKey;
+      const tgtKey = _navOrderKey(Number(dot.dataset.page));
+      _clearNavDropMarks(container);
+      if (!srcKey || !tgtKey || srcKey === tgtKey) return;
+      const r = dot.getBoundingClientRect();
+      const after = (e.clientX - r.left) > r.width / 2;
+      const keys = getNavPageOrder().map(_navOrderKey);
+      const si = keys.indexOf(srcKey);
+      if (si === -1) return;
+      keys.splice(si, 1);
+      const ti = keys.indexOf(tgtKey);
+      if (ti === -1) return;
+      keys.splice(after ? ti + 1 : ti, 0, srcKey);
+      saveNavOrder(keys);
+      renderPageNavDots();
+    });
+  });
+}
+
 function renderPageNavDots() {
   recomputeBuPages(projects); // In Active 데이터에 있는 BU만
   if (currentStatusPage > STATUS_PAGE_COUNT + 1) currentStatusPage = STATUS_PAGE_COUNT + 1;
   const el = document.getElementById('pageNavDots');
   if (!el) return;
-  const total = STATUS_PAGE_COUNT + 1;
-  // Total을 맨 앞에 보여주고 그 뒤로 BU들을 순서대로 — 페이지 번호 체계 자체(1..N=BU, N+1=Total)는
-  // Operational Task 등 다른 네비게이터와 공유되므로 그대로 두고, 여기 표시 순서만 Total-먼저로 바꾼다.
-  // (좌우 화살표는 페이지 번호를 그대로 ±1 하는데, 이 배치는 그 순환 순서를 한 칸 돌린 것뿐이라 그대로 맞는다.)
-  const order = [total, ...Array.from({length: STATUS_PAGE_COUNT}, (_, i) => i + 1)];
+  const order = getVisibleNavPageOrder();
   el.innerHTML = order.map(n =>
-    `<div class="cl-nav-dot ${n === currentStatusPage ? 'active' : ''}"
-      onclick="gotoStatusPage(${n})" title="${STATUS_PAGE_FULL_NAMES[n - 1]}">${STATUS_PAGE_LABELS[n - 1]}</div>`
+    `<div class="cl-nav-dot ${n === currentStatusPage ? 'active' : ''}" draggable="true" data-page="${n}"
+      onclick="gotoStatusPage(${n})" title="${STATUS_PAGE_FULL_NAMES[n - 1]} — 끌어서 순서 변경">${STATUS_PAGE_LABELS[n - 1]}</div>`
   ).join('');
+  initNavDotDrag(el);
 }
 
 /* ── Nav Bar ── */
@@ -10962,11 +11142,14 @@ function gotoCpPage(n) {
 }
 
 function _renderCpDots() {
-  recomputeBuPages(projects.filter(_isBoardRow)); // 보고 대상(M/Q/Y) 데이터에 있는 BU만
+  const cpList = projects.filter(_isBoardRow);
+  recomputeBuPages(cpList); // 보고 대상(M/Q/Y) 데이터에 있는 BU만
   if (currentCpPage > STATUS_PAGE_COUNT) currentCpPage = STATUS_PAGE_COUNT; // 클램프(기본 Total)
   const titles = [...BU_PAGE_NAMES, 'Total'];
-  document.getElementById('cpNavDots').innerHTML = titles.map((title, i) =>
-    `<div class="cl-nav-dot${i === currentCpPage ? ' active' : ''}" onclick="gotoCpPage(${i})" title="${title}">${STATUS_PAGE_LABELS[i]}</div>`
+  // 데이터가 있는 BU만 (Total과 현재 페이지는 항상 표시)
+  const idxs = [...visibleBuIdxs(cpList, currentCpPage), STATUS_PAGE_COUNT];
+  document.getElementById('cpNavDots').innerHTML = idxs.map(i =>
+    `<div class="cl-nav-dot${i === currentCpPage ? ' active' : ''}" onclick="gotoCpPage(${i})" title="${titles[i]}">${STATUS_PAGE_LABELS[i]}</div>`
   ).join('');
   document.getElementById('cpPageLabel').textContent =
     currentCpPage === STATUS_PAGE_COUNT ? '보고 대상 전체' : `보고 대상 — ${BU_PAGE_NAMES[currentCpPage]}`;

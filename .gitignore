@@ -1,0 +1,15 @@
+# Firebase 비밀키 — 절대 커밋 금지
+firebase 비공개 Git Hub 서비스 계정키/
+
+# 로컬 전용 백업 (git 대신 파일로만 관리)
+backup/
+수동 백업/
+Upload to Firebase/
+
+# 실제 프로젝트 데이터 (고객/제품 정보 포함 — 저장소에 올리지 않음)
+raw data/
+PPTX_Tools/PPTX_Import/
+
+# OS 캐시 파일
+Thumbs.db
+.DS_Store
