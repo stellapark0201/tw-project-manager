@@ -4244,7 +4244,32 @@ function renderStatusBadge(project) {
 // switchView=false: Firebase 실시간 동기화 등 백그라운드에서 데이터만 최신화할 때 사용 —
 // 사용자가 체크리스트 상세보기 등 다른 화면을 보고 있는 도중에 강제로 In Active 화면으로
 // 튕겨나가는 것을 막는다(예: 체크박스 하나 눌렀는데 그 직후 원격 동기화가 겹쳐 화면이 넘어가 보이던 문제).
+/* ── 흐린 행(ON HOLD / DEPRIORITIZED)은 PPTX 내보내기에서 자동 제외 ──
+   우클릭으로 상태를 바꾸는 순간에도 체크가 풀리지만(toggleNewBadge), 이미 흐린 상태로
+   들어온 데이터나 사용자가 다시 체크한 경우까지 잡으려고 렌더 직전에 한 번 더 맞춘다.
+   체크 상태를 데이터에 반영해두면 PPTX·체크리스트 등 체크박스를 보는 모든 기능이
+   따로 손대지 않아도 같은 기준을 따른다. 조용한 정규화라 이력/되돌리기에는 남기지 않는다. */
+// 흐린 행(ON HOLD / DEPRIORITIZED) = 1, 보통 행 = 0. 표 정렬에서 흐린 행을 아래로 내리는 데 쓴다.
+function _dimRank(p) {
+  return (p && (p.onHold || p.deprioritized)) ? 1 : 0;
+}
+
+function enforceDimmedUnchecked(list, storageKey) {
+  let changed = false;
+  (list || []).forEach(p => {
+    if ((p.onHold || p.deprioritized) && p.selected !== false) {
+      p.selected = false;
+      changed = true;
+    }
+  });
+  if (changed && storageKey) {
+    try { localStorage.setItem(storageKey, JSON.stringify(list)); } catch {}
+  }
+  return changed;
+}
+
 function renderDashboard(switchView = true) {
+  enforceDimmedUnchecked(projects, STORAGE_KEY);
   recomputeBuPages();
   if (switchView) {
     document.getElementById('detail').style.display = 'none';
@@ -4278,10 +4303,13 @@ function renderDashboard(switchView = true) {
   updateActiveBulkDeleteUI();
   updateUndoUI();
 
+  // 흐린 행(ON HOLD / DEPRIORITIZED)은 표 맨 아래로 모은다.
+  // filter()가 새 배열을 돌려주므로 projects 원본 순서는 건드리지 않는 "보여주기 전용" 정렬이고,
+  // Array.prototype.sort는 안정 정렬이라 같은 그룹 안에서는 드래그로 맞춘 순서가 그대로 유지된다.
   tbody.innerHTML = projects.filter(p =>
     !['M','Q','Y'].some(t => (p.boardTypes||[]).includes(t)) &&
     matchesStatusPage(p)
-  ).map(p => {
+  ).sort((a, b) => _dimRank(a) - _dimRank(b)).map(p => {
     const sel = p.selected !== false;
     const pub = escapeHtml(p.publication || '');
     const pur = escapeHtml(p.purpose || '');
@@ -5884,6 +5912,15 @@ function syncHeaderCheckbox(table) {
 function toggleSelected(id, val) {
   const { p, isOp } = findAnyProject(id);
   if (!p) return;
+  // 흐린 행(ON HOLD/DEPRIORITIZED)은 PPTX 대상이 아니므로 체크를 받아주지 않는다.
+  // (렌더 때 enforceDimmedUnchecked가 어차피 되돌리므로, 여기서 즉시 막아 혼란을 없앤다)
+  if ((p.onHold || p.deprioritized) && val) {
+    const cb0 = document.querySelector(`tr[data-pid="${id}"] input[type="checkbox"]`);
+    if (cb0) cb0.checked = false;
+    p.selected = false;
+    try { localStorage.setItem(isOp ? OP_PROJECTS_KEY : STORAGE_KEY, JSON.stringify(isOp ? opProjects : projects)); } catch {}
+    return;
+  }
   p.selected = !!val;
   // 로컬에만 저장 (re-render 없음)
   try { localStorage.setItem(isOp ? OP_PROJECTS_KEY : STORAGE_KEY, JSON.stringify(isOp ? opProjects : projects)); } catch {}
@@ -10234,6 +10271,7 @@ let _opDeletedOpen = false;
 function showOpTaskPage() {
   const body = document.getElementById('optaskBody');
   if (!body) return;
+  enforceDimmedUnchecked(opProjects, OP_PROJECTS_KEY);
   renderOpPageNavDots();
 
   const colgroup = `<colgroup>
