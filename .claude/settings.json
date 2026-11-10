@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Edit(C:\\Users\\Stella.Park\\.claude\\TW_Project_Manager\\index.html)",
+      "Write(C:\\Users\\Stella.Park\\.claude\\TW_Project_Manager\\index.html)",
+      "Bash(*)"
+    ]
+  }
+}

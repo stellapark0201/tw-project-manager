@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "tw-project-manager",
+      "runtimeExecutable": "python",
+      "runtimeArgs": ["-m", "http.server", "3333"],
+      "port": 3333,
+      "autoPort": true
+    }
+  ]
+}

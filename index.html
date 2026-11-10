@@ -1217,6 +1217,7 @@
   <div class="nav-item" id="nav-completed" onclick="navTo('completed')">Completed Projects</div>
   <div class="nav-item" id="nav-dashboard" onclick="navTo('dashboard')">Dashboard</div>
   <div class="nav-item" id="nav-record" onclick="navTo('record')">Record</div>
+  <div class="nav-item" id="nav-gantt" onclick="window.open('gantt/index.html', '_blank')" title="Timeline — Gantt 뷰 (새 창)">Timeline</div>
   <div class="nav-item" id="nav-pptformat" onclick="navTo('pptformat')" style="margin-left:auto;">PPT Preview</div>
   <div class="nav-item" id="nav-ghoffice" onclick="navTo('ghoffice')">GitHub Office Online</div>
 </nav>
@@ -1247,6 +1248,8 @@
       <button onclick="openHistoryPanel()" title="수정 이력" style="background:none;border:none;cursor:pointer;color:var(--text-muted);padding:4px;border-radius:6px;display:flex;align-items:center;transition:all 0.13s;" onmouseover="this.style.background='var(--surface-2)';this.style.color='var(--text-secondary)'" onmouseout="this.style.background='none';this.style.color='var(--text-muted)'"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><polyline points="12 7 12 12 15 15"/></svg></button>
       <button onclick="openRequestPanel()" title="Request" style="background:none;border:none;cursor:pointer;color:var(--text-muted);padding:4px;border-radius:6px;display:flex;align-items:center;transition:all 0.13s;" onmouseover="this.style.background='var(--surface-2)';this.style.color='var(--text-secondary)'" onmouseout="this.style.background='none';this.style.color='var(--text-muted)'"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="2,4 12,13 22,4"/></svg></button>
       <button onclick="captureToRecord('status', this)" title="캡처 — 현재 화면을 Record 페이지에 저장" style="background:none;border:none;cursor:pointer;color:var(--text-muted);padding:4px;border-radius:6px;display:flex;align-items:center;transition:all 0.13s;" onmouseover="this.style.background='var(--surface-2)';this.style.color='var(--text-secondary)'" onmouseout="this.style.background='none';this.style.color='var(--text-muted)'"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></button>
+      <button id="activeBulkDeleteBtn" onclick="confirmBulkDeleteSelected(event)" title="선택 일괄 삭제" disabled style="background:none;border:none;cursor:pointer;color:#ef4444;padding:4px 6px;border-radius:6px;display:flex;align-items:center;gap:3px;transition:all 0.13s;opacity:0.35;" onmouseover="if(!this.disabled)this.style.background='var(--red-light)'" onmouseout="this.style.background='none'"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg><span id="activeBulkDeleteCount" style="font-size:12px;font-weight:600;">0</span></button>
+      <button id="undoBtn" onclick="undoLastChange()" title="되돌릴 작업이 없습니다" disabled style="background:none;border:none;cursor:pointer;color:var(--text-muted);padding:4px 7px;border-radius:6px;display:flex;align-items:center;gap:4px;transition:all 0.13s;opacity:0.35;font-family:inherit;" onmouseover="if(!this.disabled){this.style.background='var(--surface-2)';this.style.color='var(--text-secondary)'}" onmouseout="this.style.background='none';this.style.color='var(--text-muted)'"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg><span style="font-size:12px;font-weight:500;">되돌리기</span></button>
       <div id="historyUserBadges" style="display:flex;gap:5px;align-items:center;"></div>
     </div>
     <div id="statusResourceFilter" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;"></div>
@@ -1419,6 +1422,7 @@
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
         <span id="deletedBulkDeleteCount" style="font-size:12px;font-weight:600;">0</span>
       </button>
+      <button class="deleted-clear-btn" onclick="restoreAllDeleted(event)" title="삭제 당시 순서 그대로 전체 복원">전체 복원</button>
       <button class="deleted-clear-btn" onclick="clearDeletedList(event)">전체 영구 삭제</button>
     </div>
     <div id="deletedListBody">
@@ -1937,6 +1941,8 @@ function toggleAdminMode() {
   STORAGE_KEY  = adminMode ? TEST_STORAGE_KEY  : REAL_STORAGE_KEY;
   DELETED_KEY  = adminMode ? TEST_DELETED_KEY  : REAL_DELETED_KEY;
   HISTORY_KEY  = adminMode ? TEST_HISTORY_KEY  : REAL_HISTORY_KEY;
+  UNDO_KEY     = adminMode ? TEST_UNDO_KEY     : REAL_UNDO_KEY;
+  if (typeof updateUndoUI === 'function') updateUndoUI();
 
   updateAdminModeUI();
 
@@ -3320,6 +3326,7 @@ function loadProjects() {
   } catch { return []; }
 }
 function saveProjects(action, detail, projectId, snapshot) {
+  pushUndoSnapshot(action, detail);   // 덮어쓰기 직전 상태를 되돌리기 스택에 보관
   localStorage.setItem(STORAGE_KEY, JSON.stringify(projects));
   recomputeBuPages();
   recordModified();
@@ -3330,6 +3337,89 @@ function saveProjects(action, detail, projectId, snapshot) {
   }
   showSyncStatus('저장 중...', 'var(--amber)');
   saveToFirebase().then(() => showSyncStatus('✓ 저장됨', 'var(--green)'));
+}
+
+/* ── 실행취소(Undo) ──
+   saveProjects()가 localStorage를 덮어쓰기 "직전"에 그 시점의 전체 상태를 스택에 쌓아둔다.
+   실수로 전체 삭제/일괄 수정을 했을 때 한 번에 직전 상태로 되돌리기 위한 안전장치.
+   (휴지통의 개별 복원과 달리 프로젝트 순서까지 그대로 돌아온다) */
+const REAL_UNDO_KEY = 'tw_pm_undo';
+const TEST_UNDO_KEY = 'tw_pm_undo_test';
+let UNDO_KEY = adminMode ? TEST_UNDO_KEY : REAL_UNDO_KEY;
+const UNDO_MAX = 20;
+let _undoInProgress = false;   // 되돌리는 중에는 스냅샷을 쌓지 않는다
+
+function _readUndoStack() {
+  try { return JSON.parse(localStorage.getItem(UNDO_KEY)) || []; } catch { return []; }
+}
+function _writeUndoStack(stack) {
+  try { localStorage.setItem(UNDO_KEY, JSON.stringify(stack.slice(0, UNDO_MAX))); } catch {}
+  updateUndoUI();
+}
+
+// saveProjects() 맨 앞에서 호출 — 이 시점의 localStorage에는 아직 "변경 전" 값이 들어있다.
+function pushUndoSnapshot(action, detail) {
+  // 되돌리기는 어디까지나 보조 기능 — 여기서 뭐가 잘못되더라도 저장 자체는 막지 않는다.
+  try {
+    if (_undoInProgress) return;
+    const prevProjects = localStorage.getItem(STORAGE_KEY);
+    if (prevProjects == null) return;   // 최초 저장이면 되돌릴 이전 상태가 없음
+    const stack = _readUndoStack();
+    stack.unshift({
+      ts: new Date().toISOString(),
+      action: action || '변경',
+      detail: detail || '',
+      projects: prevProjects,
+      deleted: localStorage.getItem(DELETED_KEY)
+    });
+    _writeUndoStack(stack);
+  } catch (err) {
+    console.warn('[undo] 스냅샷 저장 실패 (저장은 정상 진행):', err);
+  }
+}
+
+function undoLastChange() {
+  const stack = _readUndoStack();
+  if (!stack.length) { alert('되돌릴 작업이 없습니다.'); return; }
+  const snap = stack[0];
+  const when = String(snap.ts || '').replace('T', ' ').slice(0, 16);
+  let prev;
+  try { prev = JSON.parse(snap.projects); } catch { prev = null; }
+  if (!Array.isArray(prev)) { alert('되돌리기 데이터를 읽을 수 없습니다.'); return; }
+
+  const diff = prev.length - projects.length;
+  const diffTxt = diff > 0 ? `\n복구: ${diff}개 프로젝트가 되살아납니다.`
+                : diff < 0 ? `\n주의: ${-diff}개 프로젝트가 다시 사라집니다.` : '';
+  if (!confirm(`직전 작업을 되돌립니다.\n\n[${snap.action}] ${snap.detail}\n(${when})${diffTxt}\n\n이 작업 이후의 변경 내용은 사라집니다.`)) return;
+
+  _undoInProgress = true;
+  try {
+    projects = prev;
+    if (snap.deleted != null) {
+      try { deletedProjects = JSON.parse(snap.deleted) || []; } catch {}
+    }
+    // 되살아난 프로젝트가 휴지통에도 남아 있으면 휴지통 쪽을 지운다 (중복 방지)
+    const liveIds = new Set(projects.map(p => p.id));
+    deletedProjects = deletedProjects.filter(d => !liveIds.has(d.id));
+    try { localStorage.setItem(DELETED_KEY, JSON.stringify(deletedProjects)); } catch {}
+    saveProjects('되돌리기', `${snap.action}${snap.detail ? ': ' + snap.detail : ''} 취소`);
+  } finally {
+    _undoInProgress = false;
+  }
+  stack.shift();
+  _writeUndoStack(stack);
+  renderDashboard(); renderDeletedList(); renderBoardSections();
+}
+
+function updateUndoUI() {
+  const btn = document.getElementById('undoBtn');
+  if (!btn) return;
+  const top = _readUndoStack()[0];
+  btn.disabled = !top;
+  btn.style.opacity = top ? '1' : '0.35';
+  btn.title = top
+    ? `되돌리기 (Ctrl+Z) — ${top.action}${top.detail ? ': ' + top.detail : ''}`
+    : '되돌릴 작업이 없습니다';
 }
 
 /* ── Modal ── */
@@ -3365,24 +3455,12 @@ let deletedProjects = [];
 try { deletedProjects = JSON.parse(localStorage.getItem(DELETED_KEY)) || []; } catch {}
 
 let _pendingDeleteId = null;
-let _pendingDeleteIds = null; // 2개 이상 체크된 상태에서 row 삭제 아이콘을 눌렀을 때 일괄 삭제 대상
+let _pendingDeleteIds = null; // "선택 일괄 삭제" 버튼으로 모아둔 삭제 대상 id 목록
 
 function confirmDelete(id) {
   const { p, isOp } = findAnyProject(id);
   if (!p) return;
-  // 체크박스(=PPTX 내보내기 선택)로 2개 이상 선택된 상태에서, 그중 한 row의 삭제 아이콘을 누르면
-  // 그 row 하나가 아니라 선택된 전체를 일괄 삭제 확인으로 전환한다.
-  if (!isOp && p.selected !== false) {
-    const selectedOnPage = projects.filter(q => matchesStatusPage(q) && q.selected !== false);
-    if (selectedOnPage.length >= 2) {
-      _pendingDeleteId = null;
-      _pendingDeleteIds = selectedOnPage.map(q => q.id);
-      document.getElementById('delModalIntro').textContent = '선택한 프로젝트를 모두 삭제하시겠습니까?';
-      document.getElementById('delModalName').textContent = `${selectedOnPage.length}개 항목`;
-      document.getElementById('delModal').classList.add('show');
-      return;
-    }
-  }
+  // 삭제 아이콘은 체크 상태와 무관하게 해당 row 하나만 삭제한다.
   _pendingDeleteIds = null;
   _pendingDeleteId = id;
   document.getElementById('delModalIntro').textContent = '아래 프로젝트를 삭제하시겠습니까?';
@@ -3419,9 +3497,11 @@ function executeDelete() {
   }
   if (p) {
     // 전체 프로젝트 데이터를 그대로 보존 (복구 시 완벽 복원)
+    // _origIndex = 삭제 당시의 표 위치. 복원할 때 원래 자리로 되돌리는 데 쓴다.
     deletedProjects.unshift({
       ...JSON.parse(JSON.stringify(p)),
-      deletedAt: new Date().toISOString()
+      deletedAt: new Date().toISOString(),
+      _origIndex: projects.findIndex(x => x.id === id)
     });
     try { localStorage.setItem(DELETED_KEY, JSON.stringify(deletedProjects)); } catch {}
   }
@@ -4195,6 +4275,8 @@ function renderDashboard(switchView = true) {
   const noneSel = mainProjects.every(p => p.selected === false);
   chkAll.checked = allSel;
   chkAll.indeterminate = !allSel && !noneSel;
+  updateActiveBulkDeleteUI();
+  updateUndoUI();
 
   tbody.innerHTML = projects.filter(p =>
     !['M','Q','Y'].some(t => (p.boardTypes||[]).includes(t)) &&
@@ -5811,6 +5893,7 @@ function toggleSelected(id, val) {
     const table = tr && tr.closest('table');
     if (table) syncHeaderCheckbox(table);
   } catch(e) {}
+  updateActiveBulkDeleteUI();
 }
 function toggleAllSelected(val, el) {
   // el = 클릭한 헤더 체크박스. 해당 표(tbody)의 행만 선택/해제 (표 단위).
@@ -5826,6 +5909,7 @@ function toggleAllSelected(val, el) {
     });
     if (el) { el.checked = !!val; el.indeterminate = false; }
     try { localStorage.setItem(isOpTable ? OP_PROJECTS_KEY : STORAGE_KEY, JSON.stringify(arr)); } catch {}
+    updateActiveBulkDeleteUI();
     return;
   }
   // 폴백 (el 없을 때): 전체
@@ -5834,14 +5918,54 @@ function toggleAllSelected(val, el) {
   renderDashboard();
 }
 
+
+// ── 선택 일괄 삭제 ("In Active" 표 헤더의 🗑 버튼) ──
+// 대상: 현재 상태 페이지의 In Active 표에서 체크된 행 (M/Q/Y 보드 행은 제외).
+function getSelectedActiveProjects() {
+  return projects.filter(p =>
+    !['M','Q','Y'].some(t => (p.boardTypes||[]).includes(t)) &&
+    matchesStatusPage(p) && p.selected !== false
+  );
+}
+
+// 버튼의 개수 뱃지/활성 상태 갱신
+function updateActiveBulkDeleteUI() {
+  const btn = document.getElementById('activeBulkDeleteBtn');
+  if (!btn) return;
+  const n = getSelectedActiveProjects().length;
+  const countEl = document.getElementById('activeBulkDeleteCount');
+  if (countEl) countEl.textContent = n;
+  btn.title = `선택 일괄 삭제 (${n}개)`;
+  btn.disabled = n === 0;
+  btn.style.opacity = n === 0 ? '0.35' : '1';
+}
+
+// 확인 모달을 띄우고, 실제 삭제는 executeDelete() → bulkDeleteActiveProjects()가 처리
+function confirmBulkDeleteSelected(e) {
+  if (e) e.stopPropagation();
+  const targets = getSelectedActiveProjects();
+  if (!targets.length) return;
+  _pendingDeleteId = null;
+  _pendingDeleteIds = targets.map(p => p.id);
+  const names = targets.map(p => p.name || '(이름없음)').join(', ');
+  document.getElementById('delModalIntro').textContent = '체크된 프로젝트를 모두 삭제하시겠습니까?';
+  document.getElementById('delModalName').textContent = `${targets.length}개 항목 — ${names}`;
+  document.getElementById('delModal').classList.add('show');
+}
+
 // 체크된(=PPTX 내보내기 선택) 프로젝트들을 한 번에 휴지통으로 이동.
-// row의 삭제 아이콘을 2개 이상 선택된 상태에서 눌렀을 때 executeDelete()가 호출한다.
+// confirmBulkDeleteSelected() → 삭제 확인 모달 → executeDelete()가 호출한다.
 function bulkDeleteActiveProjects(targets) {
   if (!targets.length) return;
   const names = targets.map(p => p.name || '(이름없음)');
   const ids = new Set(targets.map(p => p.id));
+  // _origIndex = 삭제 당시의 표 위치 (복원 시 원래 자리로 돌려놓기 위해 기록)
   targets.forEach(p => {
-    deletedProjects.unshift({ ...JSON.parse(JSON.stringify(p)), deletedAt: new Date().toISOString() });
+    deletedProjects.unshift({
+      ...JSON.parse(JSON.stringify(p)),
+      deletedAt: new Date().toISOString(),
+      _origIndex: projects.findIndex(x => x.id === p.id)
+    });
   });
   try { localStorage.setItem(DELETED_KEY, JSON.stringify(deletedProjects)); } catch {}
   projects = projects.filter(p => !ids.has(p.id));
@@ -8060,9 +8184,39 @@ function restoreProject(id) {
   const restored = JSON.parse(JSON.stringify(p));
   delete restored.deletedAt;
   restored.selected = true;
-  projects.push(restored);
+  // 삭제 당시 위치로 되돌린다 (_origIndex가 없는 예전 데이터는 맨 뒤)
+  const at = Number.isInteger(restored._origIndex)
+    ? Math.max(0, Math.min(restored._origIndex, projects.length))
+    : projects.length;
+  delete restored._origIndex;
+  projects.splice(at, 0, restored);
   deletedProjects.splice(idx, 1);
   saveProjects('프로젝트 복원', p.name);
+  try { localStorage.setItem(DELETED_KEY, JSON.stringify(deletedProjects)); } catch {}
+  renderDashboard();
+  renderDeletedList(); renderBoardSections();
+}
+
+// 휴지통 전체 복원 — 삭제 당시 위치(_origIndex) 순서대로 되돌려 원래 순서를 유지한다.
+function restoreAllDeleted(e) {
+  if (e) e.stopPropagation();
+  if (!deletedProjects.length) return;
+  if (!confirm(`삭제 목록의 ${deletedProjects.length}개 프로젝트를 모두 복원하시겠습니까?`)) return;
+  const list = deletedProjects
+    .map(p => JSON.parse(JSON.stringify(p)))
+    .sort((a, b) => (Number.isInteger(a._origIndex) ? a._origIndex : Infinity)
+                  - (Number.isInteger(b._origIndex) ? b._origIndex : Infinity));
+  list.forEach(r => {
+    delete r.deletedAt;
+    r.selected = true;
+    const at = Number.isInteger(r._origIndex)
+      ? Math.max(0, Math.min(r._origIndex, projects.length))
+      : projects.length;
+    delete r._origIndex;
+    projects.splice(at, 0, r);
+  });
+  deletedProjects = [];
+  saveProjects('프로젝트 전체 복원', `${list.length}개`);
   try { localStorage.setItem(DELETED_KEY, JSON.stringify(deletedProjects)); } catch {}
   renderDashboard();
   renderDeletedList(); renderBoardSections();
@@ -9165,6 +9319,14 @@ document.addEventListener('keydown', e => {
   if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
     e.preventDefault();
     firebasePush();
+  }
+  // Ctrl+Z / ⌘+Z → 직전 작업 되돌리기
+  // 단, 입력 칸 안에서는 브라우저 기본 동작(글자 되돌리기)을 그대로 둔다.
+  if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'z') {
+    const el = e.target;
+    if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable)) return;
+    e.preventDefault();
+    undoLastChange();
   }
 });
 
