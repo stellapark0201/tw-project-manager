@@ -177,7 +177,12 @@
   .move-item:hover { background:var(--accent-light); border-color:var(--accent); color:var(--accent); }
   .move-item b { color:var(--text-primary); font-weight:600; }
   .move-item:hover b { color:var(--accent); }
+  .move-item.is-current { opacity:0.4; cursor:default; }
+  .move-item.is-current:hover { background:var(--surface); border-color:var(--border); color:var(--text-secondary); }
   .move-menu-note { font-size:10.5px; line-height:1.5; color:var(--text-muted); margin-top:8px; }
+  .move-menu-sep { border-top:1px solid var(--border-subtle); margin:10px -11px 9px; }
+  .move-row { display:flex; gap:4px; }
+  .move-row .move-item { flex:1; text-align:center; padding:6px 8px; }
 
   /* ── PPT Preview ── */
   .ppt-preview-section { margin-bottom:40px; }
@@ -6123,9 +6128,10 @@ function updateMoveBtnsUI() {
     const n = getMoveTargets(scope).length;
     const countEl = document.getElementById(cntId);
     if (countEl) countEl.textContent = n;
-    btn.title = n ? `체크한 ${n}개 이동하기` : '이동할 항목을 먼저 체크하세요';
-    btn.disabled = n === 0;
-    btn.style.opacity = n === 0 ? '0.35' : '1';
+    // 체크된 행이 없어도 "페이지로 가기"는 쓸 수 있어야 하므로 버튼 자체는 항상 살려 둔다.
+    btn.title = n ? `이동하기 — 체크한 ${n}개 옮기기 / 페이지 이동` : '이동하기 — 페이지 이동 (옮기려면 행을 먼저 체크하세요)';
+    btn.disabled = false;
+    btn.style.opacity = n === 0 ? '0.6' : '1';
   });
 }
 
@@ -6148,31 +6154,63 @@ function openMoveMenu(scope, e) {
   closeMoveMenu();
   if (reopening) return;                 // 같은 버튼을 다시 누르면 닫기
   const targets = getMoveTargets(scope);
-  if (!targets.length) return;
 
   const here  = scope === 'op' ? 'Operational Tasks' : 'In Active';
   const other = scope === 'op' ? 'In Active' : 'Operational Tasks';
-  // 고른 행이 모두 같은 BU면 그 BU 칩은 "이미 거기"라서 누를 수 없게 둔다.
-  const curBus = new Set(targets.map(projectBuName).filter(Boolean));
-  const chips = BU_PAGE_NAMES.map(bu => {
-    const isHere = curBus.size === 1 && curBus.has(bu);
+
+  /* (1) 체크한 행 옮기기 — 체크된 행이 있을 때만 보여준다. */
+  let movePart = '';
+  if (targets.length) {
+    // 고른 행이 모두 같은 BU면 그 BU 칩은 "이미 거기"라서 누를 수 없게 둔다.
+    const curBus = new Set(targets.map(projectBuName).filter(Boolean));
+    const moveChips = BU_PAGE_NAMES.map(bu => {
+      const isHere = curBus.size === 1 && curBus.has(bu);
+      return `<button class="move-chip${isHere ? ' is-current' : ''}"${isHere ? ' disabled' : ''}
+        onclick="moveSelectedToBu('${scope}','${bu}')"
+        title="${isHere ? `이미 ${bu} 페이지입니다` : `체크한 행을 ${bu} 페이지로 옮깁니다`}">${bu}</button>`;
+    }).join('');
+    movePart =
+      `<div class="move-menu-label">체크한 ${targets.length}개를 BU 페이지로 옮기기</div>
+       <div class="move-chips">${moveChips}</div>
+       <div class="move-menu-label">체크한 ${targets.length}개를 다른 표로 옮기기</div>
+       <button class="move-item" onclick="moveSelectedAcross('${scope}')">${here} → <b>${other}</b></button>
+       <div class="move-menu-note">${scope === 'op'
+         ? 'In Active로 옮기면 Firebase로 공유됩니다.'
+         : 'Operational Tasks는 Firebase에 올라가지 않고 이 브라우저에만 저장됩니다.'}</div>
+       <div class="move-menu-sep"></div>`;
+  }
+
+  /* (2) 페이지로 가기 — 데이터는 그대로 두고 화면만 옮긴다. 체크 여부와 무관하게 늘 보인다.
+         BU 칩 순서는 그 표의 상단 네비와 똑같이 맞춘다(데이터 없는 BU는 네비처럼 빠진다). */
+  const cur = scope === 'op' ? currentOpStatusPage : currentStatusPage;
+  const pageNums = scope === 'op'
+    ? [...visibleBuIdxs(opProjects, currentOpStatusPage - 1).map(i => i + 1), STATUS_PAGE_COUNT + 1]
+    : getVisibleNavPageOrder();
+  const goChips = pageNums.map(n => {
+    const name = STATUS_PAGE_FULL_NAMES[n - 1] || `Page ${n}`;
+    const isHere = n === cur;
     return `<button class="move-chip${isHere ? ' is-current' : ''}"${isHere ? ' disabled' : ''}
-      onclick="moveSelectedToBu('${scope}','${bu}')"
-      title="${isHere ? `이미 ${bu} 페이지입니다` : `${bu} 페이지로 옮기고 그 페이지를 보여줍니다`}">${bu}</button>`;
+      onclick="goToStatusPageFromMenu('${scope}',${n})"
+      title="${isHere ? `지금 보고 있는 페이지입니다` : `${name} 페이지로 이동`}">${name}</button>`;
   }).join('');
+  const onStatus = scope !== 'op';
+  const goPart =
+    `<div class="move-menu-label">페이지로 가기 — ${here}</div>
+     <div class="move-chips">${goChips}</div>
+     <div class="move-menu-label">다른 메뉴로 가기</div>
+     <div class="move-row">
+       <button class="move-item${onStatus ? ' is-current' : ''}"${onStatus ? ' disabled' : ''}
+         onclick="goToMenuFromMoveMenu('status')">Active Projects</button>
+       <button class="move-item${!onStatus ? ' is-current' : ''}"${!onStatus ? ' disabled' : ''}
+         onclick="goToMenuFromMoveMenu('optask')">Operational Tasks</button>
+     </div>`;
 
   const menu = document.createElement('div');
   menu.id = 'moveMenu';
   menu.className = 'move-menu';
   menu.innerHTML =
-    `<div class="move-menu-head">이동하기 — 체크한 ${targets.length}개</div>
-     <div class="move-menu-label">BU 페이지로</div>
-     <div class="move-chips">${chips}</div>
-     <div class="move-menu-label">다른 표로</div>
-     <button class="move-item" onclick="moveSelectedAcross('${scope}')">${here} → <b>${other}</b></button>
-     <div class="move-menu-note">${scope === 'op'
-       ? 'In Active로 옮기면 Firebase로 공유됩니다.'
-       : 'Operational Tasks는 Firebase에 올라가지 않고 이 브라우저에만 저장됩니다.'}</div>`;
+    `<div class="move-menu-head">이동하기${targets.length ? ` — 체크한 ${targets.length}개` : ' — 체크한 행 없음 (화면 이동만)'}</div>`
+    + movePart + goPart;
   document.body.appendChild(menu);
 
   const btn = e && e.currentTarget;
@@ -6184,6 +6222,16 @@ function openMoveMenu(scope, e) {
   _moveMenuScope = scope;
   // 지금 이 클릭이 곧바로 "바깥 클릭"으로 잡히지 않도록 한 틱 뒤에 등록한다.
   setTimeout(() => document.addEventListener('mousedown', _moveMenuOutside, true), 0);
+}
+
+// 데이터는 건드리지 않고 화면만 옮긴다 (메뉴의 "페이지로 가기").
+function goToStatusPageFromMenu(scope, n) {
+  closeMoveMenu();
+  if (scope === 'op') gotoOpStatusPage(n); else gotoStatusPage(n);
+}
+function goToMenuFromMoveMenu(page) {
+  closeMoveMenu();
+  navTo(page);
 }
 
 // 체크한 행들의 BU를 바꾼다 = 그 BU 페이지로 옮기는 것. 옮긴 뒤 그 페이지를 보여준다.
