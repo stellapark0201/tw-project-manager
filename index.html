@@ -3254,8 +3254,7 @@ function _computeBuLabels(names) {
 // 제목이 비었거나 읽기 실패하면 기존대로 BU명(fallback)을 쓴다.
 function _navNameFromTitle(pageId, fallback) {
   try {
-    const t = String(getPageTitle(pageId) || '').replace(/^\s*\[[^\]]*\]\s*/, '').trim();
-    return t.split(/\s+/)[0] || fallback;
+    return _firstWordOfTitle(getPageTitle(pageId)) || fallback;   // 규칙은 _firstWordOfTitle 한 곳에만 둔다
   } catch {
     return fallback;
   }
@@ -3263,7 +3262,20 @@ function _navNameFromTitle(pageId, fallback) {
 
 // 페이지별 네비 라벨 (1..N=BU, N+1=Total). 제목 기준으로 뽑되 겹치면 _computeBuLabels가 풀어쓴다.
 function _computeStatusPageLabels() {
-  return _computeBuLabels(STATUS_PAGE_FULL_NAMES.map((n, i) => _navNameFromTitle(i + 1, n)));
+  const full = STATUS_PAGE_FULL_NAMES;
+  const names = full.map((n, i) => _navNameFromTitle(i + 1, n));
+  const U = x => String(x).toUpperCase();
+  /* 제목은 자유 입력이라 두 페이지가 같은 첫 단어를 쓸 수 있고, 남의 BU명(또는 'Total')을
+     그대로 쓸 수도 있다. 그러면 어느 버튼이 어느 페이지인지 알 수 없으므로, 그런 이름은
+     자기 BU명으로 되돌린다. BU명은 서로 겹치지 않으니 이 한 번으로 전부 구분된다. */
+  const count = new Map();
+  names.forEach(nm => count.set(U(nm), (count.get(U(nm)) || 0) + 1));
+  names.forEach((nm, i) => {
+    const sameAsOtherTitle = count.get(U(nm)) > 1;
+    const stealsOtherPageName = full.some((bu, j) => j !== i && U(bu) === U(nm));
+    if (sameAsOtherTitle || stealsOtherPageName) names[i] = full[i];
+  });
+  return _computeBuLabels(names);
 }
 // 프로젝트의 BU명 (bu 값 우선, 비어 있으면 기존 pageId로 추론 — 구 데이터 호환)
 function projectBuName(p) {
@@ -7072,12 +7084,11 @@ function getPptExportGroups() {
     return { kind: 'record' };
   }
   // 기본값(status 등): Active Projects 전체(IBU/RBU/OBU) — 기존 동작 유지
-  const pageTitles = (() => { try { return JSON.parse(localStorage.getItem('tw_pm_page_titles')) || {}; } catch { return {}; } })();
   const allSelected = projects.filter(p => p.selected !== false);
   const groups = [];
   BU_PAGE_NAMES.forEach((buName, i) => {
     const list = allSelected.filter(p => projectBuName(p) === buName);
-    if (list.length) groups.push({ title: pageTitles[i + 1] || `[Technical Publication] ${buName} Status`, list });
+    if (list.length) groups.push({ title: getPageTitle(i + 1), list });
   });
   return { kind: 'projects', groups };
 }
@@ -9893,8 +9904,52 @@ function loadPageTitles() {
 function savePageTitles(titles) {
   localStorage.setItem(PAGE_TITLES_KEY, JSON.stringify(titles));
 }
+
+/* 제목은 페이지 번호가 아니라 "그 페이지가 무엇인지"(BU명 / 'Total')로 저장한다.
+   BU 페이지 목록은 데이터를 보고 매번 다시 만들어지고 추가 BU는 알파벳순으로 끼어들기
+   때문에, 번호로 저장하면 BU가 하나 생기는 순간 그 뒤 페이지의 제목이 통째로 한 칸씩
+   밀린다(= SBD 페이지에 'Total' 제목이 붙는 현상). 이름으로 묶어두면 밀리지 않는다. */
+function _pageTitleKey(pageId) {
+  if (pageId > STATUS_PAGE_COUNT) return 'Total';
+  return BU_PAGE_NAMES[pageId - 1] || String(pageId);
+}
+
+// 제목에서 그 페이지의 "이름"을 뽑는다: 앞의 대괄호 수식어를 떼고 첫 단어.
+function _firstWordOfTitle(t) {
+  return String(t || '').replace(/^\s*\[[^\]]*\]\s*/, '').trim().split(/\s+/)[0] || '';
+}
+
+/* 번호 키로 저장돼 있던 기존 제목을 이름 키로 한 번 옮긴다.
+   그냥 위치대로 옮기면 이미 어긋난 짝이 그대로 굳으므로, 제목의 첫 단어가 BU명이나
+   'Total'과 맞으면 그 자리로 되돌린다('[TP] SBD Status' → SBD). 맞는 이름이 없을 때만
+   지금 그 번호에 있는 BU에 붙인다. 번호 키가 없어지므로 다시 돌려도 안전하다. */
+function migratePageTitles() {
+  const titles = loadPageTitles();
+  const numeric = Object.keys(titles).filter(k => /^\d+$/.test(k));
+  if (!numeric.length) return;
+  recomputeBuPages();   // 이름을 맞춰보려면 지금 BU 목록이 필요하다
+  const byName = {};
+  Object.keys(titles).forEach(k => { if (!/^\d+$/.test(k)) byName[k] = titles[k]; });
+  const known = new Map([...BU_PAGE_NAMES.map(b => [b.toUpperCase(), b]), ['TOTAL', 'Total']]);
+  const leftover = [];
+  // 1차: 제목이 스스로 밝히는 이름으로 (어긋난 짝이 제자리를 찾는다)
+  numeric.map(Number).sort((a, b) => a - b).forEach(n => {
+    const title = titles[String(n)];
+    const hit = known.get(_firstWordOfTitle(title).toUpperCase());
+    if (hit && byName[hit] === undefined) byName[hit] = title;
+    else leftover.push(n);
+  });
+  // 2차: 이름을 못 찾은 것만 지금 그 번호가 가리키는 페이지에 붙인다
+  leftover.forEach(n => {
+    const key = _pageTitleKey(n);
+    if (byName[key] === undefined) byName[key] = titles[String(n)];
+  });
+  savePageTitles(byName);
+}
+
 function getPageTitle(pageId) {
-  const saved = loadPageTitles()[pageId];
+  const titles = loadPageTitles();
+  const saved = titles[_pageTitleKey(pageId)] ?? titles[pageId];   // 구 형식(번호 키)도 읽어준다
   if (saved) return saved;
   if (pageId > STATUS_PAGE_COUNT) return 'Total';
   const buName = BU_PAGE_NAMES[pageId - 1];
@@ -9923,7 +9978,8 @@ function saveTitleEdit() {
   if (!display || !input) return;
   const newTitle = input.value.trim() || getPageTitle(currentStatusPage);
   const titles = loadPageTitles();
-  titles[currentStatusPage] = newTitle;
+  delete titles[currentStatusPage];                 // 구 형식 번호 키가 남아 있으면 치운다
+  titles[_pageTitleKey(currentStatusPage)] = newTitle;
   savePageTitles(titles);
   display.textContent = newTitle;
   display.style.display = '';
@@ -9946,9 +10002,9 @@ function cancelTitleEdit() {
 
 /* ── Raw Data Import ── */
 const RAW_PAGE_TITLES = {
-  1: '[Technical Publication] IBU Status',
-  2: '[Technical Publication] RBU Status',
-  3: '[Technical Publication] OBU Status'
+  IBU: '[Technical Publication] IBU Status',
+  RBU: '[Technical Publication] RBU Status',
+  OBU: '[Technical Publication] OBU Status'
 };
 
 const RAW_PROJECTS = (function() {
@@ -10007,9 +10063,10 @@ const RAW_PROJECTS = (function() {
 })();
 
 function applyRawDataDefaults() {
+  migratePageTitles();            // 번호 키로 저장된 옛 제목을 BU 이름 키로 옮긴 뒤에
   const existing = {};
   try { Object.assign(existing, JSON.parse(localStorage.getItem('tw_pm_page_titles'))||{}); } catch {}
-  [1,2,3].forEach(i => { if (!existing[i]) existing[i] = RAW_PAGE_TITLES[i]; });
+  ['IBU','RBU','OBU'].forEach(bu => { if (!existing[bu]) existing[bu] = RAW_PAGE_TITLES[bu]; });
   localStorage.setItem('tw_pm_page_titles', JSON.stringify(existing));
 }
 
@@ -11761,7 +11818,7 @@ async function generatePptxBase64() {
     if (!exportList.length) return;
     slideNum++;
     // exportToPPT 내부와 동일한 슬라이드 생성 (공통 함수 buildPptSlideOnPres 사용)
-    buildPptSlideOnPres(pres, exportList, pageTitles[i + 1] || `Status Page ${i + 1}`, slideNum);
+    buildPptSlideOnPres(pres, exportList, pageTitles[buName] || `Status Page ${i + 1}`, slideNum);
   });
 
   return pres.write({ outputType: 'base64' });
@@ -11798,7 +11855,7 @@ function showPptFormatPageOld() {
   const html = Array.from({length:STATUS_PAGE_COUNT},(_,i)=>i+1).map(pageNum => {
     const list  = projects.filter(p => (p.pageId||1) === pageNum);
     if (!list.length) return '';
-    const title = escapeHtml(pageTitles[pageNum] || `Status Page ${pageNum}`);
+    const title = escapeHtml(pageTitles[BU_PAGE_NAMES[pageNum - 1]] || `Status Page ${pageNum}`);
 
     let tblHtml = '';
 
