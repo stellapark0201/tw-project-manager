@@ -1983,6 +1983,8 @@ function toggleAdminMode() {
   DELETED_KEY  = adminMode ? TEST_DELETED_KEY  : REAL_DELETED_KEY;
   HISTORY_KEY  = adminMode ? TEST_HISTORY_KEY  : REAL_HISTORY_KEY;
   UNDO_KEY     = adminMode ? TEST_UNDO_KEY     : REAL_UNDO_KEY;
+  OP_PROJECTS_KEY = adminMode ? TEST_OP_PROJECTS_KEY : REAL_OP_PROJECTS_KEY;
+  OP_DELETED_KEY  = adminMode ? TEST_OP_DELETED_KEY  : REAL_OP_DELETED_KEY;
   if (typeof updateUndoUI === 'function') updateUndoUI();
 
   updateAdminModeUI();
@@ -1993,6 +1995,8 @@ function toggleAdminMode() {
     // Real → Test: 현재 리얼 데이터를 테스트 스토리지에 복사
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(projects)); } catch {}
     try { localStorage.setItem(DELETED_KEY, JSON.stringify(deletedProjects)); } catch {}
+    try { localStorage.setItem(OP_PROJECTS_KEY, JSON.stringify(opProjects)); } catch {}
+    try { localStorage.setItem(OP_DELETED_KEY, JSON.stringify(opDeletedProjects)); } catch {}
     // 복사된 데이터로 로드 (already in projects/deletedProjects)
     applyRawDataDefaults();
     renderDashboard(); renderDeletedList(); renderBoardSections();
@@ -2004,6 +2008,8 @@ function toggleAdminMode() {
     if (!fbDb) initFirebase();
     try { projects = JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch { projects = []; }
     try { deletedProjects = JSON.parse(localStorage.getItem(DELETED_KEY)) || []; } catch { deletedProjects = []; }
+    try { opProjects = JSON.parse(localStorage.getItem(OP_PROJECTS_KEY)) || []; } catch { opProjects = []; }
+    try { opDeletedProjects = JSON.parse(localStorage.getItem(OP_DELETED_KEY)) || []; } catch { opDeletedProjects = []; }
     applyRawDataDefaults();
     renderDashboard(); renderDeletedList(); renderBoardSections();
     updateConnectionStatus('realtime');
@@ -2334,7 +2340,9 @@ async function ensureFirebase() {
 async function loadFromFirebase() {
   try {
     const snap = await fbDb.doc(FB_DATA_PATH).get();
-    if (snap.exists) return { projects: snap.data().projects||[], deletedProjects: snap.data().deletedProjects||[] };
+    // opProjects는 없을 수도 있으므로(예전 문서) 기본값을 주지 않고 그대로 넘긴다 — 받는 쪽이 구분한다.
+    if (snap.exists) return { projects: snap.data().projects||[], deletedProjects: snap.data().deletedProjects||[],
+                              opProjects: snap.data().opProjects, opDeletedProjects: snap.data().opDeletedProjects };
     return null;
   } catch(e) { handleFirebaseError(e); return null; }
 }
@@ -2485,6 +2493,37 @@ function mergeProjectsByUpdatedAt(incomingMap, localMap, localNewer) {
   return merged;
 }
 
+/* Operational Tasks도 같은 문서(tw-pm/data)에 같은 규칙(updatedAt 비교)으로 병합한다.
+   핵심: 필드가 아예 없는 문서는 "비었다"가 아니라 "모른다"로 본다. 예전 코드가 열려 있는
+   PC가 저장하면 opProjects 필드째 사라지는데, 그걸 빈 배열로 읽으면 팀 전체의 Operational
+   Tasks가 날아간다. 그래서 배열일 때만 반영하고, 아니면 로컬을 그대로 둔다. */
+function mergeOpFromRemote(d) {
+  if (!d || !Array.isArray(d.opProjects)) return false;
+  // 원격이 비었는데 로컬에 있으면 로컬을 남긴다 — projects와 같은 안전장치.
+  // 예전에는 Operational Tasks가 PC마다 따로였으므로, 목록이 빈 PC가 먼저 저장했다고 해서
+  // 다른 PC의 목록을 지워버리면 안 된다. 그 PC가 다음에 저장할 때 자기 목록이 올라간다.
+  if (d.opProjects.length === 0 && (opProjects || []).length > 0) return false;
+  const mergedDel = filterPermDeleted(unionDeleted(opDeletedProjects, d.opDeletedProjects));
+  const delIds = new Set(mergedDel.map(p => p.id));
+  const inMap = new Map(filterPermDeleted(d.opProjects).filter(p => !delIds.has(p.id)).map(p => [p.id, p]));
+  const loMap = new Map(filterPermDeleted(opProjects || []).filter(p => !delIds.has(p.id)).map(p => [p.id, p]));
+  const fbAt = d.updatedAt ? (d.updatedAt.toDate ? d.updatedAt.toDate().toISOString() : d.updatedAt) : '';
+  const localAt = (opProjects || []).reduce((max, p) => p.updatedAt > max ? p.updatedAt : max, '');
+  opProjects = mergeProjectsByUpdatedAt(inMap, loMap, localAt >= fbAt);
+  opDeletedProjects = mergedDel;
+  try { localStorage.setItem(OP_PROJECTS_KEY, JSON.stringify(opProjects)); } catch {}
+  try { localStorage.setItem(OP_DELETED_KEY, JSON.stringify(opDeletedProjects)); } catch {}
+  return true;
+}
+
+// 병합 결과를 Operational Tasks 화면에 반영 (그 페이지를 보고 있을 때만 다시 그린다)
+function refreshOpViewAfterMerge() {
+  const el = document.getElementById('page-optask');
+  if (!el || el.style.display === 'none') return;
+  if (typeof showOpTaskPage === 'function') showOpTaskPage();
+  if (typeof renderOpBoardSections === 'function') renderOpBoardSections();
+}
+
 async function saveToFirebase() {
   if (adminMode) return;
   if (!fbDb || !useFirebase) { saveToServer(); return; }
@@ -2512,6 +2551,7 @@ async function saveToFirebase() {
         projects = mergeProjectsByUpdatedAt(incomingMap, localMap, localLatest >= fbUpdatedAt);
         deletedProjects = mergedDeleted2;
         try { localStorage.setItem(STORAGE_KEY, JSON.stringify(projects)); } catch {}
+        if (mergeOpFromRemote(fbData)) refreshOpViewAfterMerge();
         renderDashboard(false); renderDeletedList(); renderBoardSections(); refreshActiveView();
         showSyncStatus('⚠ 팀원 최신 데이터 병합 후 저장', 'var(--amber)');
       }
@@ -2519,7 +2559,7 @@ async function saveToFirebase() {
   } catch(e) {}
   _lastSaveTime = Date.now();
   try {
-    await fbDb.doc(FB_DATA_PATH).set({ projects, deletedProjects, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+    await fbDb.doc(FB_DATA_PATH).set({ projects, deletedProjects, opProjects, opDeletedProjects, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
   } catch(e) { handleFirebaseError(e); saveToServer(); }
 }
 
@@ -2553,6 +2593,7 @@ function listenFirebase() {
     deletedProjects = mergedDeleted;
     ensureAllSelected();
     try { localStorage.setItem(STORAGE_KEY, JSON.stringify(projects)); } catch {}
+    if (mergeOpFromRemote(d)) refreshOpViewAfterMerge();
     renderDashboard(false); renderDeletedList(); renderBoardSections();
     refreshActiveView();
     updateConnectionStatus('realtime');
@@ -3060,7 +3101,7 @@ async function firebasePush() {
   await getBackupDirHandle(true);
   showSyncStatus('Firebase로 저장 중...', 'var(--amber)');
   try {
-    await fbDb.doc(FB_DATA_PATH).set({ projects, deletedProjects, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+    await fbDb.doc(FB_DATA_PATH).set({ projects, deletedProjects, opProjects, opDeletedProjects, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
     const backupName = await saveLocalBackup(false); // 이미 확보한 폴더에 저장 (추가 프롬프트 없음)
     showSyncStatus(backupName ? `✓ Firebase 저장 + 로컬 백업(${backupName})` : '✓ Firebase에 저장됨', 'var(--green)');
     if (!adminMode) listenFirebase();
@@ -3091,7 +3132,7 @@ async function saveToServer() {
       method: 'POST',
       mode: 'no-cors',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ projects, deletedProjects, lastModified: buildLastModified() })
+      body: JSON.stringify({ projects, deletedProjects, opProjects, opDeletedProjects, lastModified: buildLastModified() })
     });
   } catch(e) { console.warn('서버 저장 실패:', e); }
 }
@@ -3225,8 +3266,13 @@ const _defaults = _DEFAULT_ROWS.map(r => Object.assign({}, r, {targetDate:'', ch
 let projects = [];
 
 /* ── Operational Task Data ── */
-const OP_PROJECTS_KEY = 'tw_pm_op_projects';
-const OP_DELETED_KEY  = 'tw_pm_op_deleted';
+// Operational Tasks도 Firebase로 공유되므로, In Active와 똑같이 테스트 모드용 키를 따로 둔다.
+const REAL_OP_PROJECTS_KEY = 'tw_pm_op_projects';
+const TEST_OP_PROJECTS_KEY = 'tw_pm_op_projects_test';
+const REAL_OP_DELETED_KEY  = 'tw_pm_op_deleted';
+const TEST_OP_DELETED_KEY  = 'tw_pm_op_deleted_test';
+let OP_PROJECTS_KEY = adminMode ? TEST_OP_PROJECTS_KEY : REAL_OP_PROJECTS_KEY;
+let OP_DELETED_KEY  = adminMode ? TEST_OP_DELETED_KEY  : REAL_OP_DELETED_KEY;
 let opProjects = [];
 let opDeletedProjects = [];
 try { opProjects        = JSON.parse(localStorage.getItem(OP_PROJECTS_KEY)) || []; } catch {}
@@ -6188,9 +6234,7 @@ function openMoveMenu(scope, e) {
        <div class="move-chips">${moveChips}</div>
        <div class="move-menu-label">체크한 ${targets.length}개를 다른 표로 옮기기</div>
        <button class="move-item" onclick="moveSelectedAcross('${scope}')">${here} → <b>${other}</b></button>
-       <div class="move-menu-note">${scope === 'op'
-         ? 'In Active로 옮기면 Firebase로 공유됩니다.'
-         : 'Operational Tasks는 Firebase에 올라가지 않고 이 브라우저에만 저장됩니다.'}</div>
+       <div class="move-menu-note">두 표 모두 Firebase로 공유됩니다. 옮긴 결과도 팀원 화면에 반영됩니다.</div>
        <div class="move-menu-sep"></div>`;
   }
 
@@ -6280,9 +6324,7 @@ function moveSelectedAcross(scope) {
   if (!targets.length) return;
   const toOp = scope !== 'op';
   const names = targets.map(p => p.name || '(이름없음)');
-  const warn = toOp
-    ? '\n\n※ Operational Tasks는 Firebase에 올라가지 않고 이 브라우저에만 저장됩니다.\n   옮기면 다른 PC에서는 보이지 않게 됩니다.'
-    : '\n\n※ In Active로 옮기면 Firebase를 통해 다른 PC에도 공유됩니다.';
+  const warn = '\n\n※ 두 표 모두 Firebase로 공유되므로 팀원 화면에도 그대로 반영됩니다.';
   if (!confirm(`체크한 ${targets.length}개를 ${toOp ? 'Operational Tasks' : 'In Active'}로 옮깁니다.\n\n${names.join(', ')}${warn}\n\n되돌리기(Ctrl+Z)로 취소할 수 있습니다.`)) return;
 
   const ids = new Set(targets.map(p => p.id));
@@ -10468,7 +10510,13 @@ function saveOpProjects(label, detail, id, snap) {
   recomputeBuPages();
   // In Active와 동일한 수정 이력 패널(#historyPanel)을 공유해서 사용
   if (label) addHistory(label, detail || '', id, snap);
-  showSyncStatus('💾 로컬 저장됨', 'var(--text-muted)');
+  // Operational Tasks도 In Active와 같은 문서에 올라간다 (테스트 모드에서는 로컬에만 남는다)
+  if (adminMode) {
+    showSyncStatus('💾 로컬 저장됨', 'var(--text-muted)');
+    return;
+  }
+  showSyncStatus('저장 중...', 'var(--amber)');
+  saveToFirebase().then(() => showSyncStatus('✓ 저장됨', 'var(--green)'));
 }
 
 function saveOpField(id, field, val) {
@@ -12126,7 +12174,7 @@ async function init() {
         try { _stored = JSON.parse(localStorage.getItem(DELETED_KEY)); deletedProjects = filterPermDeleted(_stored || []); } catch {}
         showSyncStatus('⚠ 백업 데이터로 Firebase 덮어쓰는 중...', '#f59e0b');
         try {
-          await fbDb.doc(FB_DATA_PATH).set({ projects, deletedProjects, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
+          await fbDb.doc(FB_DATA_PATH).set({ projects, deletedProjects, opProjects, opDeletedProjects, updatedAt: firebase.firestore.FieldValue.serverTimestamp() });
           _lastSaveTime = Date.now();
           showSyncStatus('✓ 백업 데이터로 복원 완료', 'var(--green)');
         } catch(e) {
@@ -12138,6 +12186,14 @@ async function init() {
         deletedProjects = filterPermDeleted(fbData.deletedProjects || []);
         try { localStorage.setItem(STORAGE_KEY, JSON.stringify(projects)); } catch {}
         try { localStorage.setItem(DELETED_KEY, JSON.stringify(deletedProjects)); } catch {}
+        // Operational Tasks도 Firebase가 기준. 단 필드가 없는 예전 문서면 로컬을 유지한다.
+        if (Array.isArray(fbData.opProjects) &&
+            !(fbData.opProjects.length === 0 && (opProjects || []).length > 0)) {
+          opProjects = filterPermDeleted(fbData.opProjects);
+          opDeletedProjects = filterPermDeleted(fbData.opDeletedProjects || []);
+          try { localStorage.setItem(OP_PROJECTS_KEY, JSON.stringify(opProjects)); } catch {}
+          try { localStorage.setItem(OP_DELETED_KEY, JSON.stringify(opDeletedProjects)); } catch {}
+        }
         showSyncStatus('✓ Firebase에서 불러옴', 'var(--green)');
       }
     } else {
