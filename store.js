@@ -27,8 +27,12 @@
     appId: "1:488013988358:web:699a0188672560326cf987"
   };
 
-  // ★ 새 앱을 하나 더 만들 때는 이 값만 바꾼다 (문서 경로와 로컬 저장 키가 함께 따라간다)
-  const APP_ID   = 'tracker';
+  /* 앱 이름. 이 한 값이 Firestore 문서 경로와 로컬 저장 키를 함께 정한다.
+     이 파일은 여러 앱이 같이 쓰므로, 각 페이지가 자기 이름을 미리 정해 둔다 —
+         <script>window.STORE_APP_ID = 'tracker';</script>
+         <script src="../store.js"></script>
+     새 앱을 하나 더 만들려면 폴더를 만들고 그 이름만 다르게 주면 된다. */
+  const APP_ID   = global.STORE_APP_ID || 'tracker';
   const DOC_PATH = 'tw-pm/' + APP_ID;
 
   const LS_ROWS      = 'tw_' + APP_ID + '_rows';
