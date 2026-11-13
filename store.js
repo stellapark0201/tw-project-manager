@@ -150,6 +150,51 @@
     }
   }
 
+  /* ── 기존 앱 데이터 참조 (읽기 전용) ──────────────────────────────────
+     index.html이 쓰는 tw-pm/data 문서를 "보기만" 한다. 이 파일은 그 문서에
+     절대 쓰지 않는다 — 쓰기 시작하면 기존 앱의 병합 규칙을 여기도 똑같이
+     갖춰야 하고, 한쪽 실수가 실제 프로젝트 데이터를 건드리게 된다.
+
+     Tracker 행에는 projectId만 저장하고, 화면에 보일 이름·BU 같은 값은
+     그때그때 이 목록에서 찾아 쓴다. 그래야 기존 앱에서 이름을 고치면
+     Tracker에도 자동으로 따라온다. */
+  const REF_DOC_PATH = 'tw-pm/data';
+  let refs = [];
+  let refUnsub = null;
+  let refLoaded = false;
+
+  function flattenRefs(d) {
+    const out = [];
+    const take = (arr, source) => (arr || []).forEach(p => {
+      if (!p || !p.id) return;
+      out.push({
+        id: p.id,
+        source,                                  // 'active' = In Active, 'op' = Operational Tasks
+        name: p.name || '(이름 없음)',
+        bu: String(p.bu || '').trim().toUpperCase(),
+        customer: p.customer || '',
+        publication: p.publication || '',
+        purpose: p.purpose || '',
+        targetDate: p.targetDate || '',
+        releaseDate: p.releaseDate || ''
+      });
+    });
+    take(d.projects, 'active');
+    take(d.opProjects, 'op');
+    return out;
+  }
+
+  function listenRefs() {
+    if (!db || refUnsub) return;
+    refUnsub = db.doc(REF_DOC_PATH).onSnapshot(snap => {
+      if (!snap.exists) return;
+      refs = flattenRefs(snap.data());
+      refLoaded = true;
+      emit('refchange');
+      emit('change');            // 연결된 프로젝트 이름이 바뀌었을 수 있으니 표도 다시 그린다
+    }, err => console.warn('[store] 참조 데이터 수신 오류:', err.code, err.message));
+  }
+
   function listen() {
     if (!db || testMode) return;
     if (unsub) unsub();
@@ -218,8 +263,10 @@
       started = true;
       readLocal();
       emit('change');                       // 로컬로 먼저 그린다 (네트워크를 기다리지 않음)
+      const fbOk = initFirebase();
+      if (fbOk) listenRefs();               // 참조는 읽기 전용이라 테스트 모드에서도 켜 둔다
       if (testMode) { status('테스트 모드 — Firebase 저장 차단', 'warn'); return Store; }
-      if (!initFirebase()) { status('오프라인 — 로컬 데이터로 실행 중', 'warn'); return Store; }
+      if (!fbOk) { status('오프라인 — 로컬 데이터로 실행 중', 'warn'); return Store; }
       try {
         const snap = await db.doc(DOC_PATH).get();
         if (snap.exists) {
@@ -240,6 +287,14 @@
     all() { return rows.slice(); },
     get(id) { return rows.find(r => r.id === id) || null; },
     count() { return rows.length; },
+
+    /* 기존 앱(tw-pm/data)의 프로젝트 목록 — 읽기 전용.
+       Tracker 행의 projectId가 가리키는 대상이고, 선택 드롭다운의 재료다. */
+    refs() { return refs.slice(); },
+    ref(projectId) { return projectId ? (refs.find(r => r.id === projectId) || null) : null; },
+    refsLoaded() { return refLoaded; },
+    // 행에 연결된 프로젝트. 연결이 없거나 원본이 지워졌으면 null.
+    linked(row) { return row && row.projectId ? Store.ref(row.projectId) : null; },
 
     // 새 행. 기본값을 넘기면 그대로 들어간다.
     add(fields) {
@@ -314,6 +369,7 @@
         emit('change');
         if (!db) initFirebase();
         if (db) {
+          listenRefs();
           db.doc(DOC_PATH).get().then(snap => {
             if (snap.exists) {
               lastRemoteAt = stamp(snap.data().updatedAt);
