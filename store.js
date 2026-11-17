@@ -218,6 +218,23 @@
      Tracker 행에는 projectId만 저장하고, 화면에 보일 이름·BU 같은 값은
      그때그때 이 목록에서 찾아 쓴다. 그래야 기존 앱에서 이름을 고치면
      Tracker에도 자동으로 따라온다. */
+  /* index.html 의 ITEMS / KANBAN_STAGES 와 같은 값. 프로젝트가 자기 항목을
+     따로 갖고 있지 않을 때(customItems/customStages 가 없을 때) 쓰는 기본값이다. */
+  const STD_ITEMS = [
+    ['a', 'RFM 접수'], ['b', 'TW Project로 등록'], ['c', 'RFM 폴더 생성'],
+    ['d', '자료 취합/검토/보완 요청'], ['e', '일정/Scope 결정'], ['f', '1st Draft 제작'],
+    ['g', 'Review/Feedback/Revision loop'], ['h', 'In-team review'], ['i', '연구소와 보안 회의'],
+    ['j', '소스 파일 클렌싱 후 LOM 폴더로 백업'], ['k', 'LOM 리스트 업데이트'],
+    ['l', 'SharePoint 업데이트'], ['m', '복사 공지'], ['n', '홈페이지 업데이트']
+  ].map(x => ({ key: x[0], title: x[1] }));
+  const STD_STAGES = [
+    { num: 1, label: 'Preparations',           items: ['a', 'b', 'c', 'd', 'e'] },
+    { num: 2, label: 'Creating 1st draft',     items: ['f'] },
+    { num: 3, label: 'Feedback/Revision loop', items: ['g', 'h'] },
+    { num: 4, label: 'Final review',           items: ['i'] },
+    { num: 5, label: 'Project closing',        items: ['j', 'k', 'l', 'm', 'n'] }
+  ];
+
   const REF_DOC_PATH = 'tw-pm/data';
   let refs = [];
   let refUnsub = null;
@@ -236,7 +253,12 @@
         publication: p.publication || '',
         purpose: p.purpose || '',
         targetDate: p.targetDate || '',
-        releaseDate: p.releaseDate || ''
+        releaseDate: p.releaseDate || '',
+        // 체크리스트 — 기존 앱의 돋보기/상세/메모와 같은 것을 보여주기 위해 같이 읽는다
+        checks: p.checks || {},
+        customItems: p.customItems || null,
+        customStages: p.customStages || null,
+        checklistNotes: p.checklistNotes || ''
       });
     });
     take(d.projects, 'active');
@@ -577,6 +599,76 @@
       rows = rows.filter(r => !movedIds.has(r.id));
       commit('다른 보드로 이동', names, before);
       return moved.length;
+    },
+
+    /* ── 연결된 프로젝트의 체크리스트 ─────────────────────
+       기존 앱의 돋보기와 같은 내용을 단계별로 돌려준다.
+       state: true=완료, 'pb'=보류, 그 외=미완료 (기존 앱과 같은 의미) */
+    checklistOf(ref) {
+      if (!ref) return [];
+      const items = (ref.customItems && ref.customItems.length) ? ref.customItems : STD_ITEMS;
+      const stages = (ref.customStages && ref.customStages.length) ? ref.customStages : STD_STAGES;
+      const byKey = new Map(items.map(it => [it.key, it]));
+      const checks = ref.checks || {};
+      return stages.map(st => ({
+        num: st.num, label: st.label,
+        items: (st.items || []).map(k => ({
+          key: k,
+          title: (byKey.get(k) || {}).title || k,
+          state: checks[k]
+        }))
+      }));
+    },
+    checklistCount(ref) {
+      let done = 0, total = 0;
+      Store.checklistOf(ref).forEach(st => st.items.forEach(it => {
+        total++; if (it.state === true) done++;
+      }));
+      return { done: done, total: total };
+    },
+
+    /* ── 연결된 프로젝트 고치기 ────────────────────────
+       기존 앱의 문서(tw-pm/data)를 고치는 유일한 통로다.
+       트랜잭션으로 읽고-고치고-쓰기를 한 번에 해서, 그 사이에 팀원이 바꾼
+       내용을 덮어쓰지 않는다. 해당 배열 하나만 update 하므로 다른 필드는 건들지 않는다. */
+    async editRef(projectId, mutate) {
+      if (!projectId || typeof mutate !== 'function') return false;
+      if (testMode) {
+        alert('테스트 모드에서는 기존 앱 데이터를 고치지 않습니다.');
+        return false;
+      }
+      if (!db) { status('오프라인 — 고칠 수 없습니다', 'err'); return false; }
+      status('저장 중...', 'warn');
+      try {
+        const ref = db.doc(REF_DOC_PATH);
+        await db.runTransaction(async tx => {
+          const snap = await tx.get(ref);
+          if (!snap.exists) throw new Error('기존 앱 문서가 없습니다');
+          const d = snap.data() || {};
+          let key = null, idx = -1;
+          ['projects', 'opProjects'].forEach(k => {
+            if (key) return;
+            const i = (d[k] || []).findIndex(p => p && p.id === projectId);
+            if (i !== -1) { key = k; idx = i; }
+          });
+          if (!key) throw new Error('프로젝트를 찾지 못했습니다');
+          const arr = d[key].slice();
+          const p = JSON.parse(JSON.stringify(arr[idx]));
+          mutate(p);
+          p.updatedAt = nowISO();
+          arr[idx] = p;
+          const patch = {};
+          patch[key] = arr;
+          patch.updatedAt = firebase.firestore.FieldValue.serverTimestamp();
+          tx.update(ref, patch);
+        });
+        status('저장됨', 'ok');
+        return true;
+      } catch (e) {
+        console.warn('[store] 기존 앱 수정 실패:', e);
+        status('수정 실패 — ' + (e.message || ''), 'err');
+        return false;
+      }
     },
 
     isTestMode() { return testMode; },

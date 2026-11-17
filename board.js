@@ -30,7 +30,7 @@ const BOARD_LABEL = window.BOARD_LABEL || BOARD_TITLE;
     --text-primary: #161616; --text-secondary: #6f6f6f; --text-muted: #a8a8a8;
     --accent: #0f62fe; --accent-light: #edf3ff;
     --header-bg: #161616; --navy: #1f3864; --crimson: #c00000;
-    --green: #198038; --red: #da1e28; --red-light: #fff1f1;
+    --green: #198038; --amber: #b45309; --red: #da1e28; --red-light: #fff1f1;
     --shadow-lg: 0 8px 28px rgba(0,0,0,0.14);
   }
   * { box-sizing: border-box; }
@@ -185,6 +185,20 @@ const BOARD_LABEL = window.BOARD_LABEL || BOARD_TITLE;
 
   .empty { padding: 36px; text-align: center; color: var(--text-muted); }
   .count { font-size: 11.5px; color: var(--text-muted); margin: 9px 2px 0; }
+
+  /* ── 연결된 프로젝트의 체크리스트 ── */
+  .cl-stage { margin-bottom: 10px; }
+  .cl-stage-head { font-size: 11px; font-weight: 600; color: var(--text-muted); margin: 0 0 4px; }
+  .cl-item {
+    display: flex; align-items: center; gap: 7px; padding: 5px 7px; font-size: 12.5px;
+    border: 1px solid var(--border-subtle); border-radius: 5px; margin-bottom: 3px; cursor: pointer;
+  }
+  .cl-item:hover { border-color: var(--accent); }
+  .cl-item input { width: auto; margin: 0; accent-color: var(--accent); }
+  .cl-item span { flex: 1; min-width: 0; }
+  .cl-item.done span { color: var(--text-muted); text-decoration: line-through; }
+  .cl-item.pb { background: #fffbeb; border-color: #fcd34d; }
+  .cl-item em { font-style: normal; font-size: 10px; font-weight: 700; color: var(--amber); }
 
   /* ── Request 패널 ── */
   #requestPanel {
@@ -530,7 +544,8 @@ function visibleRows() {
 }
 
 function leadHTML(r) {
-  const hasMemo = (r.memo || '').trim() !== '';
+  const refForMemo = Store.linked(r);
+  const hasMemo = ((refForMemo ? refForMemo.checklistNotes : r.memo) || '').trim() !== '';
   return '<div class="lead">' +
     '<span class="drag-handle" draggable="true" title="드래그해서 순서 변경"' +
       ' ondragstart="dragStart(event,\'' + r.id + '\')" ondragend="dragEnd()">⠿</span>' +
@@ -759,7 +774,11 @@ function fillPanel(r) {
   $('pMeta').textContent = '수정 ' + String(r.updatedAt || '').replace('T', ' ').slice(0, 16);
   fillProjectOptions(r.projectId);
   set($('pProject'), r.projectId);
-  set($('pName'), r.name); set($('pOwner'), r.owner); set($('pMemo'), r.memo);
+  set($('pName'), r.name); set($('pOwner'), r.owner);
+  // 연결된 행의 메모는 기존 앱의 메모(checklistNotes)를 그대로 쓴다
+  set($('pMemo'), ref ? (ref.checklistNotes || '') : r.memo);
+  const memoLabel = $('pMemo').parentElement.querySelector('label');
+  if (memoLabel) memoLabel.textContent = ref ? '메모 — 기존 앱과 같은 메모입니다' : '메모';
   if ($('pHot') !== focused) $('pHot').checked = !!r.hot;
   if ($('pNew') !== focused) $('pNew').checked = !!r.isNew;
   $('pRefInfo').innerHTML = refInfoHTML(r, ref);
@@ -803,11 +822,24 @@ function deleteCurrent() {
   render();
 }
 function bindPanelFields() {
-  [['pProject', 'projectId'], ['pName', 'name'], ['pOwner', 'owner'], ['pMemo', 'memo']].forEach(pair => {
+  [['pProject', 'projectId'], ['pName', 'name'], ['pOwner', 'owner']].forEach(pair => {
     const el = $(pair[0]);
     el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'blur', () => {
       if (openId) { Store.setField(openId, pair[1], el.value); render(); }
     });
+  });
+  // 메모 — 연결돼 있으면 기존 앱 쪽에, 아니면 이 보드의 행에 저장한다
+  $('pMemo').addEventListener('blur', async () => {
+    if (!openId) return;
+    const r = Store.get(openId);
+    const ref = Store.linked(r);
+    const val = $('pMemo').value;
+    if (ref) {
+      if ((ref.checklistNotes || '') !== val) await Store.editRef(ref.id, p => { p.checklistNotes = val; });
+    } else {
+      Store.setField(openId, 'memo', val);
+    }
+    render();
   });
   [['pHot', 'hot'], ['pNew', 'isNew']].forEach(pair => {
     $(pair[0]).addEventListener('change', () => {
@@ -956,9 +988,12 @@ function closeRowLogs() { rowLogId = null; $('rowLogPanel').classList.remove('op
 function fillRowLogs() {
   const r = Store.get(rowLogId);
   if (!r) { closeRowLogs(); return; }
+  const ref = Store.linked(r);
   $('rlTitle').textContent = taskName(r) || '(이름 없음)';
-  $('rlSub').textContent = '세 칸에 쌓인 기록 전체 — 칸을 눌러 추가하고 여기서 한번에 봅니다';
-  $('rlBody').innerHTML = LOGS.map(l => {
+  $('rlSub').textContent = ref
+    ? '기존 앱의 체크리스트와 같은 내용입니다. 여기서 체크하면 기존 앱에도 반영됩니다.'
+    : '세 칸에 쌓인 기록 전체 — 칸을 눌러 추가하고 여기서 한번에 봅니다';
+  $('rlBody').innerHTML = checklistHTML(ref) + LOGS.map(l => {
     const list = r[l.key] || [];
     return '<div class="field"><label>' + l.label + ' (' + list.length + ')</label>' +
       (list.length ? list.map((e, i) =>
@@ -967,6 +1002,35 @@ function fillRowLogs() {
         '<span class="meta">' + shortTs(e.at).slice(0, 5) + (e.by ? ' · ' + esc(e.by) : '') + '</span></div>').join('')
         : '<div class="log-empty">기록 없음</div>') + '</div>';
   }).join('');
+}
+
+/* ── 연결된 프로젝트의 체크리스트 ──────────────────────────────────
+   기존 앱(TW Project Manager)의 돋보기와 같은 내용을 같은 단계 구성으로
+   보여주고, 여기서 체크한 것이 그대로 기존 앱 데이터에 반영된다.
+   쓰기는 store.js의 editRef 한 곳만 거친다 (트랜잭션). */
+function checklistHTML(ref) {
+  if (!ref) return '';
+  const stages = Store.checklistOf(ref);
+  const c = Store.checklistCount(ref);
+  const body = stages.map(st =>
+    '<div class="cl-stage"><div class="cl-stage-head">' + st.num + '. ' + esc(st.label) + '</div>' +
+    st.items.map(it =>
+      '<label class="cl-item' + (it.state === true ? ' done' : (it.state === 'pb' ? ' pb' : '')) + '">' +
+      '<input type="checkbox" ' + (it.state === true ? 'checked' : '') +
+      ' onchange="toggleRefCheck(\'' + esc(ref.id) + '\',\'' + it.key + '\',this.checked)" />' +
+      '<span>' + esc(it.title) + '</span>' +
+      (it.state === 'pb' ? '<em>보류</em>' : '') + '</label>').join('') + '</div>').join('');
+  return '<div class="field"><label>체크리스트 — 기존 앱과 같은 내용 ' +
+         '<b style="color:var(--accent)">' + c.done + '/' + c.total + '</b></label>' +
+    body +
+    '<div class="move-note">기존 앱에서 체크해도 여기에 바로 반영됩니다.</div></div>';
+}
+async function toggleRefCheck(projectId, key, on) {
+  const ok = await Store.editRef(projectId, p => {
+    p.checks = p.checks || {};
+    p.checks[key] = on ? true : false;
+  });
+  if (!ok) render();          // 실패하면 화면을 원래대로 되돌린다
 }
 
 /* ── 표를 이미지로 저장 (기존 앱의 카메라와 같은 html2canvas) ──── */
