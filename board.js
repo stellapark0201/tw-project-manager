@@ -498,12 +498,10 @@ const BOARD_LABEL = window.BOARD_LABEL || BOARD_TITLE;
       <h3>Deleted Tasks</h3>
       <span class="del-count"><span id="trashIcon"></span><span id="trashCount">0</span></span>
       <span style="flex:1"></span>
-      <span id="trashSelBtns" style="display:none;">
-        <button class="btn" id="trashSelRestore" onclick="event.stopPropagation();restoreSelectedTrash()">선택 복원</button>
-        <button class="btn danger" id="trashSelPurge" onclick="event.stopPropagation();purgeSelectedTrash()">선택 영구 삭제</button>
-      </span>
-      <button class="btn" onclick="event.stopPropagation();restoreAllDeleted()">전체 복원</button>
-      <button class="btn danger" onclick="event.stopPropagation();purgeAllDeleted()">전체 영구 삭제</button>
+      <button class="icon-btn" id="trashRestoreBtn" onclick="event.stopPropagation();doTrashRestore()">
+        <span id="trashRestoreIcon"></span><span class="n" id="trashRestoreCount">0</span></button>
+      <button class="icon-btn del" id="trashPurgeBtn" onclick="event.stopPropagation();doTrashPurge()">
+        <span id="trashPurgeIcon"></span><span class="n" id="trashPurgeCount">0</span></button>
     </div>
     <div id="deletedBody"></div>
   </div>
@@ -585,6 +583,8 @@ const LOGS = [
   { key: 'due',      label: 'Due date'  }
 ];
 const SVG_GLASS  = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>';
+const SVG_RESTORE = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="5" rx="1"/><path d="M4 9v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9"/><path d="M12 18v-6"/><polyline points="9 15 12 12 15 15"/></svg>';
+const SVG_PURGE   = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M9 6V4h6v2"/><line x1="10" y1="11" x2="14" y2="17"/><line x1="14" y1="11" x2="10" y2="17"/></svg>';
 const SVG_TRASH  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>';
 const SVG_MAIL   = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 6 10-6"/></svg>';
 const SVG_MOVE   = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>';
@@ -1040,16 +1040,25 @@ function trashHeaderCheck() {
   if (!all) ids.forEach(id => trashSelected.add(id));
   renderDeleted();
 }
-function restoreSelectedTrash() {
-  const ids = [...trashSelected];
+/* 체크한 것이 있으면 그것만, 없으면 전체에 적용한다 (툴바의 🗑 와 같은 규칙).
+   어느 쪽인지는 풍선 도움말과 옆의 숫자가 알려준다. */
+function trashTargetIds() {
+  return trashSelected.size ? [...trashSelected] : Store.trash().map(t => t.id);
+}
+function doTrashRestore() {
+  const ids = trashTargetIds();
   if (!ids.length) return;
-  if (!confirm(ids.length + '개를 복원합니다.')) return;
+  const names = ids.map(id => {
+    const t = Store.trash().filter(x => x.id === id)[0];
+    return t ? rowTitleOf(t.row) : '';
+  }).filter(Boolean).join(', ');
+  if (!confirm(ids.length + '개를 복원합니다 — ' + names)) return;
   Store.restore(ids);
   trashSelected.clear();
   render();
 }
-function purgeSelectedTrash() {
-  const ids = [...trashSelected];
+function doTrashPurge() {
+  const ids = trashTargetIds();
   if (!ids.length) return;
   if (!confirm(ids.length + '개를 영구 삭제합니다. 되돌릴 수 없습니다.')) return;
   Store.purge(ids);
@@ -1069,13 +1078,24 @@ function renderDeleted() {
   // 휴지통에서 사라진 id 는 선택에서도 지운다
   const liveIds = new Set(list.map(t => t.id));
   [...trashSelected].forEach(id => { if (!liveIds.has(id)) trashSelected.delete(id); });
-  const selBtns = document.getElementById('trashSelBtns');
-  if (selBtns) {
-    selBtns.style.display = trashSelected.size ? '' : 'none';
-    const a = document.getElementById('trashSelRestore');
-    const b = document.getElementById('trashSelPurge');
-    if (a) a.textContent = '선택 복원 (' + trashSelected.size + ')';
-    if (b) b.textContent = '선택 영구 삭제 (' + trashSelected.size + ')';
+  const picked = trashSelected.size;
+  const n = picked || list.length;
+  const scope = picked ? '체크한 ' + picked + '개' : '전체 ' + list.length + '개';
+  const rb = document.getElementById('trashRestoreBtn');
+  const pb = document.getElementById('trashPurgeBtn');
+  if (rb) {
+    rb.disabled = n === 0;
+    rb.style.opacity = n === 0 ? '0.35' : '1';
+    rb.title = n ? scope + '를 표로 되돌립니다. 지우기 전 자리로 돌아갑니다.'
+                 : '되돌릴 항목이 없습니다';
+    document.getElementById('trashRestoreCount').textContent = n;
+  }
+  if (pb) {
+    pb.disabled = n === 0;
+    pb.style.opacity = n === 0 ? '0.35' : '1';
+    pb.title = n ? scope + '를 영구 삭제합니다. 내용이 사라지고 되돌릴 수 없습니다.'
+                 : '영구 삭제할 항목이 없습니다';
+    document.getElementById('trashPurgeCount').textContent = n;
   }
   if (!list.length) { bodyEl.innerHTML = '<div class="del-empty">지운 항목이 없습니다.</div>'; return; }
 
@@ -1431,6 +1451,8 @@ window.addEventListener('DOMContentLoaded', () => {
   if (hl && !hl.firstChild) hl.outerHTML = headLeadHTML(false);
   renderBoardNav();
   $('trashIcon').innerHTML = SVG_TRASH;
+  $('trashRestoreIcon').innerHTML = SVG_RESTORE;
+  $('trashPurgeIcon').innerHTML = SVG_PURGE;
   bindPanelFields();
   paintMe();
   paintMode();
