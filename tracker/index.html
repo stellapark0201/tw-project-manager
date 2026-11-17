@@ -173,6 +173,61 @@
   .empty { padding: 36px; text-align: center; color: var(--text-muted); }
   .count { font-size: 11.5px; color: var(--text-muted); margin: 9px 2px 0; }
 
+  /* ── Request 패널 ── */
+  #requestPanel {
+    position: fixed; top: 72px; right: 24px; z-index: 900; width: 310px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    box-shadow: var(--shadow-lg); padding: 16px;
+  }
+  .req-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .req-title { font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 7px; }
+  #requestPanel .field { margin-bottom: 12px; }
+  #requestPanel label { display: block; font-size: 11px; color: var(--text-muted); margin-bottom: 4px; }
+  #requestPanel input, #requestPanel textarea {
+    width: 100%; font-family: inherit; font-size: 13px; padding: 7px 10px;
+    border: 1px solid var(--border); border-radius: 6px; background: var(--surface);
+  }
+  #requestPanel input:focus, #requestPanel textarea:focus { outline: none; border-color: var(--accent); }
+  #requestPanel textarea { resize: vertical; }
+  .req-label { font-size: 11px; color: var(--text-muted); margin-bottom: 8px; }
+  .req-meta { font-size: 11px; color: var(--text-muted); min-height: 16px; margin-bottom: 8px; }
+  .req-checks { display: flex; flex-direction: column; gap: 7px; margin-bottom: 14px; }
+  .req-row { display: flex; align-items: center; gap: 8px; font-size: 12.5px; }
+  .req-row .done { color: var(--green); font-size: 11px; }
+  .req-row button {
+    margin-left: auto; font-family: inherit; font-size: 11px; cursor: pointer;
+    border: 1px solid var(--border); background: var(--surface); color: var(--text-secondary);
+    border-radius: 11px; padding: 2px 9px;
+  }
+  .req-row button:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* ── 이동하기 메뉴 ── */
+  #movePop {
+    position: absolute; z-index: 1300; min-width: 256px; max-width: 330px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+    box-shadow: var(--shadow-lg); padding: 10px 11px 9px; font-size: 13px;
+  }
+  .move-head {
+    font-size: 12px; font-weight: 600; padding-bottom: 7px; margin-bottom: 7px;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .move-label { font-size: 11px; color: var(--text-muted); margin: 0 0 5px; }
+  .move-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 9px; }
+  .move-chip {
+    font-family: inherit; font-size: 12px; cursor: pointer; padding: 3px 9px; border-radius: 11px;
+    border: 1px solid var(--border); background: var(--surface); color: var(--text-secondary);
+  }
+  .move-chip:hover:not(:disabled) { background: var(--accent-light); border-color: var(--accent); color: var(--accent); }
+  .move-chip.is-current { opacity: 0.4; cursor: default; }
+  .move-item {
+    display: block; width: 100%; text-align: left; font-family: inherit; font-size: 12.5px;
+    cursor: pointer; padding: 7px 9px; border-radius: 6px; border: 1px solid var(--border);
+    background: var(--surface); color: var(--text-secondary); margin-bottom: 4px;
+  }
+  .move-item:hover { background: var(--accent-light); border-color: var(--accent); color: var(--accent); }
+  .move-note { font-size: 10.5px; line-height: 1.5; color: var(--text-muted); margin-top: 8px; }
+  .move-sep { border-top: 1px solid var(--border-subtle); margin: 9px -11px 8px; }
+
   /* ── 이력 팝업 ── */
   #logPop {
     position: absolute; z-index: 60; width: 380px; background: var(--surface);
@@ -285,11 +340,13 @@
     <button class="icon-btn" onclick="openHistory()" title="수정 이력">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><path d="M12 7v5l4 2"/></svg>
     </button>
+    <button class="icon-btn" id="reqBtn" onclick="toggleRequest()" title="Request — 업데이트 요청"><span id="reqIcon"></span></button>
     <button class="icon-btn" id="capBtn" onclick="captureTable()" title="표를 PNG 이미지로 저장"><span id="capIcon"></span></button>
     <button class="icon-btn del" id="delBtn" onclick="deleteSelected()" disabled title="선택 일괄 삭제">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
       <span class="n" id="delCount">0</span>
     </button>
+    <button class="icon-btn" id="moveBtn" onclick="openMoveMenu(event)" title="이동하기"><span id="moveIcon"></span><span class="n" id="moveCount">0</span></button>
     <button class="icon-btn" id="undoBtn" onclick="doUndo()" disabled>
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>
     </button>
@@ -350,6 +407,23 @@
   <div class="panel-foot"><button class="btn danger" onclick="deleteCurrent()">이 Task 삭제</button></div>
 </div>
 
+<!-- Request — 기존 앱과 같은 모양의 떠 있는 패널 -->
+<div id="requestPanel" style="display:none;">
+  <div class="req-head">
+    <span class="req-title"><span id="reqHeadIcon"></span> Request</span>
+    <button class="panel-close" onclick="closeRequest()" title="닫기">×</button>
+  </div>
+  <div class="field"><label>업데이트 요청 마감일</label><input type="date" id="reqDeadline" /></div>
+  <div class="field"><label>추가 메모</label><textarea id="reqNote" rows="3" placeholder="자유롭게 입력하세요…"></textarea></div>
+  <div class="req-label">담당자 확인</div>
+  <div id="reqMeta" class="req-meta"></div>
+  <div id="reqCheckList" class="req-checks"></div>
+  <button class="btn primary" style="width:100%;" onclick="saveRequest()">저장</button>
+</div>
+
+<!-- 이동하기 메뉴 -->
+<div id="movePop" style="display:none;"></div>
+
 <div id="rowLogPanel" class="side">
   <div class="panel-head">
     <div><h2 id="rlTitle">기록</h2><div class="sub" id="rlSub"></div></div>
@@ -380,6 +454,8 @@ const LOGS = [
   { key: 'due',      label: 'Due date'  }
 ];
 const SVG_GLASS  = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>';
+const SVG_MAIL   = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 6 10-6"/></svg>';
+const SVG_MOVE   = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>';
 const SVG_CAM    = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>';
 const SVG_DETAIL = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>';
 const SVG_MEMO   = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>';
@@ -490,6 +566,7 @@ function render() {
 
   $('delBtn').disabled = selected.size === 0;
   $('delCount').textContent = selected.size;
+  $('moveCount').textContent = selected.size;
   const all = list.length > 0 && list.every(r => selected.has(r.id));
   $('chkAll').checked = all;
   $('chkAll').indeterminate = !all && list.some(r => selected.has(r.id));
@@ -725,6 +802,120 @@ function bindPanelFields() {
   });
 }
 
+/* ── 페이지 등록부 ─────────────────────────────────────────────────
+   페이지(앱)를 하나 더 만들면 여기에 한 줄만 추가한다. 그러면 "이동하기"의
+   가기 목록과 옮기기 목록에 자동으로 나타난다. id는 그 페이지의
+   window.STORE_APP_ID 와 같아야 한다 (Firestore 문서 tw-pm/<id>). */
+const PAGES = [
+  { id: 'tracker', label: 'Weekly Focus', href: './' }
+];
+const MAIN_APP = { label: 'TW Project Manager (In Active)', href: '../' };
+
+/* ── 이동하기 ──────────────────────────────────────────────────────
+   기존 앱과 같은 자리의 같은 메뉴. 지금은 "페이지로 가기"가 실제로 동작하고,
+   "다른 표로 옮기기"는 옮겨 갈 페이지가 생기면 그때 목록에 나타난다. */
+function openMoveMenu(ev) {
+  ev.stopPropagation();
+  closeMoveMenu();
+  const n = selected.size;
+  const others = PAGES.filter(p => p.id !== Store.APP_ID);
+  const pageChips = [['', 'Total']].concat(pagesPresent().map(b => [b, b])).map(x =>
+    '<button class="move-chip' + (page === x[0] ? ' is-current' : '') + '"' +
+    (page === x[0] ? ' disabled' : '') + ' onclick="moveGoPage(\'' + esc(x[0]) + '\')">' + esc(x[1]) + '</button>').join('');
+
+  const movePart = n
+    ? '<div class="move-label">체크한 ' + n + '개를 다른 표로 옮기기</div>' +
+      (others.length
+        ? others.map(p => '<button class="move-item" onclick="moveRowsTo(\'' + p.id + '\')">' +
+            esc(p.label) + ' 로 옮기기</button>').join('')
+        : '<div class="move-note">옮겨 갈 페이지가 아직 없습니다. 페이지를 추가하고 이 파일의 PAGES에 한 줄 넣으면 여기에 나타납니다.</div>') +
+      '<div class="move-sep"></div>'
+    : '';
+
+  const pop = document.createElement('div');
+  pop.id = 'movePop';
+  pop.innerHTML =
+    '<div class="move-head">이동하기' + (n ? ' — 체크한 ' + n + '개' : ' — 체크한 행 없음 (화면 이동만)') + '</div>' +
+    movePart +
+    '<div class="move-label">페이지로 가기</div>' +
+    '<div class="move-chips">' + pageChips + '</div>' +
+    '<div class="move-label">다른 메뉴로 가기</div>' +
+    '<button class="move-item" onclick="location.href=\'' + MAIN_APP.href + '\'">' + esc(MAIN_APP.label) + '</button>';
+  document.body.appendChild(pop);
+
+  const r = ev.currentTarget.getBoundingClientRect();
+  const left = Math.min(r.left + window.scrollX, window.scrollX + window.innerWidth - pop.offsetWidth - 14);
+  pop.style.left = Math.max(window.scrollX + 8, left) + 'px';
+  pop.style.top = (r.bottom + window.scrollY + 6) + 'px';
+  setTimeout(() => document.addEventListener('mousedown', outsideMove, true), 0);
+}
+function outsideMove(e) {
+  const pop = document.getElementById('movePop');
+  if (pop && !pop.contains(e.target)) closeMoveMenu();
+}
+function closeMoveMenu() {
+  const pop = document.getElementById('movePop');
+  if (pop) pop.remove();
+  document.removeEventListener('mousedown', outsideMove, true);
+}
+function moveGoPage(p) { closeMoveMenu(); gotoPage(p); }
+function moveRowsTo(appId) {
+  closeMoveMenu();
+  alert('아직 옮겨 갈 페이지가 없습니다. 페이지를 추가한 뒤 연결하겠습니다. (대상: ' + appId + ')');
+}
+
+/* ── Request ───────────────────────────────────────────────────────
+   기존 앱과 같은 패널. 다만 문서는 이 앱 전용(tw-pm/tracker_request)이라
+   기존 앱의 Request와 섞이지 않는다. */
+let reqDoc = { deadline: '', note: '', createdBy: '', checks: {} };
+function toggleRequest() {
+  const el = $('requestPanel');
+  if (el.style.display === 'none') { fillRequest(); el.style.display = ''; }
+  else el.style.display = 'none';
+}
+function closeRequest() { $('requestPanel').style.display = 'none'; }
+function fillRequest() {
+  const focused = document.activeElement;
+  if ($('reqDeadline') !== focused) $('reqDeadline').value = reqDoc.deadline || '';
+  if ($('reqNote') !== focused) $('reqNote').value = reqDoc.note || '';
+  $('reqMeta').textContent = reqDoc.createdBy
+    ? reqDoc.createdBy + ' 가 올린 요청' + (reqDoc.deadline ? ' · 마감 ' + reqDoc.deadline : '')
+    : '아직 올라온 요청이 없습니다.';
+  // 담당자 목록은 표의 주담당에서 뽑는다
+  const owners = {};
+  Store.all().forEach(r => { const o = (r.owner || '').trim(); if (o) owners[o] = 1; });
+  const me = Store.initials();
+  if (me) owners[me] = 1;
+  const list = Object.keys(owners).sort();
+  $('reqCheckList').innerHTML = list.length ? list.map(o => {
+    const done = reqDoc.checks && reqDoc.checks[o];
+    return '<div class="req-row"><span class="who">' + esc(o.slice(0, 2)) + '</span>' + esc(o) +
+      (done ? '<span class="done">확인 ' + esc(done) + '</span>' : '') +
+      (o === me ? '<button onclick="markRequestDone()">' + (done ? '확인 취소' : '확인') + '</button>' : '') +
+      '</div>';
+  }).join('') : '<div class="move-note">주담당이 지정된 행이 없습니다.</div>';
+}
+async function saveRequest() {
+  if (!Store.initials() && !askInitials()) return;
+  reqDoc = {
+    deadline: $('reqDeadline').value || '',
+    note: $('reqNote').value || '',
+    createdBy: Store.initials(),
+    checks: reqDoc.checks || {}
+  };
+  await Store.auxSave('request', reqDoc);
+  fillRequest();
+}
+async function markRequestDone() {
+  const me = Store.initials();
+  if (!me) { askInitials(); return; }
+  reqDoc.checks = reqDoc.checks || {};
+  if (reqDoc.checks[me]) delete reqDoc.checks[me];
+  else reqDoc.checks[me] = new Date().toISOString().slice(0, 10);
+  await Store.auxSave('request', reqDoc);
+  fillRequest();
+}
+
 /* ── 행별 전체 기록 (돋보기) ────────────────────────
    표에는 칸마다 맨 위 한 줄만 보이므로, 세 칸의 쌓인 기록을 한번에 보는 자리. */
 let rowLogId = null;
@@ -822,6 +1013,14 @@ Store.on('status', (text, tone) => { const el = $('syncStatus'); el.textContent 
 window.addEventListener('DOMContentLoaded', () => {
   $('docPath').textContent = Store.DOC_PATH;
   $('capIcon').innerHTML = SVG_CAM;
+  $('reqIcon').innerHTML = SVG_MAIL;
+  $('reqHeadIcon').innerHTML = SVG_MAIL;
+  $('moveIcon').innerHTML = SVG_MOVE;
+  // 요청 문서는 행 목록과 따로 구독한다 (팀원이 바꾸면 바로 보인다)
+  setTimeout(() => Store.auxWatch('request', d => {
+    reqDoc = { deadline: d.deadline || '', note: d.note || '', createdBy: d.createdBy || '', checks: d.checks || {} };
+    if ($('requestPanel').style.display !== 'none') fillRequest();
+  }), 1200);
   Store.setRowLabel(r => taskName(r) || '(이름 없음)');   // 이력 문구에 연결된 이름이 나오도록
   bindPanelFields();
   paintMe();

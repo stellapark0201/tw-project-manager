@@ -500,6 +500,31 @@
       return top;
     },
 
+    /* ── 곯다리 문서 ──────────────────────────────────────
+       행 목록과 따로 굴러가는 작은 공유 상태(예: 업데이트 요청)를 넣는 곣.
+       경로는 tw-pm/<앱이름>_<이름> — 본 문서와 섞이지 않고, 기존 앱 문서도 건들지 않는다. */
+    auxWatch(name, cb) {
+      if (!db || typeof cb !== 'function') return () => {};
+      return db.doc(DOC_PATH + '_' + name).onSnapshot(
+        snap => cb(snap.exists ? (snap.data() || {}) : {}),
+        err => console.warn('[store] ' + name + ' 수신 오류:', err.code));
+    },
+    async auxSave(name, obj) {
+      if (testMode) { status('테스트 모드 — 저장하지 않음', 'warn'); return false; }
+      if (!db) { status('오프라인 — 저장 실패', 'err'); return false; }
+      try {
+        await db.doc(DOC_PATH + '_' + name).set(Object.assign({}, obj, {
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        }));
+        status('저장됨', 'ok');
+        return true;
+      } catch (e) {
+        console.warn('[store] ' + name + ' 저장 실패:', e);
+        status('저장 실패', 'err');
+        return false;
+      }
+    },
+
     isTestMode() { return testMode; },
     setTestMode(on) {
       if (testMode === !!on) return;
