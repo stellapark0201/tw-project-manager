@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Activity Update</title>
+
+<!-- index.html과 같은 Firebase 프로젝트를 쓴다. 설정은 store.js 안에 있다. -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+</head>
+<body>
+
+<!-- 이 페이지에서 다른 것은 이름뿐이다. 화면과 동작은 전부 board.js에 있다. -->
+<script>
+  window.STORE_APP_ID = 'activity-update';                    // Firestore 문서 tw-pm/activity-update
+  window.STORE_LOG_FIELDS = ['thisWeek', 'nextWeek', 'due'];
+  window.BOARD_TITLE = 'Activity Update';
+  window.BOARD_LABEL = 'Activity Update';
+</script>
+<script src="../store.js?v=20261117h"></script>
+<script src="../board.js?v=20261117h"></script>
+</body>
+</html>

@@ -194,7 +194,8 @@ const BOARD_LABEL = window.BOARD_LABEL || BOARD_TITLE;
   }
   .cell-input:hover { border-color: var(--border); }
   .cell-input:focus { outline: none; border-color: var(--accent); background: #fff; }
-  .cell-owner { text-align: center; font-weight: 600; }
+  .cell-owner { text-align: center; font-weight: 600; min-height: 17px; }
+  div.cell-input { cursor: text; white-space: pre-wrap; }
 
   .task-cell { display: flex; align-items: center; gap: 6px; padding: 0 6px; }
   .task-cell .nm { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -211,7 +212,8 @@ const BOARD_LABEL = window.BOARD_LABEL || BOARD_TITLE;
   }
   .log-cell:hover { border-color: var(--accent); background: #fff; }
   .log-cell .txt { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .log-cell .txt.none { color: var(--text-muted); font-weight: 400; }
+  /* 빈 칸 안내는 생성 내용으로 — 표를 긁어 복사할 때 딸려오지 않는다 */
+  .log-cell .txt.none::after { content: '+ 입력'; color: var(--text-muted); font-weight: 400; }
   .log-cell .cnt {
     font-size: 10px; font-weight: 600; color: var(--text-muted);
     background: var(--surface-2); border: 1px solid var(--border);
@@ -711,7 +713,7 @@ function logCellHTML(r, field) {
   const top = Store.latestLog(r, field);
   const n = Store.logCount(r, field);
   return '<div class="log-cell" onclick="openLog(event,\'' + r.id + '\',\'' + field + '\')">' +
-    '<span class="txt' + (top ? '' : ' none') + '">' + (top ? esc(top.text) : '+ 입력') + '</span>' +
+    '<span class="txt' + (top ? '' : ' none') + '">' + (top ? esc(top.text) : '') + '</span>' +
     (n > 1 ? '<span class="cnt">' + n + '</span>' : '') + '</div>';
 }
 
@@ -723,9 +725,9 @@ function render() {
     ' ondragover="dragOver(event,\'' + r.id + '\')" ondragleave="dragLeave(event)" ondrop="dropOn(event,\'' + r.id + '\')">' +
     '<td>' + leadHTML(r) + '</td>' +
     '<td>' + taskCellHTML(r) + '</td>' +
-    '<td><input class="cell-input cell-owner" value="' + esc(r.owner) + '" maxlength="4"' +
-      ' onblur="Store.setField(\'' + r.id + '\',\'owner\',this.value); render();"' +
-      ' onkeydown="if(event.key===\'Enter\')this.blur()" /></td>' +
+    '<td><div class="cell-input cell-owner" contenteditable="plaintext-only"' +
+      ' onblur="saveOwner(\'' + r.id + '\', this)"' +
+      ' onkeydown="if(event.key===\'Enter\'){event.preventDefault();this.blur();}">' + esc(r.owner) + '</div></td>' +
     '<td>' + logCellHTML(r, 'thisWeek') + '</td>' +
     '<td>' + logCellHTML(r, 'nextWeek') + '</td>' +
     '<td>' + logCellHTML(r, 'due') + '</td></tr>').join('');
@@ -893,6 +895,13 @@ function addRow() {
   openPanel(r.id);
   setTimeout(() => $('pProject').focus(), 220);
 }
+// 주담당 칸은 contenteditable 이라 값이 문서의 글자 그대로다 (표를 긁으면 같이 복사된다)
+function saveOwner(id, el) {
+  const v = String(el.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 4);
+  if (el.textContent !== v) el.textContent = v;
+  Store.setField(id, 'owner', v);
+  render();
+}
 function toggleSelect(id, on) { if (on) selected.add(id); else selected.delete(id); render(); }
 // 기존 앱처럼: 일부만 선택된 상태(–)에서 누르면 전체 선택, 전체에서 누르면 해제
 function headerCheck(el) {
@@ -1018,7 +1027,8 @@ function bindPanelFields() {
 const PAGES = [
   { id: 'tracker',   tab: 'Tasks in Active', label: 'Weekly Focus',      href: '../tracker/' },
   { id: 'completed', tab: 'Completed',       label: 'Completed Project', href: '../completed/' },
-  { id: 'task-update', tab: 'Task Update',  label: 'Task Update',       href: '../task-update/' }
+  { id: 'task-update', tab: 'Task Update',  label: 'Task Update',       href: '../task-update/' },
+  { id: 'activity-update', tab: 'Activity Update', label: 'Activity Update', href: '../activity-update/' }
 ];
 const MAIN_APP = { label: 'TW Project Manager (In Active)', href: '../' };
 
