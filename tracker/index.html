@@ -11,22 +11,12 @@
 
 <style>
   :root {
-    --bg: #f4f4f4;
-    --surface: #ffffff;
-    --surface-2: #f8f8f8;
-    --border: #e0e0e0;
-    --border-subtle: #ebebeb;
-    --text-primary: #161616;
-    --text-secondary: #6f6f6f;
-    --text-muted: #a8a8a8;
-    --accent: #0f62fe;
-    --accent-light: #edf3ff;
-    --header-bg: #161616;
-    --navy: #1f3864;
-    --crimson: #c00000;
-    --green: #198038;
-    --red: #da1e28;
-    --red-light: #fff1f1;
+    --bg: #f4f4f4; --surface: #ffffff; --surface-2: #f8f8f8;
+    --border: #e0e0e0; --border-subtle: #ebebeb;
+    --text-primary: #161616; --text-secondary: #6f6f6f; --text-muted: #a8a8a8;
+    --accent: #0f62fe; --accent-light: #edf3ff;
+    --header-bg: #161616; --navy: #1f3864; --crimson: #c00000;
+    --green: #198038; --red: #da1e28; --red-light: #fff1f1;
     --shadow-lg: 0 8px 28px rgba(0,0,0,0.14);
   }
   * { box-sizing: border-box; }
@@ -56,33 +46,53 @@
   }
   .mode-btn.on { background: #f59e0b; border-color: #f59e0b; color: #161616; font-weight: 600; }
 
-  .container { max-width: 1320px; margin: 0 auto; padding: 20px; }
-  .toolbar { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
-  .btn {
-    font-family: inherit; font-size: 12.5px; cursor: pointer; background: var(--surface);
-    color: var(--text-secondary); border: 1px solid var(--border); border-radius: 6px;
-    padding: 6px 12px; transition: all 0.12s;
-  }
-  .btn:hover:not(:disabled) { background: var(--accent-light); border-color: var(--accent); color: var(--accent); }
-  .btn:disabled { opacity: 0.4; cursor: default; }
-  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
-  .btn.primary:hover { background: #0043ce; color: #fff; }
-  .btn.danger { color: var(--red); }
-  .btn.danger:hover:not(:disabled) { background: var(--red-light); border-color: var(--red); color: var(--red); }
-  #search {
-    font-family: inherit; font-size: 12.5px; padding: 6px 10px; width: 190px;
-    border: 1px solid var(--border); border-radius: 6px; background: var(--surface);
-  }
-  #search:focus { outline: none; border-color: var(--accent); }
+  .container { max-width: 1340px; margin: 0 auto; padding: 18px 20px 40px; }
 
-  .chips { display: flex; gap: 4px; margin-left: auto; flex-wrap: wrap; }
+  /* ── 제목 줄 + 페이지 네비 ── */
+  .title-row { display: flex; align-items: center; gap: 16px; margin: 0 0 14px; position: relative; }
+  .title-row h2 { font-size: 23px; font-weight: 500; margin: 0; letter-spacing: -0.3px; }
+  .page-nav { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); display: flex; align-items: center; gap: 4px; }
+  .page-nav-arrow, .nav-home {
+    font-family: inherit; font-size: 13px; cursor: pointer; background: var(--surface);
+    border: 1px solid var(--border); border-radius: 5px; color: var(--text-secondary);
+    width: 30px; height: 26px; display: inline-flex; align-items: center; justify-content: center;
+  }
+  .page-nav-arrow:hover, .nav-home:hover { border-color: var(--accent); color: var(--accent); }
+  .page-nav-dots { display: flex; gap: 3px; }
+  .nav-dot {
+    min-width: 26px; height: 26px; padding: 0 7px; font-size: 11.5px; font-weight: 600;
+    display: inline-flex; align-items: center; justify-content: center; cursor: pointer;
+    border: 1px solid var(--border); border-radius: 5px;
+    background: var(--surface); color: var(--text-muted);
+  }
+  .nav-dot:hover { background: var(--accent-light); border-color: var(--accent); color: var(--accent); }
+  .nav-dot.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+  /* ── 아이콘 줄 ── */
+  .tool-row { display: flex; align-items: center; gap: 10px; margin: 0 0 12px 2px; }
+  .tool-row .label { font-size: 18px; font-weight: 600; color: var(--text-secondary); margin: 0; letter-spacing: -0.2px; }
+  .icon-btn {
+    background: none; border: none; cursor: pointer; color: var(--text-muted);
+    padding: 4px 6px; border-radius: 6px; display: flex; align-items: center; gap: 3px;
+    transition: all 0.13s; font-family: inherit;
+  }
+  .icon-btn:hover:not(:disabled) { background: var(--surface-2); color: var(--text-secondary); }
+  .icon-btn:disabled { opacity: 0.35; cursor: default; }
+  .icon-btn .n { font-size: 12px; font-weight: 600; }
+  .icon-btn.del { color: var(--red); }
+  .icon-btn.del:hover:not(:disabled) { background: var(--red-light); color: var(--red); }
+
+  /* ── 필터 칩 줄 ── */
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
   .chip {
-    font-family: inherit; font-size: 11.5px; cursor: pointer; padding: 4px 11px;
-    border-radius: 12px; border: 1px solid var(--border);
-    background: var(--surface); color: var(--text-secondary);
+    font-family: inherit; font-size: 11.5px; cursor: pointer; padding: 5px 13px;
+    border-radius: 13px; border: 1px solid var(--border);
+    background: var(--surface); color: var(--text-muted);
   }
-  .chip.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .chip:hover { border-color: var(--accent); color: var(--accent); }
+  .chip.on { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
 
+  /* ── 표 ── */
   .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; overflow: hidden; }
   table { width: 100%; border-collapse: collapse; table-layout: fixed; }
   thead th {
@@ -98,9 +108,27 @@
   tbody tr:hover { background: var(--surface-2); }
   tbody tr.sel { background: var(--accent-light); }
   tbody tr.hot td, tbody tr.hot .cell-input { color: var(--crimson); font-weight: 600; }
+  tbody tr.dragging { opacity: 0.4; }
+  tbody tr.drop-above td { box-shadow: inset 0 2px 0 0 var(--accent); }
+  tbody tr.drop-below td { box-shadow: inset 0 -2px 0 0 var(--accent); }
 
-  td.chk { width: 34px; text-align: center; }
-  td.chk input { width: 14px; height: 14px; accent-color: var(--accent); cursor: pointer; margin: 0; }
+  /* 행 앞 아이콘 묶음 — ⠿ 드래그 / 체크 / 상세 / 메모 */
+  .lead { display: flex; align-items: center; justify-content: center; gap: 3px; padding: 5px 4px; }
+  .lead input[type=checkbox] { width: 14px; height: 14px; accent-color: var(--accent); cursor: pointer; margin: 0; }
+  .drag-handle {
+    cursor: grab; color: var(--border); font-size: 13px; line-height: 1;
+    user-select: none; padding: 0 1px;
+  }
+  .drag-handle:hover { color: var(--accent); }
+  .drag-handle:active { cursor: grabbing; }
+  .btn-icon {
+    background: none; border: none; cursor: pointer; color: var(--accent);
+    padding: 2px; border-radius: 4px; line-height: 0;
+  }
+  .btn-icon:hover { background: var(--accent-light); }
+  .btn-icon.muted { color: var(--text-muted); }
+  .btn-icon.muted:hover { color: var(--accent); }
+  .btn-icon.has-memo { color: #f59e0b; }
 
   .cell-input {
     font-family: inherit; font-size: 12.5px; color: inherit; width: 100%;
@@ -110,8 +138,7 @@
   .cell-input:focus { outline: none; border-color: var(--accent); background: #fff; }
   .cell-owner { text-align: center; font-weight: 600; }
 
-  /* Task 칸 — 연결된 프로젝트는 이름을 그때그때 읽어온다 */
-  .task-cell { display: flex; align-items: center; gap: 6px; padding: 0 4px 0 7px; }
+  .task-cell { display: flex; align-items: center; gap: 6px; padding: 0 6px; }
   .task-cell .nm { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .task-cell .nm.none { color: var(--text-muted); }
   .task-cell .bu, .task-cell .new {
@@ -119,14 +146,7 @@
     background: var(--accent-light); color: var(--accent); flex-shrink: 0;
   }
   .task-cell .new { background: #fee2e2; color: var(--crimson); }
-  .link-btn {
-    background: none; border: none; cursor: pointer; color: var(--text-muted);
-    padding: 4px; border-radius: 4px; flex-shrink: 0; line-height: 0;
-  }
-  .link-btn:hover { background: var(--accent-light); color: var(--accent); }
-  .link-btn.off { opacity: 0.35; }
 
-  /* 이력 칸 — 마지막 한 줄만 보여준다 */
   .log-cell {
     display: flex; align-items: center; gap: 6px; cursor: pointer;
     padding: 8px; min-height: 36px; border: 1px solid transparent; border-radius: 4px;
@@ -140,7 +160,15 @@
     border-radius: 8px; padding: 0 5px; flex-shrink: 0;
   }
 
-  .empty { padding: 40px; text-align: center; color: var(--text-muted); }
+  /* 표 맨 아래 ＋ 한 줄 */
+  .add-row td { text-align: center; padding: 0; }
+  .btn-add-row {
+    width: 100%; background: none; border: none; cursor: pointer; color: var(--accent);
+    font-size: 17px; line-height: 1; padding: 8px 0; font-family: inherit;
+  }
+  .btn-add-row:hover { background: var(--accent-light); }
+
+  .empty { padding: 36px; text-align: center; color: var(--text-muted); }
   .count { font-size: 11.5px; color: var(--text-muted); margin: 9px 2px 0; }
 
   /* ── 이력 팝업 ── */
@@ -172,23 +200,23 @@
   .log-item .del:hover { color: var(--red); }
   .log-empty { color: var(--text-muted); font-size: 12px; padding: 10px 2px; }
 
-  /* ── 상세 패널 ── */
-  #panel {
-    position: fixed; top: 0; right: 0; width: 380px; height: 100%; background: var(--surface);
+  /* ── 오른쪽 패널 (상세 / 수정 이력 공용) ── */
+  .side {
+    position: fixed; top: 0; right: 0; width: 390px; height: 100%; background: var(--surface);
     border-left: 1px solid var(--border); box-shadow: var(--shadow-lg); padding: 20px;
     overflow-y: auto; transform: translateX(100%); transition: transform 0.18s ease; z-index: 50;
   }
-  #panel.open { transform: translateX(0); }
-  #panel h2 { font-size: 15px; margin: 0 0 2px; font-weight: 600; }
-  #panel .sub { font-size: 11px; color: var(--text-muted); margin-bottom: 18px; }
-  #panel label { display: block; font-size: 11px; color: var(--text-muted); margin: 0 0 4px; }
-  #panel .field { margin-bottom: 14px; }
-  #panel input, #panel select, #panel textarea {
+  .side.open { transform: translateX(0); }
+  .side h2 { font-size: 15px; margin: 0 0 2px; font-weight: 600; }
+  .side .sub { font-size: 11px; color: var(--text-muted); margin-bottom: 18px; }
+  .side label { display: block; font-size: 11px; color: var(--text-muted); margin: 0 0 4px; }
+  .side .field { margin-bottom: 14px; }
+  .side input, .side select, .side textarea {
     font-family: inherit; font-size: 13px; width: 100%;
     border: 1px solid var(--border); border-radius: 5px; padding: 7px 9px; background: var(--surface);
   }
-  #panel input:focus, #panel select:focus, #panel textarea:focus { outline: none; border-color: var(--accent); }
-  #panel textarea { resize: vertical; min-height: 80px; }
+  .side input:focus, .side select:focus, .side textarea:focus { outline: none; border-color: var(--accent); }
+  .side textarea { resize: vertical; min-height: 90px; }
   .panel-head { display: flex; align-items: flex-start; gap: 8px; }
   .panel-close {
     background: none; border: none; cursor: pointer; color: var(--text-muted);
@@ -205,6 +233,25 @@
   .row-toggle { display: flex; align-items: center; gap: 7px; font-size: 12.5px; margin-bottom: 9px; }
   .row-toggle input { width: auto; }
   .row-toggle label { margin: 0 !important; }
+  .btn {
+    font-family: inherit; font-size: 12.5px; cursor: pointer; background: var(--surface);
+    color: var(--text-secondary); border: 1px solid var(--border); border-radius: 6px; padding: 6px 12px;
+  }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .btn.danger { color: var(--red); }
+  .btn.danger:hover { background: var(--red-light); border-color: var(--red); }
+
+  /* 수정 이력 목록 */
+  .hist-item { padding: 9px 2px; border-top: 1px solid var(--border-subtle); font-size: 12.5px; }
+  .hist-item:first-child { border-top: none; }
+  .hist-item .a { font-weight: 600; }
+  .hist-item .d { color: var(--text-secondary); word-break: break-word; }
+  .hist-item .m { font-size: 10.5px; color: var(--text-muted); margin-top: 2px; }
+  .who {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 17px; height: 17px; border-radius: 50%; background: var(--accent);
+    color: #fff; font-size: 9.5px; font-weight: 700; margin-right: 5px; vertical-align: -3px;
+  }
 </style>
 </head>
 <body>
@@ -219,17 +266,41 @@
 </header>
 
 <div class="container">
-  <div class="toolbar">
-    <button class="btn primary" onclick="addRow()">＋ 추가</button>
-    <button class="btn danger" id="delBtn" onclick="deleteSelected()" disabled>선택 삭제</button>
-    <input id="search" type="search" placeholder="검색" oninput="render()" />
-    <div class="chips" id="ownerChips"></div>
+  <!-- 제목 + 페이지 네비 (기존 앱과 같은 배치) -->
+  <div class="title-row">
+    <h2 id="pageTitle">Total</h2>
+    <div class="page-nav">
+      <button class="nav-home" onclick="gotoPage('')" title="Total 보기">⌂</button>
+      <button class="page-nav-arrow" onclick="stepPage(-1)" title="이전">&#8592;</button>
+      <div class="page-nav-dots" id="navDots"></div>
+      <button class="page-nav-arrow" onclick="stepPage(1)" title="다음">&#8594;</button>
+    </div>
   </div>
+
+  <!-- 아이콘 줄 -->
+  <div class="tool-row">
+    <p class="label">Weekly Focus</p>
+    <button class="icon-btn" onclick="openHistory()" title="수정 이력">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v5h5"/><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"/><path d="M12 7v5l4 2"/></svg>
+    </button>
+    <button class="icon-btn del" id="delBtn" onclick="deleteSelected()" disabled title="선택 일괄 삭제">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+      <span class="n" id="delCount">0</span>
+    </button>
+    <button class="icon-btn" id="undoBtn" onclick="doUndo()" disabled>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 14 4 9 9 4"/><path d="M20 20v-7a4 4 0 0 0-4-4H4"/></svg>
+    </button>
+    <input id="search" class="cell-input" style="width:180px;border-color:var(--border);background:var(--surface);"
+           type="search" placeholder="검색" oninput="render()" />
+  </div>
+
+  <!-- 주담당 필터 -->
+  <div class="chips" id="ownerChips"></div>
 
   <div class="table-wrap">
     <table>
       <colgroup>
-        <col style="width:34px" /><col style="width:25%" /><col style="width:58px" />
+        <col style="width:112px" /><col style="width:24%" /><col style="width:62px" />
         <col /><col /><col style="width:128px" />
       </colgroup>
       <thead>
@@ -240,12 +311,11 @@
       </thead>
       <tbody id="tbody"></tbody>
     </table>
-    <div class="empty" id="emptyMsg" style="display:none;">아직 항목이 없습니다. ＋ 추가를 눌러 시작하세요.</div>
+    <div class="empty" id="emptyMsg" style="display:none;">아직 항목이 없습니다. 아래 ＋ 를 눌러 시작하세요.</div>
   </div>
   <div class="count" id="countMsg"></div>
 </div>
 
-<!-- This Week / Next Week / Due date 칸을 누르면 열린다 -->
 <div id="logPop" style="display:none;">
   <h3 id="logTitle"></h3>
   <div class="sub" id="logSub"></div>
@@ -257,7 +327,7 @@
   <div class="log-list" id="logList"></div>
 </div>
 
-<div id="panel">
+<div id="panel" class="side">
   <div class="panel-head">
     <div><h2 id="pTitle">Task</h2><div class="sub" id="pMeta"></div></div>
     <button class="panel-close" onclick="closePanel()" title="닫기">×</button>
@@ -277,47 +347,77 @@
   <div class="panel-foot"><button class="btn danger" onclick="deleteCurrent()">이 Task 삭제</button></div>
 </div>
 
-<!-- 데이터 계층은 저장소 루트에 하나만 두고, 앱마다 이름만 달리 준다.
-     STORE_LOG_FIELDS는 "계속 쌓이는 칸" 목록 — 두 사람이 동시에 적어도
-     서로의 줄을 지우지 않도록 store.js가 합집합으로 합쳐준다. -->
+<div id="histPanel" class="side">
+  <div class="panel-head">
+    <div><h2>수정 이력</h2><div class="sub">누가 언제 무엇을 바꿨는지 — 팀이 함께 봅니다</div></div>
+    <button class="panel-close" onclick="closeHistory()" title="닫기">×</button>
+  </div>
+  <div id="histList"></div>
+</div>
+
 <script>
   window.STORE_APP_ID = 'tracker';
   window.STORE_LOG_FIELDS = ['thisWeek', 'nextWeek', 'due'];
 </script>
 <script src="../store.js"></script>
 <script>
-/* 화면만 담당한다. 저장·동기화는 전부 store.js가 한다. */
+/* 화면만 담당한다. 저장·동기화·이력·되돌리기는 전부 store.js가 한다. */
 
 const LOGS = [
   { key: 'thisWeek', label: 'This Week' },
   { key: 'nextWeek', label: 'Next Week' },
   { key: 'due',      label: 'Due date'  }
 ];
-const LINK_SVG = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
-  'stroke-width="2.4" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/>' +
-  '<path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>';
+const SVG_DETAIL = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>';
+const SVG_MEMO   = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>';
 
+let page = '';                 // '' = Total, 아니면 BU 이름
 let ownerFilter = '';
 let openId = null;
-let logCtx = null;                 // { rowId, field }
+let logCtx = null;
+let dragId = null;
 const selected = new Set();
 
 const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c =>
   ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const shortTs = iso => String(iso || '').slice(5, 10).replace('-', '/');
+const shortTs = iso => String(iso || '').slice(5, 16).replace('T', ' ').replace('-', '/');
 
-// 연결됐으면 기존 앱의 "현재" 이름, 아니면 직접 적은 이름
-function taskName(r) {
-  const ref = Store.linked(r);
-  return (ref && ref.name) || (r && r.name) || '';
+function taskName(r) { const ref = Store.linked(r); return (ref && ref.name) || (r && r.name) || ''; }
+function buOf(r) { const ref = Store.linked(r); return (ref && ref.bu) || ''; }
+
+/* ── 페이지(BU) ────────────────────────────────────────────────────── */
+function pagesPresent() {
+  const set = {};
+  Store.all().forEach(r => { const b = buOf(r); if (b) set[b] = 1; });
+  return Object.keys(set).sort();
+}
+function renderNav() {
+  const list = pagesPresent();
+  const dots = [['', 'T', 'Total']].concat(list.map(b => [b, b.charAt(0), b]));
+  // 첫 글자가 겹치면 그 항목들만 전체 이름으로 (기존 앱과 같은 규칙)
+  const firsts = dots.map(d => d[1]);
+  $('navDots').innerHTML = dots.map((d, i) => {
+    const label = firsts.filter(x => x === d[1]).length > 1 ? d[2] : d[1];
+    return '<div class="nav-dot' + (page === d[0] ? ' active' : '') + '" onclick="gotoPage(\'' +
+      esc(d[0]) + '\')" title="' + esc(d[2]) + '">' + esc(label) + '</div>';
+  }).join('');
+  $('pageTitle').textContent = page || 'Total';
+}
+function gotoPage(p) { page = p; render(); }
+function stepPage(delta) {
+  const order = [''].concat(pagesPresent());
+  const i = order.indexOf(page);
+  page = order[((i === -1 ? 0 : i) + delta + order.length) % order.length];
+  render();
 }
 
 /* ── 목록 ──────────────────────────────────────────────────────────── */
 function visibleRows() {
   const q = $('search').value.trim().toLowerCase();
   return Store.all().filter(r => {
-    if (ownerFilter && (r.owner || '') !== ownerFilter) return false;
+    if (page && buOf(r) !== page) return false;
+    if (ownerFilter === '–' ? (r.owner || '').trim() !== '' : (ownerFilter && (r.owner || '') !== ownerFilter)) return false;
     if (!q) return true;
     const ref = Store.linked(r);
     let hay = [taskName(r), r.owner, r.memo].concat(ref ? [ref.bu, ref.customer] : []);
@@ -326,6 +426,25 @@ function visibleRows() {
   });
 }
 
+function leadHTML(r) {
+  const hasMemo = (r.memo || '').trim() !== '';
+  return '<div class="lead">' +
+    '<span class="drag-handle" draggable="true" title="드래그해서 순서 변경"' +
+      ' ondragstart="dragStart(event,\'' + r.id + '\')" ondragend="dragEnd()">⠿</span>' +
+    '<input type="checkbox" ' + (selected.has(r.id) ? 'checked' : '') +
+      ' onchange="toggleSelect(\'' + r.id + '\', this.checked)" />' +
+    '<button class="btn-icon" title="상세 / 프로젝트 연결" onclick="openPanel(\'' + r.id + '\')">' + SVG_DETAIL + '</button>' +
+    '<button class="btn-icon muted' + (hasMemo ? ' has-memo' : '') + '" title="메모" onclick="openPanel(\'' + r.id + '\',true)">' + SVG_MEMO + '</button>' +
+    '</div>';
+}
+function taskCellHTML(r) {
+  const ref = Store.linked(r);
+  const nm = taskName(r);
+  return '<div class="task-cell">' +
+    '<span class="nm' + (nm ? '' : ' none') + '">' + (nm ? esc(nm) : '(이름 없음)') + '</span>' +
+    (r.isNew ? '<span class="new">NEW</span>' : '') +
+    (ref && ref.bu ? '<span class="bu">' + esc(ref.bu) + '</span>' : '') + '</div>';
+}
 function logCellHTML(r, field) {
   const top = Store.latestLog(r, field);
   const n = Store.logCount(r, field);
@@ -334,23 +453,12 @@ function logCellHTML(r, field) {
     (n > 1 ? '<span class="cnt">' + n + '</span>' : '') + '</div>';
 }
 
-function taskCellHTML(r) {
-  const ref = Store.linked(r);
-  const nm = taskName(r);
-  return '<div class="task-cell">' +
-    '<span class="nm' + (nm ? '' : ' none') + '">' + (nm ? esc(nm) : '(이름 없음)') + '</span>' +
-    (r.isNew ? '<span class="new">NEW</span>' : '') +
-    (ref && ref.bu ? '<span class="bu">' + esc(ref.bu) + '</span>' : '') +
-    '<button class="link-btn' + (ref ? '' : ' off') + '" onclick="event.stopPropagation();openPanel(\'' + r.id + '\')" ' +
-    'title="' + (ref ? '연결됨: ' + esc(ref.name) : '기존 앱 프로젝트와 연결 / 상세 보기') + '">' + LINK_SVG + '</button></div>';
-}
-
 function render() {
   const list = visibleRows();
-  $('tbody').innerHTML = list.map(r =>
-    '<tr data-id="' + r.id + '" class="' + (selected.has(r.id) ? 'sel ' : '') + (r.hot ? 'hot' : '') + '">' +
-    '<td class="chk"><input type="checkbox" ' + (selected.has(r.id) ? 'checked' : '') +
-      ' onchange="toggleSelect(\'' + r.id + '\', this.checked)" /></td>' +
+  const rowsHTML = list.map(r =>
+    '<tr data-id="' + r.id + '" class="' + (selected.has(r.id) ? 'sel ' : '') + (r.hot ? 'hot' : '') + '"' +
+    ' ondragover="dragOver(event,\'' + r.id + '\')" ondragleave="dragLeave(event)" ondrop="dropOn(event,\'' + r.id + '\')">' +
+    '<td>' + leadHTML(r) + '</td>' +
     '<td>' + taskCellHTML(r) + '</td>' +
     '<td><input class="cell-input cell-owner" value="' + esc(r.owner) + '" maxlength="4"' +
       ' onblur="Store.setField(\'' + r.id + '\',\'owner\',this.value); render();"' +
@@ -358,33 +466,92 @@ function render() {
     '<td>' + logCellHTML(r, 'thisWeek') + '</td>' +
     '<td>' + logCellHTML(r, 'nextWeek') + '</td>' +
     '<td>' + logCellHTML(r, 'due') + '</td></tr>').join('');
+  // 기존 앱처럼 표 맨 아래에 ＋ 한 줄
+  $('tbody').innerHTML = rowsHTML +
+    '<tr class="add-row"><td colspan="6"><button class="btn-add-row" onclick="addRow()" title="새 줄 추가">＋</button></td></tr>';
 
   $('emptyMsg').style.display = list.length ? 'none' : '';
   const total = Store.count();
   $('countMsg').textContent = list.length === total ? total + '개' : list.length + '개 표시 / 전체 ' + total + '개';
+
   $('delBtn').disabled = selected.size === 0;
-  $('delBtn').textContent = selected.size ? '선택 삭제 (' + selected.size + ')' : '선택 삭제';
+  $('delCount').textContent = selected.size;
   const all = list.length > 0 && list.every(r => selected.has(r.id));
   $('chkAll').checked = all;
   $('chkAll').indeterminate = !all && list.some(r => selected.has(r.id));
 
+  const top = Store.undoTop();
+  $('undoBtn').disabled = !top;
+  $('undoBtn').title = top
+    ? '되돌리기 — ' + top.action + (top.detail ? ': ' + top.detail : '')
+    : '되돌릴 작업이 없습니다';
+
+  renderNav();
   renderOwnerChips();
-  if (logCtx) fillLog();                               // 열려 있으면 팝업도 최신으로
+  if (logCtx) fillLog();
+  if ($('histPanel').classList.contains('open')) fillHistory();
   if (openId && !Store.get(openId)) closePanel();
   else if (openId) fillPanel(Store.get(openId));
 }
 
 function renderOwnerChips() {
-  const counts = {};
-  Store.all().forEach(r => { const o = (r.owner || '').trim(); if (o) counts[o] = (counts[o] || 0) + 1; });
-  const rows = [['', 'All', Store.count()]].concat(Object.keys(counts).sort().map(o => [o, o, counts[o]]));
+  const counts = {}; let blank = 0;
+  Store.all().forEach(r => {
+    if (page && buOf(r) !== page) return;
+    const o = (r.owner || '').trim();
+    if (o) counts[o] = (counts[o] || 0) + 1; else blank++;
+  });
+  const scope = Store.all().filter(r => !page || buOf(r) === page).length;
+  let rows = [['', 'All', scope]].concat(Object.keys(counts).sort().map(o => [o, o, counts[o]]));
+  if (blank) rows.push(['–', '–', blank]);
   $('ownerChips').innerHTML = rows.map(x =>
     '<button class="chip ' + (ownerFilter === x[0] ? 'on' : '') + '" onclick="setOwnerFilter(\'' +
     esc(x[0]) + '\')">' + esc(x[1]) + ' ' + x[2] + '</button>').join('');
 }
-function setOwnerFilter(v) { ownerFilter = v; render(); }
+function setOwnerFilter(v) { ownerFilter = (ownerFilter === v ? '' : v); render(); }
 
-/* ── 이력 팝업 ─────────────────────────────────────────────────────── */
+/* ── 순서 드래그 ───────────────────────────────────────────────────── */
+function dragStart(ev, id) {
+  dragId = id;
+  ev.dataTransfer.effectAllowed = 'move';
+  try { ev.dataTransfer.setData('text/plain', id); } catch (e) {}
+  const tr = ev.target.closest('tr');
+  if (tr) tr.classList.add('dragging');
+}
+function dragEnd() {
+  dragId = null;
+  document.querySelectorAll('#tbody tr').forEach(tr =>
+    tr.classList.remove('dragging', 'drop-above', 'drop-below'));
+}
+function dragOver(ev, id) {
+  if (!dragId || dragId === id) return;
+  ev.preventDefault();
+  const tr = ev.currentTarget;
+  const r = tr.getBoundingClientRect();
+  const below = (ev.clientY - r.top) > r.height / 2;
+  tr.classList.toggle('drop-below', below);
+  tr.classList.toggle('drop-above', !below);
+}
+function dragLeave(ev) { ev.currentTarget.classList.remove('drop-above', 'drop-below'); }
+function dropOn(ev, targetId) {
+  ev.preventDefault();
+  const src = dragId;
+  dragEnd();
+  if (!src || src === targetId) return;
+  const r = ev.currentTarget.getBoundingClientRect();
+  const below = (ev.clientY - r.top) > r.height / 2;
+  const ids = Store.all().map(x => x.id);
+  const from = ids.indexOf(src);
+  if (from === -1) return;
+  ids.splice(from, 1);
+  let to = ids.indexOf(targetId);
+  if (to === -1) return;
+  ids.splice(below ? to + 1 : to, 0, src);
+  Store.reorder(ids);
+  render();
+}
+
+/* ── 이력 칸 팝업 ──────────────────────────────────────────────────── */
 function openLog(ev, rowId, field) {
   ev.stopPropagation();
   logCtx = { rowId: rowId, field: field };
@@ -414,7 +581,7 @@ function fillLog() {
   $('logList').innerHTML = list.length ? list.map((e, i) =>
     '<div class="log-item ' + (i === 0 ? 'newest' : '') + '">' +
     '<span class="t">' + esc(e.text) + '</span>' +
-    '<span class="meta">' + shortTs(e.at) + (e.by ? ' · ' + esc(e.by) : '') + '</span>' +
+    '<span class="meta">' + shortTs(e.at).slice(0, 5) + (e.by ? ' · ' + esc(e.by) : '') + '</span>' +
     '<button class="del" title="이 줄 삭제" onclick="delLog(\'' + e.id + '\')">×</button></div>').join('')
     : '<div class="log-empty">아직 기록이 없습니다.</div>';
 }
@@ -422,7 +589,7 @@ function submitLog() {
   if (!logCtx) return;
   const el = $('logInput');
   if (!el.value.trim()) return;
-  if (!Store.initials() && !askInitials()) return;     // 누가 썼는지 남겨야 한다
+  if (!Store.initials() && !askInitials()) return;
   Store.addLog(logCtx.rowId, logCtx.field, el.value);
   el.value = '';
   render();
@@ -445,7 +612,7 @@ function addRow() {
 function toggleSelect(id, on) { if (on) selected.add(id); else selected.delete(id); render(); }
 function toggleAll(on) { visibleRows().forEach(r => { if (on) selected.add(r.id); else selected.delete(r.id); }); render(); }
 function deleteSelected() {
-  const ids = [].concat(Array.from(selected));
+  const ids = Array.from(selected);
   if (!ids.length) return;
   const names = ids.map(id => taskName(Store.get(id)) || '(이름 없음)').join(', ');
   if (!confirm(ids.length + '개를 삭제합니다 — ' + names)) return;
@@ -454,14 +621,22 @@ function deleteSelected() {
   if (openId && ids.indexOf(openId) !== -1) closePanel();
   render();
 }
+function doUndo() {
+  const top = Store.undoTop();
+  if (!top) return;
+  if (!confirm('직전 작업을 되돌립니다 — ' + top.action + (top.detail ? ': ' + top.detail : ''))) return;
+  Store.undo();
+  render();
+}
 
 /* ── 상세 패널 ─────────────────────────────────────────────────────── */
-function openPanel(id) {
+function openPanel(id, focusMemo) {
   const r = Store.get(id);
   if (!r) return;
   openId = id;
   fillPanel(r);
   $('panel').classList.add('open');
+  if (focusMemo) setTimeout(() => $('pMemo').focus(), 200);
 }
 function fillPanel(r) {
   if (!r) return;
@@ -497,7 +672,7 @@ function fillProjectOptions(current) {
   sel.innerHTML = html;
 }
 function refInfoHTML(r, ref) {
-  if (!r.projectId) return '<span class="note">연결하면 기존 앱에서 이름을 고쳤을 때 여기 Task 이름도 자동으로 따라옵니다.</span>';
+  if (!r.projectId) return '<span class="note">연결하면 기존 앱에서 이름을 고쳤을 때 여기 Task 이름도 자동으로 따라옵니다. BU가 정해지면 위쪽 페이지 탭에도 그 BU로 들어갑니다.</span>';
   if (!ref) return Store.refsLoaded()
     ? '<span class="note" style="color:var(--red)">원본을 찾을 수 없습니다. 기존 앱에서 지워졌을 수 있습니다.</span>'
     : '<span class="note">기존 앱 데이터를 불러오는 중...</span>';
@@ -529,7 +704,20 @@ function bindPanelFields() {
   });
 }
 
-/* ── 기입자 이니셜 (기존 앱과 같은 값을 씁니다) ────────────────────── */
+/* ── 수정 이력 패널 ────────────────────────────────────────────────── */
+function openHistory() { fillHistory(); $('histPanel').classList.add('open'); }
+function closeHistory() { $('histPanel').classList.remove('open'); }
+function fillHistory() {
+  const list = Store.history();
+  $('histList').innerHTML = list.length ? list.map(h =>
+    '<div class="hist-item">' +
+      '<div><span class="who">' + esc((h.by || '?').slice(0, 2)) + '</span>' +
+      '<span class="a">' + esc(h.action) + '</span>' + (h.detail ? ' <span class="d">— ' + esc(h.detail) + '</span>' : '') + '</div>' +
+      '<div class="m">' + shortTs(h.at) + '</div></div>').join('')
+    : '<div class="log-empty">아직 기록이 없습니다.</div>';
+}
+
+/* ── 기입자 이니셜 (기존 앱과 같은 값) ─────────────────────────────── */
 function askInitials() {
   const v = prompt('기록에 남길 이니셜을 입력하세요 (예: SP, K, MJ)', Store.initials());
   if (v === null) return false;
@@ -564,6 +752,7 @@ Store.on('status', (text, tone) => { const el = $('syncStatus'); el.textContent 
 
 window.addEventListener('DOMContentLoaded', () => {
   $('docPath').textContent = Store.DOC_PATH;
+  Store.setRowLabel(r => taskName(r) || '(이름 없음)');   // 이력 문구에 연결된 이름이 나오도록
   bindPanelFields();
   paintMe();
   paintMode();

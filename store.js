@@ -45,6 +45,7 @@
   let unsub = null;
   let rows = [];
   let tombs = [];                 // [{ id, deletedAt }]
+  let history = [];               // [{ id, at, by, action, detail }] — 팀이 함께 보는 수정 이력
   let testMode = localStorage.getItem(LS_TESTMODE) === '1';
   let lastSaveAt = 0;
   let lastRemoteAt = '';
@@ -56,6 +57,8 @@
   const nowISO = () => new Date().toISOString();
   const lsKey  = () => (testMode ? LS_ROWS_TEST : LS_ROWS);
   const lsTomb = () => lsKey() + '_deleted';
+  const lsHist = () => lsKey() + '_history';
+  const lsUndo = () => lsKey() + '_undo';
 
   function newId() {
     return 'r_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 7);
@@ -67,12 +70,28 @@
   function status(text, tone) { emit('status', text, tone || 'muted'); }
 
   function readLocal() {
-    try { rows  = JSON.parse(localStorage.getItem(lsKey()))  || []; } catch { rows  = []; }
-    try { tombs = JSON.parse(localStorage.getItem(lsTomb())) || []; } catch { tombs = []; }
+    try { rows    = JSON.parse(localStorage.getItem(lsKey()))  || []; } catch { rows  = []; }
+    try { tombs   = JSON.parse(localStorage.getItem(lsTomb())) || []; } catch { tombs = []; }
+    try { history = JSON.parse(localStorage.getItem(lsHist())) || []; } catch { history = []; }
   }
   function writeLocal() {
-    try { localStorage.setItem(lsKey(),  JSON.stringify(rows));  } catch {}
-    try { localStorage.setItem(lsTomb(), JSON.stringify(tombs)); } catch {}
+    try { localStorage.setItem(lsKey(),  JSON.stringify(rows));    } catch {}
+    try { localStorage.setItem(lsTomb(), JSON.stringify(tombs));   } catch {}
+    try { localStorage.setItem(lsHist(), JSON.stringify(history)); } catch {}
+  }
+
+  /* ── 수정 이력 ──────────────────────────────────────────────────────
+     누가 언제 무엇을 바꿨는지 문서에 같이 올려 팀이 함께 본다. 이력 줄도
+     이력 칸과 같은 이유로 id 기준 합집합으로 합친다 — 두 사람이 동시에
+     뭔가 바꿔도 한쪽 기록만 남는 일이 없도록. */
+  const HISTORY_MAX = 300;
+  function capHistory(list) { return (list || []).slice(0, HISTORY_MAX); }
+  function note(action, detail) {
+    if (!action) return;
+    history = capHistory([{
+      id: 'h_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 6),
+      at: nowISO(), by: Store.initials(), action: action, detail: detail || ''
+    }].concat(history));
   }
 
   /* ── 삭제 기록 ──────────────────────────────────────────────────────
@@ -173,6 +192,7 @@
     );
     rows = merged;
     tombs = mergedTombs;
+    history = capHistory(unionLogs(history, d.history));   // 이력도 양쪽을 합친다
     writeLocal();
     return true;
   }
@@ -274,7 +294,7 @@
       }
       lastSaveAt = Date.now();
       await db.doc(DOC_PATH).set({
-        rows, tombs,
+        rows, tombs, history,
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
       });
       status('저장됨', 'ok');
@@ -284,7 +304,25 @@
     }
   }
 
-  function commit() {
+  /* ── 되돌리기 ───────────────────────────────────────────────────────
+     바꾸기 "직전"의 행 목록을 쌓아둔다. 이 브라우저에만 두는 보조 장치라
+     (팀 공유 아님) 여기서 뭐가 잘못되더라도 저장 자체는 막지 않는다. */
+  const UNDO_MAX = 20;
+  let undoing = false;
+  const snapshotRows = () => JSON.parse(JSON.stringify(rows));
+  // 이력 문구에 쓸 행 이름표. 연결된 프로젝트 이름처럼 페이지만 아는 것이 있어 늦게 받는다.
+  let rowLabel = r => (r && r.name) || '(이름 없음)';
+  function readUndo()  { try { return JSON.parse(localStorage.getItem(lsUndo())) || []; } catch { return []; } }
+  function writeUndo(st) { try { localStorage.setItem(lsUndo(), JSON.stringify(st.slice(0, UNDO_MAX))); } catch {} }
+
+  function commit(action, detail, before) {
+    if (action && !undoing) {
+      if (before) {
+        try { writeUndo([{ at: nowISO(), action: action, detail: detail || '', rows: before }].concat(readUndo())); }
+        catch (e) { console.warn('[store] 되돌리기 스냅샷 실패 (저장은 계속):', e); }
+      }
+      note(action, detail);
+    }
     writeLocal();
     emit('change');
     if (testMode) { status('테스트 모드 — 이 브라우저에만 저장', 'warn'); return Promise.resolve(); }
@@ -338,10 +376,11 @@
 
     // 새 행. 기본값을 넘기면 그대로 들어간다.
     add(fields) {
+      const before = snapshotRows();
       const row = Object.assign({ id: newId(), createdAt: nowISO() }, fields || {});
       row.updatedAt = nowISO();
       rows.unshift(row);
-      commit();
+      commit('행 추가', rowLabel(row), before);
       return row;
     },
 
@@ -351,9 +390,10 @@
       if (!r) return null;
       const v = typeof value === 'string' ? value.trim() : value;
       if (r[field] === v) return r;
+      const before = snapshotRows();
       r[field] = v;
       r.updatedAt = nowISO();
-      commit();
+      commit('수정', rowLabel(r) + ' › ' + field, before);
       return r;
     },
 
@@ -361,9 +401,10 @@
     update(id, fields) {
       const r = Store.get(id);
       if (!r) return null;
+      const before = snapshotRows();
       Object.assign(r, fields || {});
       r.updatedAt = nowISO();
-      commit();
+      commit('수정', rowLabel(r), before);
       return r;
     },
 
@@ -379,18 +420,21 @@
         id: 'e_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 6),
         text: t, at: nowISO(), by: Store.initials()
       };
+      const before = snapshotRows();
       r[field] = [entry].concat(r[field] || []);
       r.updatedAt = nowISO();
-      commit();
+      commit('기록 추가', rowLabel(r) + ' › ' + field + ': ' + t, before);
       return entry;
     },
     removeLog(rowId, field, entryId) {
       const r = Store.get(rowId);
       if (!r) return false;
+      const before = snapshotRows();
+      const gone = (r[field] || []).filter(e => e.id === entryId)[0];
       r[field] = (r[field] || []).filter(e => e.id !== entryId);
       r.removedLogIds = [...new Set([...(r.removedLogIds || []), entryId])];
       r.updatedAt = nowISO();
-      commit();
+      commit('기록 삭제', rowLabel(r) + ' › ' + field + (gone ? ': ' + gone.text : ''), before);
       return true;
     },
     // 칸에 보여줄 가장 최근 한 줄
@@ -410,10 +454,12 @@
       const list = Array.isArray(ids) ? ids : [ids];
       const set = new Set(list);
       const at = nowISO();
+      const before = snapshotRows();
+      const names = list.map(id => rowLabel(Store.get(id))).join(', ');
       list.forEach(id => tombs.unshift({ id, deletedAt: at }));
       tombs = pruneTombs(tombs);
       rows = rows.filter(r => !set.has(r.id));
-      commit();
+      commit('삭제', names, before);
       return list.length;
     },
 
@@ -424,9 +470,34 @@
       idsInOrder.forEach(id => { if (m.has(id)) { next.push(m.get(id)); m.delete(id); } });
       m.forEach(r => next.push(r));
       const at = nowISO();
+      const before = snapshotRows();
       next.forEach(r => { r.updatedAt = at; });
       rows = next;
-      commit();
+      commit('순서 변경', '', before);
+    },
+
+    /* ── 수정 이력 / 되돌리기 ─────────────────────────
+       이력은 문서에 올라가 팀이 함께 보고, 되돌리기 스택은 이 브라우저에만 남는다
+       (내가 한 일을 되돌리는 것이므로). 되돌린 결과는 다시 팀에 공유된다. */
+    history() { return history.slice(); },
+    setRowLabel(fn) { if (typeof fn === 'function') rowLabel = fn; return Store; },
+
+    undoTop() { return readUndo()[0] || null; },
+    canUndo() { return readUndo().length > 0; },
+    undo() {
+      const stack = readUndo();
+      const top = stack[0];
+      if (!top || !Array.isArray(top.rows)) return null;
+      undoing = true;
+      try {
+        rows = top.rows;
+        note('되돌리기', top.action + (top.detail ? ': ' + top.detail : '') + ' 취소');
+        commit();
+      } finally { undoing = false; }
+      stack.shift();
+      writeUndo(stack);
+      emit('change');
+      return top;
     },
 
     isTestMode() { return testMode; },
