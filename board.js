@@ -56,6 +56,22 @@ const BOARD_LABEL = window.BOARD_LABEL || BOARD_TITLE;
     font-family: inherit; font-size: 11px; font-weight: 700; color: #fff; background: #8b5cf6;
   }
   #meBadge.unset { background: rgba(255,255,255,0.2); color: rgba(255,255,255,0.7); }
+  .conn-pill {
+    display: inline-flex; align-items: center; gap: 6px; font-size: 11.5px;
+    color: rgba(255,255,255,0.75); background: rgba(255,255,255,0.08);
+    border-radius: 11px; padding: 3px 10px;
+  }
+  .conn-pill .dot { width: 7px; height: 7px; border-radius: 50%; background: #6ee7a8; }
+  .conn-pill.off .dot { background: #fca5a5; }
+  .conn-pill.test .dot { background: #fbbf24; }
+  .head-tools { display: inline-flex; align-items: center; gap: 3px; }
+  .head-btn {
+    background: rgba(255,255,255,0.07); border: none; cursor: pointer;
+    color: rgba(255,255,255,0.72); width: 28px; height: 26px; border-radius: 6px;
+    display: inline-flex; align-items: center; justify-content: center; transition: all 0.12s;
+  }
+  .head-btn:hover { background: rgba(255,255,255,0.18); color: #fff; }
+  .head-btn svg { width: 15px; height: 15px; }
   .mode-btn {
     font-family: inherit; font-size: 11px; cursor: pointer; background: transparent;
     color: rgba(255,255,255,0.6); border: 1px solid rgba(255,255,255,0.25);
@@ -431,8 +447,17 @@ const BOARD_LABEL = window.BOARD_LABEL || BOARD_TITLE;
   <h1>__TITLE__</h1>
   <span class="doc" id="docPath"></span>
   <span class="spacer"></span>
+  <span class="conn-pill" id="connPill"><span class="dot"></span><span id="connText">연결 중</span></span>
   <span id="syncStatus">연결 중...</span>
   <button id="meBadge" onclick="askInitials()">?</button>
+  <span class="head-tools">
+    <button class="head-btn" id="hbPull"   onclick="Store.pull()"><span></span></button>
+    <button class="head-btn" id="hbPush"   onclick="Store.forceSave()"><span></span></button>
+    <button class="head-btn" id="hbFolder" onclick="Store.chooseBackupFolder()"><span></span></button>
+    <button class="head-btn" id="hbRefresh" onclick="location.reload()"><span></span></button>
+    <button class="head-btn" id="hbExport" onclick="Store.saveBackup(true)"><span></span></button>
+    <button class="head-btn" id="hbImport" onclick="importBoardJSON()"><span></span></button>
+  </span>
   <button class="mode-btn" id="modeBtn" onclick="toggleMode()" title="테스트 모드에서는 Firebase에 저장되지 않습니다">테스트</button>
 </header>
 
@@ -1163,6 +1188,57 @@ function purgeAllDeleted() {
   Store.purge(ids); render();
 }
 
+const HEAD_ICONS = {
+  Pull: { svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14.9A5 5 0 0 1 7 6a6 6 0 0 1 11.3 1.5A4.5 4.5 0 0 1 18 16.5h-1"/><polyline points="9 14 12 17 15 14"/><line x1="12" y1="10" x2="12" y2="17"/></svg>', tip: '서버에서 불러오기 — 이 화면을 서버에 저장된 최신 내용으로 맞춥니다' },
+  Push: { svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14.9A5 5 0 0 1 7 6a6 6 0 0 1 11.3 1.5A4.5 4.5 0 0 1 18 16.5h-1"/><polyline points="9 13 12 10 15 13"/><line x1="12" y1="17" x2="12" y2="10"/></svg>', tip: '서버로 올리기 — 지금 화면의 내용을 서버에 저장합니다' },
+  Folder: { svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>', tip: '백업 폴더 지정 — 한 번 정해두면 백업이 그 폴더에 쌓입니다' },
+  Refresh: { svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><polyline points="1 20 1 14 7 14"/><path d="M3.5 9a9 9 0 0 1 14.9-3.4L23 10M1 14l4.6 4.4A9 9 0 0 0 20.5 15"/></svg>', tip: '새로고침 — 페이지를 다시 불러옵니다' },
+  Export: { svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>', tip: 'JSON으로 백업 — 지정한 폴더에, 없으면 내려받기로 저장합니다' },
+  Import: { svg: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>', tip: 'JSON에서 복원 — 백업 파일을 골라 이 보드를 그 내용으로 바꿉니다' },
+};
+
+/* ── 헤더 도구 버튼 ───────────────────────────────────
+   기존 앱 헤더 오른쪽과 같은 줄. 아이콘만 두고 설명은 풍선 도움말에 넣는다. */
+function paintHeadTools() {
+  Object.keys(HEAD_ICONS).forEach(k => {
+    const b = document.getElementById('hb' + k);
+    if (!b) return;
+    b.firstElementChild.innerHTML = HEAD_ICONS[k].svg;
+    b.title = HEAD_ICONS[k].tip;
+  });
+}
+function paintConn() {
+  const pill = $('connPill'), txt = $('connText');
+  if (!pill) return;
+  const test = Store.isTestMode();
+  pill.classList.toggle('test', test);
+  pill.classList.toggle('off', !test && !Store.online());
+  txt.textContent = test ? '테스트' : (Store.online() ? '실시간' : '오프라인');
+  pill.title = test ? '테스트 모드 — 이 브라우저에만 저장됩니다'
+                    : (Store.online() ? '서버와 연결돼 있어 바뀌는 대로 팀에 공유됩니다'
+                                      : '서버에 연결되지 않아 이 브라우저에만 저장됩니다');
+}
+
+// JSON 백업 파일에서 복원
+function importBoardJSON() {
+  const inp = document.createElement('input');
+  inp.type = 'file'; inp.accept = 'application/json,.json';
+  inp.onchange = () => {
+    const f = inp.files && inp.files[0];
+    if (!f) return;
+    const rd = new FileReader();
+    rd.onload = () => {
+      try {
+        const n = Store.importJSON(String(rd.result));
+        alert(n + '개를 불러왔습니다.');
+        render();
+      } catch (e) { alert('복원 실패: ' + e.message); }
+    };
+    rd.readAsText(f);
+  };
+  inp.click();
+}
+
 /* ── 보드 탭 ──────────────────────────────────────────
    기존 앱의 Active Projects / Operational Tasks 와 같은 자리의 탭.
    PAGES 에 한 줄 더하면 탭도 같이 늘어난다. */
@@ -1433,7 +1509,10 @@ function paintMode() {
 
 /* ── 시작 ──────────────────────────────────────────────────────────── */
 Store.on('change', render);
-Store.on('status', (text, tone) => { const el = $('syncStatus'); el.textContent = text; el.className = tone; });
+Store.on('status', (text, tone) => {
+  const el = $('syncStatus'); el.textContent = text; el.className = tone;
+  paintConn();          // 연결 상태 알약도 같이 맞춘다 (init 도중에도 바뀐다)
+});
 
 window.addEventListener('DOMContentLoaded', () => {
   $('docPath').textContent = Store.DOC_PATH;
@@ -1450,11 +1529,14 @@ window.addEventListener('DOMContentLoaded', () => {
   const hl = document.getElementById('headLead');
   if (hl && !hl.firstChild) hl.outerHTML = headLeadHTML(false);
   renderBoardNav();
+  paintConn();
   $('trashIcon').innerHTML = SVG_TRASH;
   $('trashRestoreIcon').innerHTML = SVG_RESTORE;
   $('trashPurgeIcon').innerHTML = SVG_PURGE;
   bindPanelFields();
   paintMe();
   paintMode();
+  paintHeadTools();
+  paintConn();
   Store.init();
 });

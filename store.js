@@ -197,6 +197,33 @@
     return true;
   }
 
+  /* ── IndexedDB (백업 폴더 핸들 보관용) ──────────────────────────────
+     기존 앱과 같은 방식. 폴더 핸들은 localStorage에 못 넣으므로 여기 둔다. */
+  const IDB_DB = 'tw_board_handles', IDB_STORE = 'handles';
+  function _idbOpen() {
+    return new Promise((res, rej) => {
+      const q = indexedDB.open(IDB_DB, 1);
+      q.onupgradeneeded = () => q.result.createObjectStore(IDB_STORE);
+      q.onsuccess = () => res(q.result);
+      q.onerror = () => rej(q.error);
+    });
+  }
+  async function _idbGet(key) {
+    const d = await _idbOpen();
+    return new Promise((res, rej) => {
+      const t = d.transaction(IDB_STORE, 'readonly').objectStore(IDB_STORE).get(key);
+      t.onsuccess = () => res(t.result); t.onerror = () => rej(t.error);
+    });
+  }
+  async function _idbSet(key, val) {
+    const d = await _idbOpen();
+    return new Promise((res, rej) => {
+      const t = d.transaction(IDB_STORE, 'readwrite');
+      t.objectStore(IDB_STORE).put(val, key);
+      t.oncomplete = () => res(); t.onerror = () => rej(t.error);
+    });
+  }
+
   /* ── Firebase ──────────────────────────────────────────────────────── */
   function initFirebase() {
     try {
@@ -713,6 +740,83 @@
       tombs = tombs.map(t => (set.has(t.id) ? { id: t.id, deletedAt: t.deletedAt } : t));
       commit('영구 삭제', names.join(', '));
       return names.length;
+    },
+
+    /* ── 서버와 직접 주고받기 ───────────────────────────────────────
+       기존 앱 헤더의 "Firebase에서 불러오기 / 업로드"와 같은 일. 평소에는
+       자동으로 오가지만, 어긋났다 싶을 때 손으로 맞추는 용도다. */
+    async pull() {
+      if (testMode) { alert('테스트 모드에서는 서버에서 불러오지 않습니다.'); return false; }
+      if (!db) { status('오프라인 — 불러올 수 없습니다', 'err'); return false; }
+      status('불러오는 중...', 'warn');
+      try {
+        const snap = await db.doc(DOC_PATH).get();
+        if (!snap.exists) { status('서버에 아직 문서가 없습니다', 'warn'); return false; }
+        const d = snap.data() || {};
+        rows = Array.isArray(d.rows) ? d.rows : [];
+        tombs = pruneTombs(d.tombs || []);
+        history = capHistory(d.history || []);
+        lastRemoteAt = stamp(d.updatedAt);
+        writeLocal();
+        emit('change');
+        status('서버 내용으로 맞춤', 'ok');
+        return true;
+      } catch (e) {
+        console.warn('[store] 불러오기 실패:', e);
+        status('불러오기 실패', 'err');
+        return false;
+      }
+    },
+    async forceSave() {
+      if (testMode) { alert('테스트 모드에서는 서버에 저장하지 않습니다.'); return false; }
+      if (!db) { status('오프라인 — 저장할 수 없습니다', 'err'); return false; }
+      await push();
+      return true;
+    },
+    online() { return !testMode && !!db; },
+
+    /* ── 폴더에 백업 ────────────────────────────────────────────────
+       기존 앱과 같은 방식 — 폴더를 한 번 지정해두면 핸들을 IndexedDB에
+       보관했다가 다음부터는 묻지 않고 그 폴더에 JSON을 쌓는다. */
+    async chooseBackupFolder() {
+      if (!window.showDirectoryPicker) {
+        alert('이 브라우저는 폴더 지정 저장을 지원하지 않습니다. (Chrome/Edge 권장)');
+        return false;
+      }
+      try {
+        const h = await window.showDirectoryPicker({ id: 'twBoardBackup', mode: 'readwrite' });
+        await _idbSet('backupDir_' + APP_ID, h);
+        status('백업 폴더 지정됨: ' + h.name, 'ok');
+        return true;
+      } catch (e) { return false; }
+    },
+    async saveBackup(allowPrompt) {
+      let h = null;
+      try { h = await _idbGet('backupDir_' + APP_ID); } catch (e) {}
+      if (h) {
+        const perm = await h.queryPermission({ mode: 'readwrite' });
+        if (perm !== 'granted' && allowPrompt) {
+          if (await h.requestPermission({ mode: 'readwrite' }) !== 'granted') h = null;
+        } else if (perm !== 'granted') h = null;
+      }
+      const name = APP_ID + '_' + new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-') + '.json';
+      const text = Store.exportJSON();
+      if (h) {
+        try {
+          const fh = await h.getFileHandle(name, { create: true });
+          const w = await fh.createWritable();
+          await w.write(text); await w.close();
+          status('백업 저장됨: ' + name, 'ok');
+          return true;
+        } catch (e) { console.warn('[store] 백업 실패:', e); }
+      }
+      // 폴더가 없으면 그냥 내려받는다
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
+      a.download = name; a.click();
+      URL.revokeObjectURL(a.href);
+      status('백업 파일 내려받음', 'ok');
+      return true;
     },
 
     isTestMode() { return testMode; },
