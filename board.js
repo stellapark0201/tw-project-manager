@@ -60,6 +60,19 @@ const BOARD_LABEL = window.BOARD_LABEL || BOARD_TITLE;
   }
   .mode-btn.on { background: #f59e0b; border-color: #f59e0b; color: #161616; font-weight: 600; }
 
+  /* ── 보드 탭 (기존 앱의 Active Projects / Operational Tasks 와 같은 자리) ── */
+  .board-nav {
+    background: var(--header-bg); display: flex; align-items: stretch;
+    padding: 0 20px; gap: 2px; border-top: 1px solid rgba(255,255,255,0.08);
+  }
+  .board-nav a {
+    display: inline-flex; align-items: center; gap: 7px; padding: 0 16px; height: 38px;
+    font-size: 13px; color: rgba(255,255,255,0.45); text-decoration: none;
+    border-bottom: 2px solid transparent; transition: color 0.12s;
+  }
+  .board-nav a:hover { color: rgba(255,255,255,0.8); }
+  .board-nav a.on { color: #fff; font-weight: 600; border-bottom-color: var(--accent); }
+
   .container { max-width: 1340px; margin: 0 auto; padding: 18px 20px 40px; }
 
   /* ── 제목 줄 + 페이지 네비 ── */
@@ -351,6 +364,8 @@ const BOARD_LABEL = window.BOARD_LABEL || BOARD_TITLE;
   <button id="meBadge" onclick="askInitials()">?</button>
   <button class="mode-btn" id="modeBtn" onclick="toggleMode()" title="테스트 모드에서는 Firebase에 저장되지 않습니다">테스트</button>
 </header>
+
+<nav class="board-nav" id="boardNav"></nav>
 
 <div class="container">
   <!-- 제목 + 페이지 네비 (기존 앱과 같은 배치) -->
@@ -853,10 +868,22 @@ function bindPanelFields() {
    가기 목록과 옮기기 목록에 자동으로 나타난다. id는 그 페이지의
    window.STORE_APP_ID 와 같아야 한다 (Firestore 문서 tw-pm/<id>). */
 const PAGES = [
-  { id: 'tracker',   label: 'Weekly Focus',      href: '../tracker/' },
-  { id: 'completed', label: 'Completed Project', href: '../completed/' }
+  { id: 'tracker',   tab: 'Tasks in Active', label: 'Weekly Focus',      href: '../tracker/' },
+  { id: 'completed', tab: 'Completed',       label: 'Completed Project', href: '../completed/' }
 ];
 const MAIN_APP = { label: 'TW Project Manager (In Active)', href: '../' };
+
+/* ── 보드 탭 ──────────────────────────────────────────
+   기존 앱의 Active Projects / Operational Tasks 와 같은 자리의 탭.
+   PAGES 에 한 줄 더하면 탭도 같이 늘어난다. */
+const HOME_SVG = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>';
+function renderBoardNav() {
+  const nav = document.getElementById('boardNav');
+  if (!nav) return;
+  nav.innerHTML = PAGES.map((p, i) =>
+    '<a href="' + p.href + '" class="' + (p.id === Store.APP_ID ? 'on' : '') + '">' +
+    (i === 0 ? HOME_SVG : '') + esc(p.tab || p.label) + '</a>').join('');
+}
 
 /* ── 이동하기 ──────────────────────────────────────────────────────
    기존 앱과 같은 자리의 같은 메뉴. 지금은 "페이지로 가기"가 실제로 동작하고,
@@ -1112,6 +1139,7 @@ window.addEventListener('DOMContentLoaded', () => {
     if ($('requestPanel').style.display !== 'none') fillRequest();
   }), 1200);
   Store.setRowLabel(r => taskName(r) || '(이름 없음)');   // 이력 문구에 연결된 이름이 나오도록
+  renderBoardNav();
   bindPanelFields();
   paintMe();
   paintMode();
