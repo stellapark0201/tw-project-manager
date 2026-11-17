@@ -135,6 +135,18 @@ const BOARD_LABEL = window.BOARD_LABEL || BOARD_TITLE;
   tbody tr:hover { background: var(--surface-2); }
   tbody tr.sel { background: var(--accent-light); }
   tbody tr.hot td, tbody tr.hot .cell-input { color: var(--crimson); font-weight: 600; }
+  /* ON HOLD / deprioritized — 기존 앱처럼 행을 흐리게 하고 맨 아래로 내린다 */
+  tbody tr.row-dimmed .cell-input, tbody tr.row-dimmed .task-cell .nm,
+  tbody tr.row-dimmed .log-cell .txt { color: var(--text-muted); }
+  .badge-hold {
+    display: inline-block; font-size: 9px; font-weight: 700; letter-spacing: .5px;
+    color: #ef4444; flex-shrink: 0; white-space: nowrap;
+  }
+  .badge-deprioritized {
+    display: inline-block; font-family: 'Segoe Print', 'Bradley Hand', 'Comic Sans MS', cursive;
+    font-size: 12px; font-style: italic; font-weight: 600; letter-spacing: .2px;
+    color: var(--text-muted); flex-shrink: 0; white-space: nowrap;
+  }
   tbody tr.dragging { opacity: 0.4; }
   tbody tr.drop-above td { box-shadow: inset 0 2px 0 0 var(--accent); }
   tbody tr.drop-below td { box-shadow: inset 0 -2px 0 0 var(--accent); }
@@ -555,7 +567,11 @@ function visibleRows() {
     let hay = [taskName(r), r.owner, r.memo].concat(ref ? [ref.bu, ref.customer] : []);
     LOGS.forEach(l => { (r[l.key] || []).forEach(e => hay.push(e.text)); });
     return hay.some(v => String(v || '').toLowerCase().includes(q));
-  });
+  })
+  // 기존 앱처럼 흐린 행(ON HOLD / deprioritized)은 표 맨 아래로 모은다.
+  // sort는 안정 정렬이라 같은 무리 안에서는 드래그로 맞춘 순서가 그대로 남는다.
+  // filter()가 새 배열을 주므로 저장된 순서 자체는 건드리지 않는다.
+  .sort((a, b) => (isDimmed(a) ? 1 : 0) - (isDimmed(b) ? 1 : 0));
 }
 
 function leadHTML(r) {
@@ -571,12 +587,22 @@ function leadHTML(r) {
     '<button class="btn-icon muted' + (hasMemo ? ' has-memo' : '') + '" title="메모" onclick="openPanel(\'' + r.id + '\',true)">' + SVG_MEMO + '</button>' +
     '</div>';
 }
+// 기존 앱과 같은 순환: 기본 → NEW → NEW+ON HOLD → ON HOLD → deprioritized → 기본
+function badgesHTML(r) {
+  if (r.isNew && r.onHold) return '<span class="badge-hold">NEW</span><span class="badge-hold">ON HOLD</span>';
+  if (r.isNew) return '<span class="new">NEW</span>';
+  if (r.onHold) return '<span class="badge-hold">ON HOLD</span>';
+  if (r.deprioritized) return '<span class="badge-deprioritized">deprioritized</span>';
+  return '';
+}
+function isDimmed(r) { return !!(r && (r.onHold || r.deprioritized)); }
+
 function taskCellHTML(r) {
   const ref = Store.linked(r);
   const nm = taskName(r);
-  return '<div class="task-cell">' +
+  return '<div class="task-cell" oncontextmenu="cycleBadge(event,\'' + r.id + '\')" title="오른쪽 클릭 — NEW / ON HOLD / deprioritized">' +
     '<span class="nm' + (nm ? '' : ' none') + '">' + (nm ? esc(nm) : '(이름 없음)') + '</span>' +
-    (r.isNew ? '<span class="new">NEW</span>' : '') +
+    badgesHTML(r) +
     (ref && ref.bu ? '<span class="bu">' + esc(ref.bu) + '</span>' : '') + '</div>';
 }
 function logCellHTML(r, field) {
@@ -590,7 +616,8 @@ function logCellHTML(r, field) {
 function render() {
   const list = visibleRows();
   const rowsHTML = list.map(r =>
-    '<tr data-id="' + r.id + '" class="' + (selected.has(r.id) ? 'sel ' : '') + (r.hot ? 'hot' : '') + '"' +
+    '<tr data-id="' + r.id + '" class="' + (selected.has(r.id) ? 'sel ' : '') +
+      (r.hot ? 'hot ' : '') + (isDimmed(r) ? 'row-dimmed' : '') + '"' +
     ' ondragover="dragOver(event,\'' + r.id + '\')" ondragleave="dragLeave(event)" ondrop="dropOn(event,\'' + r.id + '\')">' +
     '<td>' + leadHTML(r) + '</td>' +
     '<td>' + taskCellHTML(r) + '</td>' +
@@ -734,6 +761,24 @@ function submitLog() {
 function delLog(entryId) {
   if (!logCtx) return;
   Store.removeLog(logCtx.rowId, logCtx.field, entryId);
+  render();
+}
+
+/* ── NEW / ON HOLD / deprioritized 순환 ───────────────────────────
+   Task 이름 칸에서 오른쪽 클릭하면 기존 앱과 같은 차례로 돈다.
+   흐려지는 상태(ON HOLD, deprioritized)가 되면 체크를 풀고 맨 아래로 내려간다. */
+function cycleBadge(ev, id) {
+  ev.preventDefault();
+  const r = Store.get(id);
+  if (!r) return;
+  const next = { isNew: !!r.isNew, onHold: !!r.onHold, deprioritized: !!r.deprioritized };
+  if (!next.isNew && !next.onHold && !next.deprioritized) next.isNew = true;
+  else if (next.isNew && !next.onHold) next.onHold = true;
+  else if (next.isNew && next.onHold) next.isNew = false;
+  else if (next.onHold) { next.onHold = false; next.deprioritized = true; }
+  else next.deprioritized = false;
+  if (next.onHold || next.deprioritized) selected.delete(id);   // 흐린 행은 체크 해제
+  Store.update(id, next);
   render();
 }
 
