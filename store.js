@@ -525,6 +525,60 @@
       }
     },
 
+    /* ── 다른 보드로 행 옮기기 ────────────────────────────────────────
+       기존 앱의 In Active ↔ Operational Tasks 이동과 같은 일을 보드 사이에서
+       한다. 대상 문서를 먼저 읽어 합친 뒤 쓰기 때문에, 저쪽에서 동시에 뭔가
+       하고 있어도 그 내용을 덮어쓰지 않는다. 쌓인 기록도 행에 붙어 그대로 간다.
+       옮기기 직전 상태는 되돌리기 스택에 남아 ↩ 로 되돌릴 수 있다. */
+    async moveTo(appId, ids) {
+      if (!appId || appId === APP_ID) return 0;
+      const list = rows.filter(r => ids.indexOf(r.id) !== -1);
+      if (!list.length) return 0;
+      if (testMode) {
+        alert('테스트 모드에서는 보드 사이 이동을 하지 않습니다. 리얼 모드에서 해주세요.');
+        return 0;
+      }
+      if (!db) { status('오프라인 — 옮길 수 없습니다', 'err'); return 0; }
+
+      const moved = JSON.parse(JSON.stringify(list));
+      const at = nowISO();
+      moved.forEach(r => { r.updatedAt = at; });
+      const movedIds = new Set(moved.map(r => r.id));
+      const names = moved.map(r => rowLabel(r)).join(', ');
+
+      status('옮기는 중...', 'warn');
+      try {
+        // ① 대상 문서에 더한다 (읽고 → 합치고 → 쓴다)
+        const tgt = db.doc('tw-pm/' + appId);
+        const snap = await tgt.get();
+        const d = snap.exists ? (snap.data() || {}) : {};
+        const keep = (Array.isArray(d.rows) ? d.rows : []).filter(r => !movedIds.has(r.id));
+        const tgtHist = [{
+          id: 'h_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 6),
+          at: at, by: Store.initials(), action: '다른 보드에서 들어옴', detail: names
+        }].concat(Array.isArray(d.history) ? d.history : []).slice(0, 300);
+        await tgt.set({
+          rows: moved.concat(keep),
+          // 저쪽에 같은 id의 삭제 기록이 남아 있으면 치운다 (안 그러면 들어오자마자 사라진다)
+          tombs: (Array.isArray(d.tombs) ? d.tombs : []).filter(t => !movedIds.has(t.id)),
+          history: tgtHist,
+          updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+      } catch (e) {
+        console.warn('[store] 옮기기 실패:', e);
+        status('옮기기 실패 — 아무것도 바뀌지 않았습니다', 'err');
+        return 0;
+      }
+
+      // ② 이쪽에서 뺀다 (삭제 기록을 남겨 옛 사본이 되살리지 못하게)
+      const before = snapshotRows();
+      ids.forEach(id => tombs.unshift({ id: id, deletedAt: at }));
+      tombs = pruneTombs(tombs);
+      rows = rows.filter(r => !movedIds.has(r.id));
+      commit('다른 보드로 이동', names, before);
+      return moved.length;
+    },
+
     isTestMode() { return testMode; },
     setTestMode(on) {
       if (testMode === !!on) return;
