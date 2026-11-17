@@ -96,6 +96,42 @@
     return (list || []).filter(r => !(m.has(r.id) && m.get(r.id) >= (r.updatedAt || '')));
   }
 
+  /* ── 이력 칸 ────────────────────────────────────────────────────────
+     계속 쌓이는 칸(This Week / Next Week / Due date처럼)은 "마지막에 저장한
+     사람이 이긴다"로 합치면 안 된다. 두 사람이 거의 동시에 한 줄씩 적으면
+     한쪽 글이 통째로 사라지기 때문이다. 그래서 이 칸들만은 항목 id 기준으로
+     양쪽을 합집합으로 모으고, 지운 항목은 removedLogIds로 따로 기억한다.
+
+     페이지가 자기 이력 칸 이름을 미리 알려준다 —
+         window.STORE_LOG_FIELDS = ['thisWeek', 'nextWeek', 'due'];
+     한 항목의 모양: { id, text, at, by }  (at = 기입 시각, by = 작성자 이니셜) */
+  const LOG_FIELDS = Array.isArray(global.STORE_LOG_FIELDS) ? global.STORE_LOG_FIELDS : [];
+
+  function unionLogs(a, b) {
+    const m = new Map();
+    [...(a || []), ...(b || [])].forEach(e => {
+      if (!e || !e.id) return;
+      const prev = m.get(e.id);
+      if (!prev || (e.at || '') > (prev.at || '')) m.set(e.id, e);
+    });
+    // 최신이 위로
+    return [...m.values()].sort((x, y) => (y.at || '').localeCompare(x.at || ''));
+  }
+
+  /* 같은 행이 양쪽에 있을 때. 보통 칸은 updatedAt이 최신인 쪽을 쓰고,
+     이력 칸만 양쪽을 합쳐서 어느 쪽 기록도 잃지 않게 한다. */
+  function mergeRow(incoming, local) {
+    const base = (incoming.updatedAt || '') >= (local.updatedAt || '') ? incoming : local;
+    if (!LOG_FIELDS.length) return base;
+    const out = Object.assign({}, base);
+    const dead = new Set([...(incoming.removedLogIds || []), ...(local.removedLogIds || [])]);
+    out.removedLogIds = [...dead];
+    LOG_FIELDS.forEach(k => {
+      out[k] = unionLogs(incoming[k], local[k]).filter(e => !dead.has(e.id));
+    });
+    return out;
+  }
+
   /* ── 병합 ───────────────────────────────────────────────────────────
      같은 id면 updatedAt이 큰 쪽을 남긴다. 순서는 "더 최신인 쪽"을 기준으로
      잡아서, 방금 내가 바꾼 순서가 원격 사본 때문에 되돌아가지 않게 한다. */
@@ -112,7 +148,7 @@
       const a = inMap.get(id), b = loMap.get(id);
       if (!a) { out.push(b); return; }
       if (!b) { out.push(a); return; }
-      out.push((a.updatedAt || '') >= (b.updatedAt || '') ? a : b);
+      out.push(mergeRow(a, b));
     });
     return out;
   }
@@ -329,6 +365,45 @@
       r.updatedAt = nowISO();
       commit();
       return r;
+    },
+
+    /* ── 이력 칸 ──────────────────────────────────────────────────────
+       한 줄 적을 때마다 기입 시각과 작성자 이니셜이 같이 남는다.
+       최신이 배열 앞(위)에 오고, 지운 항목은 removedLogIds에 남겨서
+       다른 PC의 옛 사본 때문에 되살아나지 않게 한다. */
+    addLog(rowId, field, text) {
+      const r = Store.get(rowId);
+      const t = String(text == null ? '' : text).trim();
+      if (!r || !t) return null;
+      const entry = {
+        id: 'e_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 6),
+        text: t, at: nowISO(), by: Store.initials()
+      };
+      r[field] = [entry].concat(r[field] || []);
+      r.updatedAt = nowISO();
+      commit();
+      return entry;
+    },
+    removeLog(rowId, field, entryId) {
+      const r = Store.get(rowId);
+      if (!r) return false;
+      r[field] = (r[field] || []).filter(e => e.id !== entryId);
+      r.removedLogIds = [...new Set([...(r.removedLogIds || []), entryId])];
+      r.updatedAt = nowISO();
+      commit();
+      return true;
+    },
+    // 칸에 보여줄 가장 최근 한 줄
+    latestLog(row, field) { return (row && (row[field] || [])[0]) || null; },
+    logCount(row, field) { return ((row && row[field]) || []).length; },
+
+    /* 작성자 이니셜 — 기존 앱(index.html)과 같은 키를 쓴다.
+       같은 사이트라 한 번 정해두면 두 앱에서 그대로 이어진다. */
+    initials() { return (localStorage.getItem('tw_pm_user_initials') || '').trim().toUpperCase(); },
+    setInitials(v) {
+      const s = String(v || '').trim().toUpperCase().slice(0, 4);
+      if (s) localStorage.setItem('tw_pm_user_initials', s);
+      return s;
     },
 
     remove(ids) {
