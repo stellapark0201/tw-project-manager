@@ -247,6 +247,22 @@ const BOARD_LABEL = window.BOARD_LABEL || BOARD_TITLE;
   .req-label { font-size: 11px; color: var(--text-muted); margin-bottom: 8px; }
   .req-meta { font-size: 11px; color: var(--text-muted); min-height: 16px; margin-bottom: 8px; }
   .req-checks { display: flex; flex-direction: column; gap: 7px; margin-bottom: 14px; }
+  .req-person {
+    display: flex; align-items: center; gap: 10px; padding: 11px 13px;
+    border: 1px solid var(--border); border-radius: 9px; background: var(--surface-2);
+    font-size: 12.5px; color: var(--text-muted);
+  }
+  .req-person.mine { border-color: var(--accent); background: var(--surface); cursor: pointer; color: var(--text-primary); }
+  .req-person.mine:hover { background: var(--accent-light); }
+  .req-person.done { color: var(--green); }
+  .req-person .av {
+    width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; background: var(--border); color: var(--surface);
+  }
+  .req-person .av.me { background: var(--accent); color: #fff; }
+  .req-person .av.on { background: var(--green); color: #fff; }
+  .req-person .txt { flex: 1; min-width: 0; }
   .req-row { display: flex; align-items: center; gap: 8px; font-size: 12.5px; }
   .req-row .done { color: var(--green); font-size: 11px; }
   .req-row button {
@@ -308,6 +324,15 @@ const BOARD_LABEL = window.BOARD_LABEL || BOARD_TITLE;
   }
   .del-row .nm2 { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .del-row .when { font-size: 10.5px; color: var(--text-muted); white-space: nowrap; }
+  .del-lead { gap: 4px; }
+  .del-lead .btn { font-size: 10.5px; padding: 3px 7px; }
+  .cell-ro { padding: 8px 7px; font-size: 12.5px; }
+  .cell-ro .cnt {
+    font-size: 10px; font-weight: 600; color: var(--text-muted);
+    background: var(--surface-2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 0 5px;
+  }
+  .task-cell .when { font-size: 10.5px; color: var(--text-muted); white-space: nowrap; }
   .del-empty { color: var(--text-muted); font-size: 12.5px; padding: 10px 2px; }
 
   /* ── 이력 팝업 ── */
@@ -452,7 +477,7 @@ const BOARD_LABEL = window.BOARD_LABEL || BOARD_TITLE;
       </colgroup>
       <thead>
         <tr>
-          <th><input type="checkbox" id="chkAll" onclick="headerCheck(this)" title="보이는 행 전체 선택/해제" /></th>
+          <th><div class="lead" id="headLead"></div></th>
           <th>Task</th><th>주담당</th><th>This Week</th><th>Next Week</th><th>Due date</th>
         </tr>
       </thead>
@@ -518,7 +543,7 @@ const BOARD_LABEL = window.BOARD_LABEL || BOARD_TITLE;
   <div class="req-label">담당자 확인</div>
   <div id="reqMeta" class="req-meta"></div>
   <div id="reqCheckList" class="req-checks"></div>
-  <button class="btn primary" style="width:100%;" onclick="saveRequest()">저장</button>
+  <button class="btn primary" style="width:100%;" onclick="saveRequest()">Save</button>
 </div>
 
 <!-- 이동하기 메뉴 -->
@@ -971,6 +996,20 @@ function toggleDeleted() {
   deletedOpen = !deletedOpen;
   renderDeleted();
 }
+/* 머리글 체크박스를 행의 체크박스와 같은 세로줄에 세운다.
+   폭을 눈대중으로 맞추면 아이콘이 하나만 늘어도 어긋나므로, 행과 똑같은 묶음을
+   만들어 두고 체크박스만 남기고 가린다. */
+function headLeadHTML(hideAll) {
+  const ghost = s => '<span style="visibility:hidden;pointer-events:none;">' + s + '</span>';
+  return '<div class="lead"' + (hideAll ? ' style="visibility:hidden"' : '') + '>' +
+    ghost('<span class="drag-handle">⠱</span>') +
+    '<input type="checkbox" id="' + (hideAll ? 'chkAllGhost' : 'chkAll') + '"' +
+      (hideAll ? ' disabled' : ' onclick="headerCheck(this)" title="보이는 행 전체 선택/해제"') + ' />' +
+    ghost('<button class="btn-icon">' + SVG_GLASS + '</button>') +
+    ghost('<button class="btn-icon">' + SVG_DETAIL + '</button>') +
+    ghost('<button class="btn-icon">' + SVG_MEMO + '</button>') + '</div>';
+}
+
 function renderDeleted() {
   const list = Store.trash();
   const cnt = document.getElementById('trashCount');
@@ -980,14 +1019,34 @@ function renderDeleted() {
   const bodyEl = document.getElementById('deletedBody');
   if (!bodyEl) return;
   if (!deletedOpen) { bodyEl.innerHTML = ''; return; }
-  bodyEl.innerHTML = list.length ? list.map(function (t) {
-    return '<div class="del-row">' +
-      '<span class="nm2">' + esc(rowTitleOf(t.row)) + '</span>' +
-      '<span class="when">' + shortTs(t.deletedAt) + ' 삭제</span>' +
-      '<button class="btn" onclick="restoreDeleted(\'' + t.id + '\')">복원</button>' +
-      '<button class="btn danger" onclick="purgeDeleted(\'' + t.id + '\')">영구 삭제</button>' +
-      '</div>';
-  }).join('') : '<div class="del-empty">지운 항목이 없습니다.</div>';
+  if (!list.length) { bodyEl.innerHTML = '<div class="del-empty">지운 항목이 없습니다.</div>'; return; }
+
+  // 위 표와 같은 형식 — 같은 칸 너비, 같은 머리글. 내용은 지울 당시 그대로 보여주고
+  // 고치지는 않는다 (복원한 뒤에 고치면 된다).
+  const lastOf = (row, field) => {
+    const e = (row && row[field] || [])[0];
+    const n = (row && row[field] || []).length;
+    return e ? esc(e.text) + (n > 1 ? ' <span class="cnt">' + n + '</span>' : '') : '';
+  };
+  bodyEl.innerHTML =
+    '<div class="table-wrap"><table>' +
+    '<colgroup><col style="width:112px" /><col style="width:24%" /><col style="width:62px" />' +
+    '<col /><col /><col style="width:128px" /></colgroup>' +
+    '<thead><tr><th>' + headLeadHTML(true) + '</th><th>Task</th><th>주담당</th><th>This Week</th><th>Next Week</th><th>Due date</th></tr></thead>' +
+    '<tbody>' + list.map(function (t) {
+      const r = t.row || {};
+      return '<tr class="row-dimmed">' +
+        '<td><div class="lead del-lead">' +
+          '<button class="btn" title="복원" onclick="restoreDeleted(\'' + t.id + '\')">복원</button>' +
+          '<button class="btn danger" title="영구 삭제" onclick="purgeDeleted(\'' + t.id + '\')">영구</button>' +
+        '</div></td>' +
+        '<td><div class="task-cell"><span class="nm">' + esc(rowTitleOf(r)) + '</span>' +
+          '<span class="when">' + shortTs(t.deletedAt) + ' 삭제</span></div></td>' +
+        '<td><div class="cell-ro cell-owner">' + esc(r.owner || '') + '</div></td>' +
+        '<td><div class="cell-ro">' + lastOf(r, 'thisWeek') + '</div></td>' +
+        '<td><div class="cell-ro">' + lastOf(r, 'nextWeek') + '</div></td>' +
+        '<td><div class="cell-ro">' + lastOf(r, 'due') + '</div></td></tr>';
+    }).join('') + '</tbody></table></div>';
 }
 // 휴지통 안의 행은 Store에 없으므로 이름을 직접 만들어 쓴다
 function rowTitleOf(row) {
@@ -1116,9 +1175,12 @@ function fillRequest() {
   const list = Object.keys(owners).sort();
   $('reqCheckList').innerHTML = list.length ? list.map(o => {
     const done = reqDoc.checks && reqDoc.checks[o];
-    return '<div class="req-row"><span class="who">' + esc(o.slice(0, 2)) + '</span>' + esc(o) +
-      (done ? '<span class="done">확인 ' + esc(done) + '</span>' : '') +
-      (o === me ? '<button onclick="markRequestDone()">' + (done ? '확인 취소' : '확인') + '</button>' : '') +
+    const mine = o === me;
+    return '<div class="req-person' + (mine ? ' mine' : '') + (done ? ' done' : '') + '"' +
+      (mine ? ' onclick="markRequestDone()" title="누르면 완료/취소"' : '') + '>' +
+      '<span class="av' + (done ? ' on' : (mine ? ' me' : '')) + '">' + esc(o.slice(0, 2)) + '</span>' +
+      '<span class="txt">' + (done ? '완료 · ' + esc(done)
+                                   : (mine ? '← 클릭하여 완료 처리' : '미완료')) + '</span>' +
       '</div>';
   }).join('') : '<div class="move-note">주담당이 지정된 행이 없습니다.</div>';
 }
@@ -1281,6 +1343,8 @@ window.addEventListener('DOMContentLoaded', () => {
     if ($('requestPanel').style.display !== 'none') fillRequest();
   }), 1200);
   Store.setRowLabel(r => taskName(r) || '(이름 없음)');   // 이력 문구에 연결된 이름이 나오도록
+  const hl = document.getElementById('headLead');
+  if (hl && !hl.firstChild) hl.outerHTML = headLeadHTML(false);
   renderBoardNav();
   $('trashIcon').innerHTML = SVG_TRASH;
   bindPanelFields();
