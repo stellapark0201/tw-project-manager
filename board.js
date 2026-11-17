@@ -280,6 +280,33 @@ const BOARD_LABEL = window.BOARD_LABEL || BOARD_TITLE;
   .move-note { font-size: 10.5px; line-height: 1.5; color: var(--text-muted); margin-top: 8px; }
   .move-sep { border-top: 1px solid var(--border-subtle); margin: 9px -11px 8px; }
 
+  /* ── Deleted Tasks ── */
+  .deleted-section { margin-top: 26px; }
+  .deleted-head {
+    display: flex; align-items: center; gap: 9px; cursor: pointer;
+    padding: 8px 2px; border-bottom: 1px solid var(--border); margin-bottom: 10px;
+  }
+  .deleted-head h3 { font-size: 15px; font-weight: 600; color: var(--text-secondary); margin: 0; }
+  .chev {
+    background: none; border: none; cursor: pointer; color: var(--text-muted);
+    font-size: 11px; padding: 0 2px; transition: transform 0.15s;
+  }
+  .chev.closed { transform: rotate(-90deg); }
+  .del-count { display: inline-flex; align-items: center; gap: 3px; color: var(--red); font-size: 12px; font-weight: 600; }
+  .del-count svg { width: 16px; height: 16px; }
+  .deleted-section .btn { font-size: 11.5px; padding: 4px 11px; color: var(--text-muted); }
+  .deleted-section .btn:hover { border-color: var(--accent); color: var(--accent); }
+  .deleted-section .btn.danger { color: var(--red); }
+  .deleted-section .btn.danger:hover { border-color: var(--red); background: var(--red-light); }
+  .del-row {
+    display: flex; align-items: center; gap: 9px; padding: 8px 10px; font-size: 12.5px;
+    border: 1px solid var(--border-subtle); border-radius: 6px; margin-bottom: 4px;
+    background: var(--surface); color: var(--text-secondary);
+  }
+  .del-row .nm2 { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .del-row .when { font-size: 10.5px; color: var(--text-muted); white-space: nowrap; }
+  .del-empty { color: var(--text-muted); font-size: 12.5px; padding: 10px 2px; }
+
   /* ── 이력 팝업 ── */
   #logPop {
     position: absolute; z-index: 60; width: 380px; background: var(--surface);
@@ -431,6 +458,19 @@ const BOARD_LABEL = window.BOARD_LABEL || BOARD_TITLE;
     <div class="empty" id="emptyMsg" style="display:none;">아직 항목이 없습니다. 아래 ＋ 를 눌러 시작하세요.</div>
   </div>
   <div class="count" id="countMsg"></div>
+
+  <!-- 기존 앱 In Active 하단의 삭제 목록과 같은 자리 -->
+  <div class="deleted-section" id="deletedSection">
+    <div class="deleted-head" onclick="toggleDeleted()">
+      <button class="chev" id="delChev" title="접기/펼치기">▾</button>
+      <h3>Deleted Tasks</h3>
+      <span class="del-count"><span id="trashIcon"></span><span id="trashCount">0</span></span>
+      <span style="flex:1"></span>
+      <button class="btn" onclick="event.stopPropagation();restoreAllDeleted()">전체 복원</button>
+      <button class="btn danger" onclick="event.stopPropagation();purgeAllDeleted()">전체 영구 삭제</button>
+    </div>
+    <div id="deletedBody"></div>
+  </div>
 </div>
 
 <div id="logPop" style="display:none;">
@@ -509,6 +549,7 @@ const LOGS = [
   { key: 'due',      label: 'Due date'  }
 ];
 const SVG_GLASS  = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>';
+const SVG_TRASH  = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>';
 const SVG_MAIL   = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 10 6 10-6"/></svg>';
 const SVG_MOVE   = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>';
 const SVG_CAM    = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>';
@@ -650,6 +691,7 @@ function render() {
 
   renderNav();
   renderOwnerChips();
+  renderDeleted();
   if (logCtx) fillLog();
   if ($('histPanel').classList.contains('open')) fillHistory();
   if (rowLogId) { if (Store.get(rowLogId)) fillRowLogs(); else closeRowLogs(); }
@@ -918,6 +960,58 @@ const PAGES = [
 ];
 const MAIN_APP = { label: 'TW Project Manager (In Active)', href: '../' };
 
+/* ── Deleted Tasks ─────────────────────────────────────
+   기존 앱 In Active 하단의 삭제 목록과 같다. 지운 행은 여기 남아 복원할 수 있고,
+   영구 삭제하면 내용이 사라진다 (다른 PC가 다시 살리지 못하도록 기록은 남는다). */
+let deletedOpen = true;
+function toggleDeleted() {
+  deletedOpen = !deletedOpen;
+  renderDeleted();
+}
+function renderDeleted() {
+  const list = Store.trash();
+  const cnt = document.getElementById('trashCount');
+  if (cnt) cnt.textContent = list.length;
+  const chev = document.getElementById('delChev');
+  if (chev) chev.classList.toggle('closed', !deletedOpen);
+  const bodyEl = document.getElementById('deletedBody');
+  if (!bodyEl) return;
+  if (!deletedOpen) { bodyEl.innerHTML = ''; return; }
+  bodyEl.innerHTML = list.length ? list.map(function (t) {
+    return '<div class="del-row">' +
+      '<span class="nm2">' + esc(rowTitleOf(t.row)) + '</span>' +
+      '<span class="when">' + shortTs(t.deletedAt) + ' 삭제</span>' +
+      '<button class="btn" onclick="restoreDeleted(\'' + t.id + '\')">복원</button>' +
+      '<button class="btn danger" onclick="purgeDeleted(\'' + t.id + '\')">영구 삭제</button>' +
+      '</div>';
+  }).join('') : '<div class="del-empty">지운 항목이 없습니다.</div>';
+}
+// 휴지통 안의 행은 Store에 없으므로 이름을 직접 만들어 쓴다
+function rowTitleOf(row) {
+  if (!row) return '(지워짐)';
+  const ref = row.projectId ? Store.ref(row.projectId) : null;
+  return (ref && ref.name) || row.name || '(이름 없음)';
+}
+function restoreDeleted(id) { Store.restore([id]); render(); }
+function purgeDeleted(id) {
+  const t = Store.trash().filter(function (x) { return x.id === id; })[0];
+  if (!t) return;
+  if (!confirm('영구 삭제합니다 — ' + rowTitleOf(t.row) + '. 되돌릴 수 없습니다.')) return;
+  Store.purge([id]); render();
+}
+function restoreAllDeleted() {
+  const ids = Store.trash().map(function (t) { return t.id; });
+  if (!ids.length) return;
+  if (!confirm(ids.length + '개를 모두 복원합니다.')) return;
+  Store.restore(ids); render();
+}
+function purgeAllDeleted() {
+  const ids = Store.trash().map(function (t) { return t.id; });
+  if (!ids.length) return;
+  if (!confirm(ids.length + '개를 모두 영구 삭제합니다. 되돌릴 수 없습니다.')) return;
+  Store.purge(ids); render();
+}
+
 /* ── 보드 탭 ──────────────────────────────────────────
    기존 앱의 Active Projects / Operational Tasks 와 같은 자리의 탭.
    PAGES 에 한 줄 더하면 탭도 같이 늘어난다. */
@@ -1185,6 +1279,7 @@ window.addEventListener('DOMContentLoaded', () => {
   }), 1200);
   Store.setRowLabel(r => taskName(r) || '(이름 없음)');   // 이력 문구에 연결된 이름이 나오도록
   renderBoardNav();
+  $('trashIcon').innerHTML = SVG_TRASH;
   bindPanelFields();
   paintMe();
   paintMode();

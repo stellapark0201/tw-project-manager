@@ -478,7 +478,16 @@
       const at = nowISO();
       const before = snapshotRows();
       const names = list.map(id => rowLabel(Store.get(id))).join(', ');
-      list.forEach(id => tombs.unshift({ id, deletedAt: at }));
+      // 삭제 기록에 행 전체를 담아 둔다 — 휴지통에서 되살릴 수 있도록.
+      // _origIndex 는 지울 때의 자리. 복원하면 그 자리로 돌려놓는다.
+      list.forEach(id => {
+        const r = Store.get(id);
+        tombs.unshift({
+          id: id, deletedAt: at,
+          row: r ? JSON.parse(JSON.stringify(r)) : null,
+          _origIndex: rows.findIndex(x => x.id === id)
+        });
+      });
       tombs = pruneTombs(tombs);
       rows = rows.filter(r => !set.has(r.id));
       commit('삭제', names, before);
@@ -669,6 +678,41 @@
         status('수정 실패 — ' + (e.message || ''), 'err');
         return false;
       }
+    },
+
+    /* ── 휴지통 ────────────────────────────────────────────────────────
+       지운 행은 삭제 기록과 함께 남아 있다. 영구 삭제는 내용만 비우고 기록은
+       남긴다 — 그래야 다른 PC의 예전 사본이 그 행을 다시 살려내지 않는다. */
+    trash() { return tombs.filter(t => t && t.row); },
+    trashCount() { return tombs.filter(t => t && t.row).length; },
+
+    restore(ids) {
+      const list = Array.isArray(ids) ? ids : [ids];
+      const set = new Set(list);
+      const picked = tombs.filter(t => t && t.row && set.has(t.id));
+      if (!picked.length) return 0;
+      const before = snapshotRows();
+      const at = nowISO();
+      // 지울 때의 자리로 돌려놓는다. 자리가 애매하면 맨 앞으로.
+      picked.slice().reverse().forEach(t => {
+        const r = JSON.parse(JSON.stringify(t.row));
+        r.updatedAt = at;          // 원격의 예전 사본보다 최신이어야 다시 안 지워진다
+        const i = (typeof t._origIndex === 'number' && t._origIndex >= 0) ? t._origIndex : 0;
+        rows.splice(Math.min(i, rows.length), 0, r);
+      });
+      tombs = tombs.filter(t => !set.has(t.id));
+      commit('복원', picked.map(t => rowLabel(t.row)).join(', '), before);
+      return picked.length;
+    },
+
+    purge(ids) {
+      const list = Array.isArray(ids) ? ids : [ids];
+      const set = new Set(list);
+      const names = tombs.filter(t => t && t.row && set.has(t.id)).map(t => rowLabel(t.row));
+      if (!names.length) return 0;
+      tombs = tombs.map(t => (set.has(t.id) ? { id: t.id, deletedAt: t.deletedAt } : t));
+      commit('영구 삭제', names.join(', '));
+      return names.length;
     },
 
     isTestMode() { return testMode; },
