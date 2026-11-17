@@ -1017,7 +1017,8 @@ function bindPanelFields() {
    window.STORE_APP_ID 와 같아야 한다 (Firestore 문서 tw-pm/<id>). */
 const PAGES = [
   { id: 'tracker',   tab: 'Tasks in Active', label: 'Weekly Focus',      href: '../tracker/' },
-  { id: 'completed', tab: 'Completed',       label: 'Completed Project', href: '../completed/' }
+  { id: 'completed', tab: 'Completed',       label: 'Completed Project', href: '../completed/' },
+  { id: 'task-update', tab: 'Task Update',  label: 'Task Update',       href: '../task-update/' }
 ];
 const MAIN_APP = { label: 'TW Project Manager (In Active)', href: '../' };
 
