@@ -1024,13 +1024,13 @@ function bindPanelFields() {
    페이지(앱)를 하나 더 만들면 여기에 한 줄만 추가한다. 그러면 "이동하기"의
    가기 목록과 옮기기 목록에 자동으로 나타난다. id는 그 페이지의
    window.STORE_APP_ID 와 같아야 한다 (Firestore 문서 tw-pm/<id>). */
+/* 보드 — 행을 서로 옮길 수 있는 표들. 여기 한 줄이 탭 하나이고 옮기기 대상 하나다. */
 const PAGES = [
-  { id: 'tracker',   tab: 'Tasks in Active', label: 'Weekly Focus',      href: '../tracker/' },
-  { id: 'completed', tab: 'Completed',       label: 'Completed Project', href: '../completed/' },
-  { id: 'task-update', tab: 'Task Update',  label: 'Task Update',       href: '../task-update/' },
-  { id: 'activity-update', tab: 'Activity Update', label: 'Activity Update', href: '../activity-update/' }
+  { id: 'tracker',         tab: 'TW Team Weekly Focus', label: 'TW Team Weekly Focus', href: '../tracker/' },
+  { id: 'activity-update', tab: 'Activity Update',      label: 'Activity Update',      href: '../activity-update/' }
 ];
-const MAIN_APP = { label: 'TW Project Manager (In Active)', href: '../' };
+// 프로젝트 원본이 있는 앱. 표 구조가 달라 옵기기 대상은 아니고, 오가기만 한다.
+const MAIN_APP = { label: 'TW Project Manager', href: '../' };
 
 /* ── Deleted Tasks ─────────────────────────────────────
    기존 앱 In Active 하단의 삭제 목록과 같다. 지운 행은 여기 남아 복원할 수 있고,
@@ -1257,9 +1257,12 @@ const HOME_SVG = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" st
 function renderBoardNav() {
   const nav = document.getElementById('boardNav');
   if (!nav) return;
-  nav.innerHTML = PAGES.map((p, i) =>
-    '<a href="' + p.href + '" class="' + (p.id === Store.APP_ID ? 'on' : '') + '">' +
-    (i === 0 ? HOME_SVG : '') + esc(p.tab || p.label) + '</a>').join('');
+  // 세 html 을 서로 잇는 줄. 첫 칸은 프로젝트 원본이 있는 기존 앱.
+  nav.innerHTML =
+    '<a href="' + MAIN_APP.href + '">' + HOME_SVG + esc(MAIN_APP.label) + '</a>' +
+    PAGES.map(p =>
+      '<a href="' + p.href + '" class="' + (p.id === Store.APP_ID ? 'on' : '') + '">' +
+      esc(p.tab || p.label) + '</a>').join('');
 }
 
 /* ── 이동하기 ──────────────────────────────────────────────────────
