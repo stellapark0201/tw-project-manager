@@ -498,6 +498,10 @@ const BOARD_LABEL = window.BOARD_LABEL || BOARD_TITLE;
       <h3>Deleted Tasks</h3>
       <span class="del-count"><span id="trashIcon"></span><span id="trashCount">0</span></span>
       <span style="flex:1"></span>
+      <span id="trashSelBtns" style="display:none;">
+        <button class="btn" id="trashSelRestore" onclick="event.stopPropagation();restoreSelectedTrash()">선택 복원</button>
+        <button class="btn danger" id="trashSelPurge" onclick="event.stopPropagation();purgeSelectedTrash()">선택 영구 삭제</button>
+      </span>
       <button class="btn" onclick="event.stopPropagation();restoreAllDeleted()">전체 복원</button>
       <button class="btn danger" onclick="event.stopPropagation();purgeAllDeleted()">전체 영구 삭제</button>
     </div>
@@ -1014,6 +1018,45 @@ function headLeadHTML(hideAll) {
     ghost('<button class="btn-icon">' + SVG_MEMO + '</button>') + '</div>';
 }
 
+/* 삭제 표의 선택 — 여러 개를 한 번에 복원하거나 영구 삭제하려고 둔다.
+   머리글 체크박스는 행 체크박스와 같은 세로줄에 서야 하므로 같은 묶음을 쓴다. */
+const trashSelected = new Set();
+function trashHeadLeadHTML() {
+  const ghost = x => '<span style="visibility:hidden;pointer-events:none;">' + x + '</span>';
+  return '<div class="lead del-lead">' +
+    '<input type="checkbox" id="trashChkAll" onclick="trashHeaderCheck(this)" title="지운 항목 전체 선택/해제" />' +
+    ghost('<button class="btn-icon">' + SVG_GLASS + '</button>') +
+    ghost('<button class="btn">복원</button>') +
+    ghost('<button class="btn">영구</button>') + '</div>';
+}
+function toggleTrashSelect(id, on) {
+  if (on) trashSelected.add(id); else trashSelected.delete(id);
+  renderDeleted();
+}
+function trashHeaderCheck() {
+  const ids = Store.trash().map(t => t.id);
+  const all = ids.length > 0 && ids.every(id => trashSelected.has(id));
+  trashSelected.clear();
+  if (!all) ids.forEach(id => trashSelected.add(id));
+  renderDeleted();
+}
+function restoreSelectedTrash() {
+  const ids = [...trashSelected];
+  if (!ids.length) return;
+  if (!confirm(ids.length + '개를 복원합니다.')) return;
+  Store.restore(ids);
+  trashSelected.clear();
+  render();
+}
+function purgeSelectedTrash() {
+  const ids = [...trashSelected];
+  if (!ids.length) return;
+  if (!confirm(ids.length + '개를 영구 삭제합니다. 되돌릴 수 없습니다.')) return;
+  Store.purge(ids);
+  trashSelected.clear();
+  render();
+}
+
 function renderDeleted() {
   const list = Store.trash();
   const cnt = document.getElementById('trashCount');
@@ -1023,6 +1066,17 @@ function renderDeleted() {
   const bodyEl = document.getElementById('deletedBody');
   if (!bodyEl) return;
   if (!deletedOpen) { bodyEl.innerHTML = ''; return; }
+  // 휴지통에서 사라진 id 는 선택에서도 지운다
+  const liveIds = new Set(list.map(t => t.id));
+  [...trashSelected].forEach(id => { if (!liveIds.has(id)) trashSelected.delete(id); });
+  const selBtns = document.getElementById('trashSelBtns');
+  if (selBtns) {
+    selBtns.style.display = trashSelected.size ? '' : 'none';
+    const a = document.getElementById('trashSelRestore');
+    const b = document.getElementById('trashSelPurge');
+    if (a) a.textContent = '선택 복원 (' + trashSelected.size + ')';
+    if (b) b.textContent = '선택 영구 삭제 (' + trashSelected.size + ')';
+  }
   if (!list.length) { bodyEl.innerHTML = '<div class="del-empty">지운 항목이 없습니다.</div>'; return; }
 
   // 위 표와 같은 형식 — 같은 칸 너비, 같은 머리글. 내용은 지울 당시 그대로 보여주고
@@ -1034,13 +1088,15 @@ function renderDeleted() {
   };
   bodyEl.innerHTML =
     '<div class="table-wrap"><table>' +
-    '<colgroup><col style="width:112px" /><col style="width:24%" /><col style="width:62px" />' +
+    '<colgroup><col style="width:150px" /><col style="width:24%" /><col style="width:62px" />' +
     '<col /><col /><col style="width:128px" /></colgroup>' +
-    '<thead><tr><th>' + headLeadHTML(true) + '</th><th>Task</th><th>주담당</th><th>This Week</th><th>Next Week</th><th>Due date</th></tr></thead>' +
+    '<thead><tr><th>' + trashHeadLeadHTML() + '</th><th>Task</th><th>주담당</th><th>This Week</th><th>Next Week</th><th>Due date</th></tr></thead>' +
     '<tbody>' + list.map(function (t) {
       const r = t.row || {};
       return '<tr class="row-dimmed">' +
         '<td><div class="lead del-lead">' +
+          '<input type="checkbox" ' + (trashSelected.has(t.id) ? 'checked' : '') +
+            ' onchange="toggleTrashSelect(\'' + t.id + '\', this.checked)" />' +
           '<button class="btn-icon muted" title="내용 확인" onclick="openRowLogs(\'' + t.id + '\')">' + SVG_GLASS + '</button>' +
           '<button class="btn" title="복원" onclick="restoreDeleted(\'' + t.id + '\')">복원</button>' +
           '<button class="btn danger" title="영구 삭제" onclick="purgeDeleted(\'' + t.id + '\')">영구</button>' +
@@ -1052,6 +1108,14 @@ function renderDeleted() {
         '<td><div class="cell-ro">' + lastOf(r, 'nextWeek') + '</div></td>' +
         '<td><div class="cell-ro">' + lastOf(r, 'due') + '</div></td></tr>';
     }).join('') + '</tbody></table></div>';
+
+  const hc = document.getElementById('trashChkAll');
+  if (hc) {
+    const ids = list.map(t => t.id);
+    const all = ids.length > 0 && ids.every(id => trashSelected.has(id));
+    hc.checked = all;
+    hc.indeterminate = !all && ids.some(id => trashSelected.has(id));
+  }
 }
 // 휴지통 안의 행은 Store에 없으므로 이름을 직접 만들어 쓴다
 function rowTitleOf(row) {
