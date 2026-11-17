@@ -333,6 +333,10 @@ const BOARD_LABEL = window.BOARD_LABEL || BOARD_TITLE;
     border-radius: 8px; padding: 0 5px;
   }
   .task-cell .when { font-size: 10.5px; color: var(--text-muted); white-space: nowrap; }
+  .trash-note {
+    background: #fff7ed; border: 1px solid #fed7aa; color: #9a3412;
+    border-radius: 6px; padding: 8px 10px; font-size: 11.5px; margin-bottom: 14px;
+  }
   .del-empty { color: var(--text-muted); font-size: 12.5px; padding: 10px 2px; }
 
   /* ── 이력 팝업 ── */
@@ -1037,6 +1041,7 @@ function renderDeleted() {
       const r = t.row || {};
       return '<tr class="row-dimmed">' +
         '<td><div class="lead del-lead">' +
+          '<button class="btn-icon muted" title="내용 확인" onclick="openRowLogs(\'' + t.id + '\')">' + SVG_GLASS + '</button>' +
           '<button class="btn" title="복원" onclick="restoreDeleted(\'' + t.id + '\')">복원</button>' +
           '<button class="btn danger" title="영구 삭제" onclick="purgeDeleted(\'' + t.id + '\')">영구</button>' +
         '</div></td>' +
@@ -1208,23 +1213,38 @@ async function markRequestDone() {
 /* ── 행별 전체 기록 (돋보기) ────────────────────────
    표에는 칸마다 맨 위 한 줄만 보이므로, 세 칸의 쌓인 기록을 한번에 보는 자리. */
 let rowLogId = null;
+// 살아 있는 행이면 그것을, 아니면 휴지통에 보관된 행을 돌려준다.
+// 지운 행도 열어볼 수 있어야 영구 삭제 전에 내용을 확인할 수 있다.
+function rowAnywhere(id) {
+  const live = Store.get(id);
+  if (live) return { row: live, deleted: false, at: '' };
+  const t = Store.trash().filter(x => x.id === id)[0];
+  return t ? { row: t.row, deleted: true, at: t.deletedAt } : null;
+}
 function openRowLogs(id) {
-  const r = Store.get(id);
-  if (!r) return;
+  if (!rowAnywhere(id)) return;
   rowLogId = id;
   fillRowLogs();
   $('rowLogPanel').classList.add('open');
 }
 function closeRowLogs() { rowLogId = null; $('rowLogPanel').classList.remove('open'); }
 function fillRowLogs() {
-  const r = Store.get(rowLogId);
-  if (!r) { closeRowLogs(); return; }
+  const found = rowAnywhere(rowLogId);
+  if (!found) { closeRowLogs(); return; }
+  const r = found.row;
   const ref = Store.linked(r);
   $('rlTitle').textContent = taskName(r) || '(이름 없음)';
-  $('rlSub').textContent = ref
-    ? '기존 앱의 체크리스트와 같은 내용입니다. 여기서 체크하면 기존 앱에도 반영됩니다.'
-    : '세 칸에 쌓인 기록 전체 — 칸을 눌러 추가하고 여기서 한번에 봅니다';
-  $('rlBody').innerHTML = checklistHTML(ref) + LOGS.map(l => {
+  $('rlSub').textContent = found.deleted
+    ? shortTs(found.at) + ' 에 지운 항목입니다. 영구 삭제하기 전에 내용을 확인하세요.'
+    : (ref ? '기존 앱의 체크리스트와 같은 내용입니다. 여기서 체크하면 기존 앱에도 반영됩니다.'
+           : '세 칸에 쌓인 기록 전체 — 칸을 눌러 추가하고 여기서 한번에 봅니다');
+  const head = found.deleted
+    ? '<div class="trash-note">지운 항목 — 보기 전용입니다. 되살리려면 복원을 누르세요.</div>' +
+      '<div class="field"><label>주담당</label><div class="cell-ro">' + (esc(r.owner || '') || '—') + '</div></div>' +
+      (String(r.memo || '').trim()
+        ? '<div class="field"><label>메모</label><div class="cell-ro">' + esc(r.memo) + '</div></div>' : '')
+    : '';
+  $('rlBody').innerHTML = head + checklistHTML(ref, found.deleted) + LOGS.map(l => {
     const list = r[l.key] || [];
     return '<div class="field"><label>' + l.label + ' (' + list.length + ')</label>' +
       (list.length ? list.map((e, i) =>
@@ -1239,7 +1259,7 @@ function fillRowLogs() {
    기존 앱(TW Project Manager)의 돋보기와 같은 내용을 같은 단계 구성으로
    보여주고, 여기서 체크한 것이 그대로 기존 앱 데이터에 반영된다.
    쓰기는 store.js의 editRef 한 곳만 거친다 (트랜잭션). */
-function checklistHTML(ref) {
+function checklistHTML(ref, readOnly) {
   if (!ref) return '';
   const stages = Store.checklistOf(ref);
   const c = Store.checklistCount(ref);
@@ -1247,7 +1267,7 @@ function checklistHTML(ref) {
     '<div class="cl-stage"><div class="cl-stage-head">' + st.num + '. ' + esc(st.label) + '</div>' +
     st.items.map(it =>
       '<label class="cl-item' + (it.state === true ? ' done' : (it.state === 'pb' ? ' pb' : '')) + '">' +
-      '<input type="checkbox" ' + (it.state === true ? 'checked' : '') +
+      '<input type="checkbox" ' + (it.state === true ? 'checked ' : '') + (readOnly ? 'disabled ' : '') +
       ' onchange="toggleRefCheck(\'' + esc(ref.id) + '\',\'' + it.key + '\',this.checked)" />' +
       '<span>' + esc(it.title) + '</span>' +
       (it.state === 'pb' ? '<em>보류</em>' : '') + '</label>').join('') + '</div>').join('');
